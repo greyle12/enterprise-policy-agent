@@ -1,0 +1,740 @@
+﻿{
+  "tool_name": "submit_mock_approval",
+  "version": "1.0",
+  "implementation_status": "contract_only",
+  "description": "在用户已经明确确认且草稿满足提交条件时，将申请草稿模拟提交到审批流程，并返回正式申请编号、审批路线和审计信息。",
+  "side_effect": "workflow_submission",
+  "requires_user_confirmation": true,
+  "supported_application_types": [
+    "purchase",
+    "travel_reimbursement",
+    "leave",
+    "expense_reimbursement"
+  ],
+  "preconditions": [
+    "draft必须由create_application_draft工具生成",
+    "draft.status必须为waiting_for_confirmation",
+    "draft.confirmation.required必须为true",
+    "用户必须通过明确意图完成确认",
+    "confirmation.user_confirmed必须为true",
+    "草稿不得存在阻断性的validation_issues",
+    "草稿必须满足ready_for_submission条件",
+    "提交人必须是申请人本人或具有合法代办权限的用户",
+    "submission_idempotency_key必须存在",
+    "相同幂等键不得创建多个正式申请"
+  ],
+  "security_rules": [
+    "不得根据模糊表达推断用户已经确认",
+    "不得由大模型自行设置user_confirmed为true",
+    "可信用户身份必须来自认证层",
+    "提交前必须验证草稿归属和调用人权限",
+    "不得提交其他用户的草稿，除非存在经过验证的代办权限",
+    "不得绕过材料完整性、余额、预算、金额或时间重叠检查",
+    "敏感信息不得写入普通提交日志",
+    "提交必须生成不可重复的正式申请编号",
+    "所有提交结果都必须记录request_id、session_id和幂等键",
+    "重复调用必须返回首次提交结果，而不是创建新申请"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "draft",
+      "confirmation",
+      "user_context",
+      "session_id",
+      "request_id",
+      "submission_idempotency_key"
+    ],
+    "properties": {
+      "draft": {
+        "type": "object",
+        "required": [
+          "draft_id",
+          "application_type",
+          "status",
+          "applicant",
+          "application_data",
+          "policy_snapshot",
+          "required_approvers",
+          "confirmation",
+          "submission",
+          "audit_metadata"
+        ],
+        "properties": {
+          "draft_id": {
+            "type": "string"
+          },
+          "application_type": {
+            "type": "string",
+            "enum": [
+              "purchase",
+              "travel_reimbursement",
+              "leave",
+              "expense_reimbursement"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting_for_confirmation"
+            ]
+          },
+          "applicant": {
+            "type": "object",
+            "required": [
+              "employee_id",
+              "employee_name",
+              "department"
+            ],
+            "properties": {
+              "employee_id": {
+                "type": "string"
+              },
+              "employee_name": {
+                "type": "string"
+              },
+              "department": {
+                "type": "string"
+              }
+            }
+          },
+          "application_data": {
+            "type": "object"
+          },
+          "calculated_fields": {
+            "type": "object"
+          },
+          "policy_snapshot": {
+            "type": "object",
+            "required": [
+              "document_id",
+              "version",
+              "effective_date",
+              "checked_at"
+            ],
+            "properties": {
+              "document_id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "effective_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "checked_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "missing_fields": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "missing_materials": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "validation_issues": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "required_approvers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confirmation": {
+            "type": "object",
+            "required": [
+              "required",
+              "user_confirmed",
+              "confirmed_at"
+            ],
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "user_confirmed": {
+                "type": "boolean"
+              },
+              "confirmed_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "submission": {
+            "type": "object",
+            "required": [
+              "submitted",
+              "submission_id",
+              "submitted_at"
+            ],
+            "properties": {
+              "submitted": {
+                "type": "boolean"
+              },
+              "submission_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "submitted_at": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            }
+          },
+          "audit_metadata": {
+            "type": "object"
+          }
+        }
+      },
+      "confirmation": {
+        "type": "object",
+        "required": [
+          "confirmation_intent",
+          "confirmation_text",
+          "confirmed_by",
+          "confirmed_at"
+        ],
+        "properties": {
+          "confirmation_intent": {
+            "type": "string",
+            "enum": [
+              "confirm"
+            ]
+          },
+          "confirmation_text": {
+            "type": "string",
+            "description": "用户用于明确确认提交的原始文本"
+          },
+          "confirmed_by": {
+            "type": "string",
+            "description": "完成确认的员工编号"
+          },
+          "confirmed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "confirmation_channel": {
+            "type": "string",
+            "enum": [
+              "chat",
+              "web",
+              "api"
+            ],
+            "default": "chat"
+          }
+        }
+      },
+      "user_context": {
+        "type": "object",
+        "required": [
+          "employee_id",
+          "employee_name",
+          "department",
+          "roles",
+          "region"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "employee_name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "min_items": 1
+          },
+          "region": {
+            "type": "string"
+          },
+          "delegated_permissions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "default": []
+          }
+        }
+      },
+      "session_id": {
+        "type": "string"
+      },
+      "request_id": {
+        "type": "string"
+      },
+      "submission_idempotency_key": {
+        "type": "string",
+        "min_length": 8,
+        "description": "用于保证提交操作仅执行一次"
+      },
+      "simulate_failure": {
+        "type": "boolean",
+        "description": "仅用于本地测试工具异常和重试流程",
+        "default": false
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "success",
+      "submission_result",
+      "approval_workflow",
+      "audit_metadata"
+    ],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "submission_result": {
+        "type": "object",
+        "required": [
+          "submission_id",
+          "draft_id",
+          "application_type",
+          "status",
+          "submitted_at",
+          "submitted_by",
+          "duplicate_submission"
+        ],
+        "properties": {
+          "submission_id": {
+            "type": "string"
+          },
+          "draft_id": {
+            "type": "string"
+          },
+          "application_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "approval_in_progress"
+            ]
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "submitted_by": {
+            "type": "string"
+          },
+          "duplicate_submission": {
+            "type": "boolean"
+          },
+          "idempotency_key": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "approval_workflow": {
+        "type": "object",
+        "required": [
+          "workflow_id",
+          "current_step",
+          "steps"
+        ],
+        "properties": {
+          "workflow_id": {
+            "type": "string"
+          },
+          "current_step": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "step_number",
+                "approver_role",
+                "status"
+              ],
+              "properties": {
+                "step_number": {
+                  "type": "integer"
+                },
+                "approver_role": {
+                  "type": "string"
+                },
+                "approver_employee_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "waiting",
+                    "approved",
+                    "rejected",
+                    "skipped"
+                  ]
+                },
+                "acted_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "format": "date-time"
+                },
+                "comment": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "updated_draft_state": {
+        "type": "object",
+        "required": [
+          "draft_id",
+          "status",
+          "user_confirmed",
+          "submitted",
+          "submission_id",
+          "submitted_at"
+        ],
+        "properties": {
+          "draft_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "submitted",
+              "approval_in_progress"
+            ]
+          },
+          "user_confirmed": {
+            "type": "boolean"
+          },
+          "submitted": {
+            "type": "boolean"
+          },
+          "submission_id": {
+            "type": "string"
+          },
+          "submitted_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "audit_metadata": {
+        "type": "object",
+        "required": [
+          "session_id",
+          "request_id",
+          "submission_idempotency_key",
+          "confirmation_text_recorded",
+          "created_at"
+        ],
+        "properties": {
+          "session_id": {
+            "type": "string"
+          },
+          "request_id": {
+            "type": "string"
+          },
+          "submission_idempotency_key": {
+            "type": "string"
+          },
+          "confirmation_text_recorded": {
+            "type": "boolean"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "error": {
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    }
+  },
+  "example_input": {
+    "draft": {
+      "draft_id": "PURCHASE-DRAFT-001",
+      "application_type": "purchase",
+      "status": "waiting_for_confirmation",
+      "applicant": {
+        "employee_id": "EMP-10001",
+        "employee_name": "张伟",
+        "department": "产品研发部"
+      },
+      "application_data": {
+        "purchase_details": {
+          "item_name": "27英寸办公显示器",
+          "quantity": 3,
+          "unit": "台",
+          "estimated_unit_price": 2000.0,
+          "estimated_total_amount": 6000.0,
+          "currency": "CNY",
+          "purpose": "为新入职研发人员配置办公设备"
+        },
+        "budget": {
+          "budget_code": "RD-EQUIPMENT-2026",
+          "cost_center": "CC-RD-001"
+        },
+        "supplier": {
+          "supplier_name": "苏州示例科技有限公司"
+        }
+      },
+      "calculated_fields": {
+        "calculated_total_amount": 6000.0,
+        "amount_calculation_valid": true,
+        "purchase_level": "GENERAL_PURCHASE",
+        "procurement_method": "INQUIRY",
+        "required_quotation_count": 2,
+        "ready_for_submission": true
+      },
+      "policy_snapshot": {
+        "document_id": "PROCUREMENT_POLICY_001",
+        "version": "1.0",
+        "effective_date": "2026-01-01",
+        "checked_at": "2026-07-30T14:30:00+08:00"
+      },
+      "missing_fields": [],
+      "missing_materials": [],
+      "validation_issues": [
+        {
+          "code": "IT_REVIEW_REQUIRED",
+          "severity": "info",
+          "message": "该采购需要信息技术部技术评审。",
+          "blocking": false
+        }
+      ],
+      "required_approvers": [
+        "DIRECT_MANAGER",
+        "DEPARTMENT_HEAD",
+        "IT_DEPARTMENT",
+        "PROCUREMENT_DEPARTMENT"
+      ],
+      "confirmation": {
+        "required": true,
+        "user_confirmed": true,
+        "confirmed_at": "2026-07-30T14:45:00+08:00"
+      },
+      "submission": {
+        "submitted": false,
+        "submission_id": null,
+        "submitted_at": null
+      },
+      "audit_metadata": {
+        "session_id": "SESSION-20260730-001",
+        "request_id": "REQUEST-20260730-001",
+        "created_at": "2026-07-30T14:30:00+08:00",
+        "created_by": "EMP-10001"
+      }
+    },
+    "confirmation": {
+      "confirmation_intent": "confirm",
+      "confirmation_text": "确认提交这份采购申请",
+      "confirmed_by": "EMP-10001",
+      "confirmed_at": "2026-07-30T14:45:00+08:00",
+      "confirmation_channel": "chat"
+    },
+    "user_context": {
+      "employee_id": "EMP-10001",
+      "employee_name": "张伟",
+      "department": "产品研发部",
+      "roles": [
+        "EMPLOYEE"
+      ],
+      "region": "中国大陆",
+      "delegated_permissions": []
+    },
+    "session_id": "SESSION-20260730-001",
+    "request_id": "REQUEST-20260730-002",
+    "submission_idempotency_key": "submit:purchase:PURCHASE-DRAFT-001:EMP-10001",
+    "simulate_failure": false
+  },
+  "example_output": {
+    "success": true,
+    "submission_result": {
+      "submission_id": "PURCHASE-202607-0001",
+      "draft_id": "PURCHASE-DRAFT-001",
+      "application_type": "purchase",
+      "status": "approval_in_progress",
+      "submitted_at": "2026-07-30T14:46:00+08:00",
+      "submitted_by": "EMP-10001",
+      "duplicate_submission": false,
+      "idempotency_key": "submit:purchase:PURCHASE-DRAFT-001:EMP-10001",
+      "message": "采购申请已模拟提交，当前等待直属经理审批。"
+    },
+    "approval_workflow": {
+      "workflow_id": "WORKFLOW-PURCHASE-202607-0001",
+      "current_step": 1,
+      "steps": [
+        {
+          "step_number": 1,
+          "approver_role": "DIRECT_MANAGER",
+          "approver_employee_id": "EMP-20001",
+          "status": "pending",
+          "acted_at": null,
+          "comment": null
+        },
+        {
+          "step_number": 2,
+          "approver_role": "DEPARTMENT_HEAD",
+          "approver_employee_id": "EMP-30001",
+          "status": "waiting",
+          "acted_at": null,
+          "comment": null
+        },
+        {
+          "step_number": 3,
+          "approver_role": "IT_DEPARTMENT",
+          "approver_employee_id": null,
+          "status": "waiting",
+          "acted_at": null,
+          "comment": null
+        },
+        {
+          "step_number": 4,
+          "approver_role": "PROCUREMENT_DEPARTMENT",
+          "approver_employee_id": null,
+          "status": "waiting",
+          "acted_at": null,
+          "comment": null
+        }
+      ]
+    },
+    "updated_draft_state": {
+      "draft_id": "PURCHASE-DRAFT-001",
+      "status": "approval_in_progress",
+      "user_confirmed": true,
+      "submitted": true,
+      "submission_id": "PURCHASE-202607-0001",
+      "submitted_at": "2026-07-30T14:46:00+08:00"
+    },
+    "audit_metadata": {
+      "session_id": "SESSION-20260730-001",
+      "request_id": "REQUEST-20260730-002",
+      "submission_idempotency_key": "submit:purchase:PURCHASE-DRAFT-001:EMP-10001",
+      "confirmation_text_recorded": true,
+      "created_at": "2026-07-30T14:46:00+08:00"
+    },
+    "error": null
+  },
+  "duplicate_submission_example": {
+    "success": true,
+    "submission_result": {
+      "submission_id": "PURCHASE-202607-0001",
+      "draft_id": "PURCHASE-DRAFT-001",
+      "application_type": "purchase",
+      "status": "approval_in_progress",
+      "submitted_at": "2026-07-30T14:46:00+08:00",
+      "submitted_by": "EMP-10001",
+      "duplicate_submission": true,
+      "idempotency_key": "submit:purchase:PURCHASE-DRAFT-001:EMP-10001",
+      "message": "检测到重复提交请求，已返回首次提交结果，未创建新的申请。"
+    }
+  },
+  "error_codes": [
+    {
+      "code": "INVALID_DRAFT",
+      "description": "草稿结构无效或缺少必需字段"
+    },
+    {
+      "code": "UNSUPPORTED_APPLICATION_TYPE",
+      "description": "申请类型不受支持"
+    },
+    {
+      "code": "DRAFT_NOT_READY_FOR_SUBMISSION",
+      "description": "草稿仍缺少字段、材料或存在阻断问题"
+    },
+    {
+      "code": "INVALID_DRAFT_STATUS",
+      "description": "草稿状态不是waiting_for_confirmation"
+    },
+    {
+      "code": "USER_CONFIRMATION_REQUIRED",
+      "description": "用户尚未明确确认提交"
+    },
+    {
+      "code": "AMBIGUOUS_CONFIRMATION",
+      "description": "用户表达不够明确，不能视为提交确认"
+    },
+    {
+      "code": "CONFIRMATION_USER_MISMATCH",
+      "description": "执行确认的用户与草稿申请人不一致，且没有合法代办权限"
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "description": "当前用户无权提交该申请"
+    },
+    {
+      "code": "BLOCKING_VALIDATION_ISSUE",
+      "description": "申请仍存在阻断性的制度或数据校验问题"
+    },
+    {
+      "code": "POLICY_RECHECK_REQUIRED",
+      "description": "草稿制度快照已过期或制度版本发生变化，需要重新检查"
+    },
+    {
+      "code": "IDEMPOTENCY_KEY_REQUIRED",
+      "description": "提交操作没有提供幂等键"
+    },
+    {
+      "code": "IDEMPOTENCY_KEY_CONFLICT",
+      "description": "幂等键已被其他不同提交请求使用"
+    },
+    {
+      "code": "ALREADY_SUBMITTED",
+      "description": "草稿已经被提交"
+    },
+    {
+      "code": "APPROVAL_ROUTE_NOT_FOUND",
+      "description": "无法为当前申请生成有效审批路线"
+    },
+    {
+      "code": "SUBMISSION_SERVICE_UNAVAILABLE",
+      "description": "模拟提交或审批服务暂时不可用"
+    }
+  ]
+}

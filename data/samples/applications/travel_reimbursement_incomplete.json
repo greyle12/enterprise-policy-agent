@@ -1,0 +1,39 @@
+﻿{
+  "application_type": "travel_reimbursement",
+  "status": "waiting_for_information",
+  "user_original_message": "我上周去上海出差，帮我报销",
+  "extracted_fields": {
+    "destination_city": "上海",
+    "travel_time_description": "上周"
+  },
+  "normalized_fields": {
+    "destination_city": "上海",
+    "destination_city_category": "CATEGORY_ONE"
+  },
+  "missing_fields": [
+    "travel_application_id",
+    "departure_city",
+    "start_date",
+    "end_date",
+    "business_purpose",
+    "project_name",
+    "cost_center",
+    "transportation_expenses",
+    "accommodation_expenses",
+    "local_transportation_expenses",
+    "meal_information",
+    "invoice_information",
+    "payment_records",
+    "business_trip_result"
+  ],
+  "missing_materials": [
+    "approved_travel_application",
+    "travel_itinerary",
+    "transportation_receipts",
+    "accommodation_invoice",
+    "hotel_detail",
+    "payment_records",
+    "business_trip_result"
+  ],
+  "next_question": "请提供这次出差的开始日期、结束日期和出发城市。"
+}

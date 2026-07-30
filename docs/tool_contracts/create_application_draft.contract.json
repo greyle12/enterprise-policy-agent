@@ -1,0 +1,633 @@
+﻿{
+  "tool_name": "create_application_draft",
+  "version": "1.0",
+  "implementation_status": "contract_only",
+  "description": "根据已经收集并完成必要校验的申请数据，创建标准化申请草稿，并生成供用户确认的摘要。",
+  "side_effect": "draft_write",
+  "requires_user_confirmation": false,
+  "supported_application_types": [
+    "purchase",
+    "travel_reimbursement",
+    "leave",
+    "expense_reimbursement"
+  ],
+  "preconditions": [
+    "application_data必须是有效对象",
+    "material_check_result必须来自check_required_materials工具",
+    "material_check_result.completeness.ready_for_draft必须为true",
+    "不得存在阻止创建草稿的严重数据错误",
+    "user_context必须来自可信身份认证层"
+  ],
+  "security_rules": [
+    "不得使用用户自述覆盖可信用户身份",
+    "不得自动补造缺失金额、日期、供应商、预算或假期类型",
+    "不得把用户未确认的草稿标记为已确认",
+    "不得把草稿标记为已提交",
+    "不得在草稿摘要中展示无必要的完整敏感信息",
+    "医疗信息、身份证号、电话号码和账号信息应当脱敏",
+    "草稿创建必须记录来源会话和请求标识",
+    "同一个草稿请求重复执行时应当避免创建重复草稿"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "application_type",
+      "application_data",
+      "material_check_result",
+      "user_context",
+      "session_id",
+      "request_id"
+    ],
+    "properties": {
+      "application_type": {
+        "type": "string",
+        "enum": [
+          "purchase",
+          "travel_reimbursement",
+          "leave",
+          "expense_reimbursement"
+        ]
+      },
+      "application_data": {
+        "type": "object",
+        "description": "已经从对话、用户资料和业务规则中整理出的申请数据",
+        "additional_properties": true
+      },
+      "material_check_result": {
+        "type": "object",
+        "required": [
+          "completeness",
+          "missing_fields",
+          "missing_materials",
+          "validation_issues",
+          "required_approvers"
+        ],
+        "properties": {
+          "completeness": {
+            "type": "object",
+            "required": [
+              "ready_for_draft",
+              "ready_for_confirmation",
+              "ready_for_submission"
+            ],
+            "properties": {
+              "ready_for_draft": {
+                "type": "boolean"
+              },
+              "ready_for_confirmation": {
+                "type": "boolean"
+              },
+              "ready_for_submission": {
+                "type": "boolean"
+              }
+            }
+          },
+          "missing_fields": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "missing_materials": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "validation_issues": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "required_approvers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "user_context": {
+        "type": "object",
+        "required": [
+          "employee_id",
+          "employee_name",
+          "department",
+          "roles",
+          "region"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "employee_name": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "min_items": 1
+          },
+          "region": {
+            "type": "string"
+          }
+        }
+      },
+      "session_id": {
+        "type": "string",
+        "description": "创建草稿所对应的Agent会话编号"
+      },
+      "request_id": {
+        "type": "string",
+        "description": "用于日志追踪的请求编号"
+      },
+      "draft_idempotency_key": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "description": "用于防止同一次请求生成多个重复草稿",
+        "default": null
+      },
+      "effective_date": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date",
+        "description": "用于确定草稿适用的制度版本",
+        "default": null
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "success",
+      "draft",
+      "draft_summary",
+      "confirmation_request"
+    ],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "draft": {
+        "type": "object",
+        "required": [
+          "draft_id",
+          "application_type",
+          "status",
+          "applicant",
+          "application_data",
+          "policy_snapshot",
+          "required_approvers",
+          "confirmation",
+          "submission",
+          "audit_metadata"
+        ],
+        "properties": {
+          "draft_id": {
+            "type": "string"
+          },
+          "application_type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "waiting_for_information",
+              "waiting_for_materials",
+              "waiting_for_confirmation"
+            ]
+          },
+          "applicant": {
+            "type": "object"
+          },
+          "application_data": {
+            "type": "object"
+          },
+          "calculated_fields": {
+            "type": "object"
+          },
+          "policy_snapshot": {
+            "type": "object",
+            "required": [
+              "document_id",
+              "version",
+              "effective_date",
+              "checked_at"
+            ],
+            "properties": {
+              "document_id": {
+                "type": "string"
+              },
+              "version": {
+                "type": "string"
+              },
+              "effective_date": {
+                "type": "string",
+                "format": "date"
+              },
+              "checked_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "missing_fields": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "missing_materials": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "validation_issues": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "required_approvers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "confirmation": {
+            "type": "object",
+            "required": [
+              "required",
+              "user_confirmed",
+              "confirmed_at"
+            ],
+            "properties": {
+              "required": {
+                "type": "boolean"
+              },
+              "user_confirmed": {
+                "type": "boolean"
+              },
+              "confirmed_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "submission": {
+            "type": "object",
+            "required": [
+              "submitted",
+              "submission_id",
+              "submitted_at"
+            ],
+            "properties": {
+              "submitted": {
+                "type": "boolean"
+              },
+              "submission_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "submitted_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "audit_metadata": {
+            "type": "object",
+            "required": [
+              "session_id",
+              "request_id",
+              "created_at",
+              "created_by"
+            ],
+            "properties": {
+              "session_id": {
+                "type": "string"
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "created_by": {
+                "type": "string"
+              },
+              "draft_idempotency_key": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "draft_summary": {
+        "type": "object",
+        "required": [
+          "title",
+          "summary_lines",
+          "warnings",
+          "ready_for_confirmation"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary_lines": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "ready_for_confirmation": {
+            "type": "boolean"
+          }
+        }
+      },
+      "confirmation_request": {
+        "type": "object",
+        "required": [
+          "confirmation_required",
+          "confirmation_message",
+          "accepted_user_intents"
+        ],
+        "properties": {
+          "confirmation_required": {
+            "type": "boolean"
+          },
+          "confirmation_message": {
+            "type": "string"
+          },
+          "accepted_user_intents": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "error": {
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    }
+  },
+  "example_input": {
+    "application_type": "purchase",
+    "application_data": {
+      "purchase_details": {
+        "item_name": "27英寸办公显示器",
+        "category": "IT_EQUIPMENT",
+        "purpose": "为新入职研发人员配置办公设备",
+        "specification": "27英寸，2K分辨率，支持HDMI和DisplayPort接口",
+        "quantity": 3,
+        "unit": "台",
+        "estimated_unit_price": 2000.0,
+        "estimated_total_amount": 6000.0,
+        "currency": "CNY",
+        "expected_delivery_date": "2026-08-15",
+        "delivery_location": "苏州办公室研发部办公区"
+      },
+      "budget": {
+        "budget_code": "RD-EQUIPMENT-2026",
+        "cost_center": "CC-RD-001",
+        "budget_available": true
+      },
+      "supplier": {
+        "supplier_name": "苏州示例科技有限公司",
+        "is_existing_supplier": true
+      },
+      "attachments": [
+        {
+          "attachment_type": "quotation",
+          "file_name": "supplier_a_quotation.pdf",
+          "status": "provided"
+        },
+        {
+          "attachment_type": "quotation",
+          "file_name": "supplier_b_quotation.pdf",
+          "status": "provided"
+        },
+        {
+          "attachment_type": "technical_requirement",
+          "file_name": "monitor_technical_requirement.pdf",
+          "status": "provided"
+        }
+      ]
+    },
+    "material_check_result": {
+      "completeness": {
+        "ready_for_draft": true,
+        "ready_for_confirmation": true,
+        "ready_for_submission": false
+      },
+      "missing_fields": [],
+      "missing_materials": [],
+      "validation_issues": [
+        {
+          "code": "IT_REVIEW_REQUIRED",
+          "severity": "info",
+          "message": "该采购需要信息技术部技术评审。",
+          "blocking": false
+        }
+      ],
+      "required_approvers": [
+        "DIRECT_MANAGER",
+        "DEPARTMENT_HEAD",
+        "IT_DEPARTMENT",
+        "PROCUREMENT_DEPARTMENT"
+      ]
+    },
+    "user_context": {
+      "employee_id": "EMP-10001",
+      "employee_name": "张伟",
+      "department": "产品研发部",
+      "roles": [
+        "EMPLOYEE"
+      ],
+      "region": "中国大陆"
+    },
+    "session_id": "SESSION-20260730-001",
+    "request_id": "REQUEST-20260730-001",
+    "draft_idempotency_key": "draft:purchase:EMP-10001:SESSION-20260730-001",
+    "effective_date": "2026-07-30"
+  },
+  "example_output": {
+    "success": true,
+    "draft": {
+      "draft_id": "PURCHASE-DRAFT-001",
+      "application_type": "purchase",
+      "status": "waiting_for_confirmation",
+      "applicant": {
+        "employee_id": "EMP-10001",
+        "employee_name": "张伟",
+        "department": "产品研发部"
+      },
+      "application_data": {
+        "purchase_details": {
+          "item_name": "27英寸办公显示器",
+          "quantity": 3,
+          "unit": "台",
+          "estimated_unit_price": 2000.0,
+          "estimated_total_amount": 6000.0,
+          "currency": "CNY",
+          "purpose": "为新入职研发人员配置办公设备",
+          "expected_delivery_date": "2026-08-15"
+        },
+        "budget": {
+          "budget_code": "RD-EQUIPMENT-2026",
+          "cost_center": "CC-RD-001"
+        },
+        "supplier": {
+          "supplier_name": "苏州示例科技有限公司"
+        }
+      },
+      "calculated_fields": {
+        "calculated_total_amount": 6000.0,
+        "amount_calculation_valid": true,
+        "purchase_level": "GENERAL_PURCHASE",
+        "procurement_method": "INQUIRY",
+        "required_quotation_count": 2
+      },
+      "policy_snapshot": {
+        "document_id": "PROCUREMENT_POLICY_001",
+        "version": "1.0",
+        "effective_date": "2026-01-01",
+        "checked_at": "2026-07-30T14:30:00+08:00"
+      },
+      "missing_fields": [],
+      "missing_materials": [],
+      "validation_issues": [
+        {
+          "code": "IT_REVIEW_REQUIRED",
+          "severity": "info",
+          "message": "该采购需要信息技术部技术评审。",
+          "blocking": false
+        }
+      ],
+      "required_approvers": [
+        "DIRECT_MANAGER",
+        "DEPARTMENT_HEAD",
+        "IT_DEPARTMENT",
+        "PROCUREMENT_DEPARTMENT"
+      ],
+      "confirmation": {
+        "required": true,
+        "user_confirmed": false,
+        "confirmed_at": null
+      },
+      "submission": {
+        "submitted": false,
+        "submission_id": null,
+        "submitted_at": null
+      },
+      "audit_metadata": {
+        "session_id": "SESSION-20260730-001",
+        "request_id": "REQUEST-20260730-001",
+        "created_at": "2026-07-30T14:30:00+08:00",
+        "created_by": "EMP-10001",
+        "draft_idempotency_key": "draft:purchase:EMP-10001:SESSION-20260730-001"
+      }
+    },
+    "draft_summary": {
+      "title": "采购申请草稿",
+      "summary_lines": [
+        "采购事项：27英寸办公显示器",
+        "采购数量：3台",
+        "预计单价：人民币2,000元",
+        "预计总金额：人民币6,000元",
+        "采购用途：为新入职研发人员配置办公设备",
+        "推荐供应商：苏州示例科技有限公司",
+        "预计交付日期：2026年8月15日",
+        "审批流程：直属经理 → 部门负责人 → 信息技术部 → 采购管理部"
+      ],
+      "warnings": [
+        "该采购属于信息技术设备采购，需要信息技术部技术评审。"
+      ],
+      "ready_for_confirmation": true
+    },
+    "confirmation_request": {
+      "confirmation_required": true,
+      "confirmation_message": "以上是采购申请草稿。请确认内容是否准确，确认后才能模拟提交审批。",
+      "accepted_user_intents": [
+        "confirm",
+        "modify",
+        "cancel"
+      ]
+    },
+    "error": null
+  },
+  "error_codes": [
+    {
+      "code": "UNSUPPORTED_APPLICATION_TYPE",
+      "description": "申请类型不受支持"
+    },
+    {
+      "code": "INVALID_APPLICATION_DATA",
+      "description": "申请数据格式错误或缺少基本结构"
+    },
+    {
+      "code": "INVALID_USER_CONTEXT",
+      "description": "缺少可信用户身份信息"
+    },
+    {
+      "code": "MATERIAL_CHECK_RESULT_REQUIRED",
+      "description": "没有提供材料检查结果"
+    },
+    {
+      "code": "NOT_READY_FOR_DRAFT",
+      "description": "材料检查结果表明当前数据不足以创建草稿"
+    },
+    {
+      "code": "BLOCKING_VALIDATION_ISSUE",
+      "description": "申请存在阻止创建草稿的严重校验问题"
+    },
+    {
+      "code": "CALCULATION_MISMATCH",
+      "description": "数量、单价、总金额、天数或余额等计算不一致"
+    },
+    {
+      "code": "POLICY_VERSION_NOT_FOUND",
+      "description": "无法确定当前申请适用的制度版本"
+    },
+    {
+      "code": "DRAFT_ALREADY_EXISTS",
+      "description": "相同幂等键的草稿已经存在"
+    },
+    {
+      "code": "DRAFT_STORAGE_UNAVAILABLE",
+      "description": "草稿存储服务暂时不可用"
+    }
+  ]
+}

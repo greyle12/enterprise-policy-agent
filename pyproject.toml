@@ -1,0 +1,14 @@
+﻿[project]
+name = "enterprise-policy-agent"
+version = "0.1.0"
+description = "Enterprise policy question-answering and workflow processing Agent"
+requires-python = ">=3.12,<3.13"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

@@ -1,0 +1,510 @@
+﻿{
+  "tool_name": "check_required_materials",
+  "version": "1.0",
+  "implementation_status": "contract_only",
+  "description": "根据申请类型、申请字段、附件和可信用户上下文，检查创建草稿或提交审批所需的信息与材料是否完整。",
+  "side_effect": "none",
+  "requires_user_confirmation": false,
+  "supported_application_types": [
+    "purchase",
+    "travel_reimbursement",
+    "leave",
+    "expense_reimbursement"
+  ],
+  "security_rules": [
+    "user_context必须来自可信身份认证层",
+    "不得根据用户自述修改其部门、角色或员工编号",
+    "工具只返回用户有权查看的材料状态",
+    "医疗证明等敏感材料不得在普通日志中记录原文",
+    "工具不得虚构缺失字段或假设附件已经提供",
+    "工具不得将材料不完整的申请判断为可以提交"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "application_type",
+      "application_data",
+      "attachments",
+      "user_context",
+      "check_stage"
+    ],
+    "properties": {
+      "application_type": {
+        "type": "string",
+        "enum": [
+          "purchase",
+          "travel_reimbursement",
+          "leave",
+          "expense_reimbursement"
+        ]
+      },
+      "application_data": {
+        "type": "object",
+        "description": "当前已经收集到的申请字段。不同申请类型具有不同结构。",
+        "additional_properties": true
+      },
+      "attachments": {
+        "type": "array",
+        "description": "当前已经提供或关联的附件列表",
+        "items": {
+          "type": "object",
+          "required": [
+            "attachment_type",
+            "status"
+          ],
+          "properties": {
+            "attachment_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "attachment_type": {
+              "type": "string"
+            },
+            "file_name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "provided",
+                "missing",
+                "invalid",
+                "pending_review"
+              ]
+            },
+            "contains_sensitive_information": {
+              "type": "boolean",
+              "default": false
+            }
+          }
+        }
+      },
+      "user_context": {
+        "type": "object",
+        "required": [
+          "employee_id",
+          "department",
+          "roles",
+          "region"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "min_items": 1
+          },
+          "region": {
+            "type": "string"
+          }
+        }
+      },
+      "check_stage": {
+        "type": "string",
+        "description": "不同阶段采用不同严格程度",
+        "enum": [
+          "draft",
+          "confirmation",
+          "submission"
+        ]
+      },
+      "effective_date": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date",
+        "description": "用于确定应当采用的制度版本",
+        "default": null
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "success",
+      "application_type",
+      "check_stage",
+      "completeness",
+      "missing_fields",
+      "missing_materials",
+      "validation_issues",
+      "next_action"
+    ],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "application_type": {
+        "type": "string"
+      },
+      "check_stage": {
+        "type": "string"
+      },
+      "applicable_policy": {
+        "type": "object",
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      },
+      "completeness": {
+        "type": "object",
+        "required": [
+          "fields_complete",
+          "materials_complete",
+          "policy_checks_passed",
+          "ready_for_draft",
+          "ready_for_confirmation",
+          "ready_for_submission"
+        ],
+        "properties": {
+          "fields_complete": {
+            "type": "boolean"
+          },
+          "materials_complete": {
+            "type": "boolean"
+          },
+          "policy_checks_passed": {
+            "type": "boolean"
+          },
+          "ready_for_draft": {
+            "type": "boolean"
+          },
+          "ready_for_confirmation": {
+            "type": "boolean"
+          },
+          "ready_for_submission": {
+            "type": "boolean"
+          }
+        }
+      },
+      "missing_fields": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "field_name",
+            "display_name",
+            "reason",
+            "required_for_stage"
+          ],
+          "properties": {
+            "field_name": {
+              "type": "string"
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "required_for_stage": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "confirmation",
+                "submission"
+              ]
+            },
+            "suggested_question": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "missing_materials": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "material_type",
+            "display_name",
+            "reason",
+            "required_for_stage"
+          ],
+          "properties": {
+            "material_type": {
+              "type": "string"
+            },
+            "display_name": {
+              "type": "string"
+            },
+            "reason": {
+              "type": "string"
+            },
+            "required_for_stage": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "confirmation",
+                "submission"
+              ]
+            },
+            "sensitive": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "validation_issues": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "code",
+            "severity",
+            "message",
+            "blocking"
+          ],
+          "properties": {
+            "code": {
+              "type": "string"
+            },
+            "severity": {
+              "type": "string",
+              "enum": [
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "message": {
+              "type": "string"
+            },
+            "blocking": {
+              "type": "boolean"
+            },
+            "related_fields": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "required_approvers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "next_action": {
+        "type": "object",
+        "required": [
+          "action_type",
+          "message"
+        ],
+        "properties": {
+          "action_type": {
+            "type": "string",
+            "enum": [
+              "ask_for_field",
+              "ask_for_material",
+              "resolve_validation_issue",
+              "create_draft",
+              "request_confirmation",
+              "submit_application",
+              "stop"
+            ]
+          },
+          "target": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "error": {
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    }
+  },
+  "example_input": {
+    "application_type": "purchase",
+    "application_data": {
+      "applicant": {
+        "employee_id": "EMP-10001",
+        "department": "产品研发部"
+      },
+      "purchase_details": {
+        "item_name": "显示器",
+        "quantity": 3,
+        "unit": "台",
+        "estimated_unit_price": 2000.0,
+        "estimated_total_amount": 6000.0,
+        "purpose": "为新入职员工配置办公设备",
+        "is_it_related": true
+      },
+      "budget": {
+        "budget_code": null,
+        "cost_center": "CC-RD-001"
+      },
+      "supplier": {
+        "supplier_name": null
+      }
+    },
+    "attachments": [
+      {
+        "attachment_id": "ATTACHMENT-001",
+        "attachment_type": "quotation",
+        "file_name": "supplier_a_quotation.pdf",
+        "status": "provided",
+        "contains_sensitive_information": false
+      }
+    ],
+    "user_context": {
+      "employee_id": "EMP-10001",
+      "department": "产品研发部",
+      "roles": [
+        "EMPLOYEE"
+      ],
+      "region": "中国大陆"
+    },
+    "check_stage": "confirmation",
+    "effective_date": "2026-07-30"
+  },
+  "example_output": {
+    "success": true,
+    "application_type": "purchase",
+    "check_stage": "confirmation",
+    "applicable_policy": {
+      "document_id": "PROCUREMENT_POLICY_001",
+      "version": "1.0",
+      "effective_date": "2026-01-01"
+    },
+    "completeness": {
+      "fields_complete": false,
+      "materials_complete": false,
+      "policy_checks_passed": false,
+      "ready_for_draft": true,
+      "ready_for_confirmation": false,
+      "ready_for_submission": false
+    },
+    "missing_fields": [
+      {
+        "field_name": "budget.budget_code",
+        "display_name": "预算编号",
+        "reason": "采购申请必须关联预算编号或有效预算来源",
+        "required_for_stage": "confirmation",
+        "suggested_question": "这项采购对应的预算编号是什么？"
+      },
+      {
+        "field_name": "supplier.supplier_name",
+        "display_name": "推荐供应商",
+        "reason": "当前申请尚未填写供应商信息",
+        "required_for_stage": "confirmation",
+        "suggested_question": "目前是否已有推荐供应商？"
+      }
+    ],
+    "missing_materials": [
+      {
+        "material_type": "quotation",
+        "display_name": "第二家供应商报价",
+        "reason": "人民币6,000元采购原则上需要不少于两家合格供应商报价",
+        "required_for_stage": "submission",
+        "sensitive": false
+      },
+      {
+        "material_type": "technical_requirement",
+        "display_name": "技术需求说明",
+        "reason": "信息技术设备采购需要提供技术需求材料",
+        "required_for_stage": "confirmation",
+        "sensitive": false
+      }
+    ],
+    "validation_issues": [
+      {
+        "code": "QUOTATION_COUNT_INSUFFICIENT",
+        "severity": "error",
+        "message": "当前仅提供1家供应商报价，制度要求原则上至少提供2家有效报价。",
+        "blocking": true,
+        "related_fields": [
+          "attachments"
+        ]
+      },
+      {
+        "code": "IT_REVIEW_REQUIRED",
+        "severity": "info",
+        "message": "该采购属于信息技术设备采购，需要信息技术部技术评审。",
+        "blocking": false,
+        "related_fields": [
+          "purchase_details.is_it_related"
+        ]
+      }
+    ],
+    "required_approvers": [
+      "DIRECT_MANAGER",
+      "DEPARTMENT_HEAD",
+      "IT_DEPARTMENT",
+      "PROCUREMENT_DEPARTMENT"
+    ],
+    "next_action": {
+      "action_type": "ask_for_field",
+      "target": "budget.budget_code",
+      "message": "请先补充这项采购对应的预算编号。"
+    },
+    "error": null
+  },
+  "error_codes": [
+    {
+      "code": "UNSUPPORTED_APPLICATION_TYPE",
+      "description": "传入的申请类型不受支持"
+    },
+    {
+      "code": "INVALID_APPLICATION_DATA",
+      "description": "申请数据不是有效对象或结构严重错误"
+    },
+    {
+      "code": "INVALID_USER_CONTEXT",
+      "description": "缺少可信员工身份、部门、角色或区域信息"
+    },
+    {
+      "code": "POLICY_RULE_NOT_FOUND",
+      "description": "没有找到适用于当前申请的材料规则"
+    },
+    {
+      "code": "POLICY_VERSION_NOT_FOUND",
+      "description": "指定日期没有可用的制度版本"
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "description": "用户没有检查该申请或相关材料的权限"
+    },
+    {
+      "code": "MATERIAL_CHECK_SERVICE_UNAVAILABLE",
+      "description": "材料检查依赖服务暂时不可用"
+    }
+  ]
+}

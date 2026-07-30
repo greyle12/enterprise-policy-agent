@@ -1,0 +1,22 @@
+﻿{
+  "application_type": "purchase",
+  "status": "waiting_for_information",
+  "user_original_message": "帮我申请购买三台显示器",
+  "extracted_fields": {
+    "item_name": "显示器",
+    "quantity": 3,
+    "unit": "台"
+  },
+  "missing_fields": [
+    "purpose",
+    "specification",
+    "estimated_unit_price",
+    "estimated_total_amount",
+    "budget_code",
+    "cost_center",
+    "expected_delivery_date",
+    "delivery_location",
+    "supplier_name"
+  ],
+  "next_question": "这三台显示器的预计单价和规格要求是什么？"
+}

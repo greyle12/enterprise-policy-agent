@@ -1,0 +1,88 @@
+﻿{
+  "application_id": "PURCHASE-DRAFT-001",
+  "application_type": "purchase",
+  "status": "draft",
+  "applicant": {
+    "employee_id": "EMP-10001",
+    "employee_name": "张伟",
+    "department": "产品研发部",
+    "role": "EMPLOYEE",
+    "manager_employee_id": "EMP-20001",
+    "manager_name": "李敏"
+  },
+  "purchase_details": {
+    "item_name": "27英寸办公显示器",
+    "category": "IT_EQUIPMENT",
+    "purpose": "为新入职研发人员配置办公设备",
+    "specification": "27英寸，2K分辨率，支持HDMI和DisplayPort接口",
+    "quantity": 3,
+    "unit": "台",
+    "estimated_unit_price": 2000.0,
+    "estimated_total_amount": 6000.0,
+    "currency": "CNY",
+    "expected_delivery_date": "2026-08-15",
+    "delivery_location": "苏州办公室研发部办公区"
+  },
+  "budget": {
+    "budget_code": "RD-EQUIPMENT-2026",
+    "cost_center": "CC-RD-001",
+    "budget_available": true
+  },
+  "supplier": {
+    "supplier_name": "苏州示例科技有限公司",
+    "is_existing_supplier": true,
+    "recommended_reason": "历史合作供应商，交付及时，报价处于市场合理范围"
+  },
+  "procurement_context": {
+    "is_it_related": true,
+    "requires_it_review": true,
+    "is_emergency": false,
+    "emergency_reason": null,
+    "involves_personal_data": false,
+    "involves_company_data": false
+  },
+  "attachments": [
+    {
+      "attachment_type": "quotation",
+      "file_name": "supplier_a_quotation.pdf",
+      "status": "provided"
+    },
+    {
+      "attachment_type": "quotation",
+      "file_name": "supplier_b_quotation.pdf",
+      "status": "provided"
+    },
+    {
+      "attachment_type": "technical_requirement",
+      "file_name": "monitor_technical_requirement.pdf",
+      "status": "provided"
+    }
+  ],
+  "policy_check": {
+    "applicable_policy_id": "PROCUREMENT_POLICY_001",
+    "applicable_policy_version": "1.0",
+    "amount_level": "GENERAL_PURCHASE",
+    "procurement_method": "INQUIRY",
+    "required_quotation_count": 2,
+    "required_approvers": [
+      "DIRECT_MANAGER",
+      "DEPARTMENT_HEAD",
+      "IT_DEPARTMENT",
+      "PROCUREMENT_DEPARTMENT"
+    ],
+    "missing_materials": [],
+    "policy_check_passed": true
+  },
+  "confirmation": {
+    "user_confirmed": false,
+    "confirmed_at": null
+  },
+  "submission": {
+    "submitted": false,
+    "submission_id": null,
+    "submitted_at": null,
+    "idempotency_key": null
+  },
+  "created_at": "2026-07-30T13:30:00+08:00",
+  "updated_at": "2026-07-30T13:30:00+08:00"
+}

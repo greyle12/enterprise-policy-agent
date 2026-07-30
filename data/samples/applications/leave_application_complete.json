@@ -1,0 +1,99 @@
+﻿{
+  "application_id": "LEAVE-DRAFT-001",
+  "application_type": "leave",
+  "status": "waiting_for_confirmation",
+  "applicant": {
+    "employee_id": "EMP-10001",
+    "employee_name": "张伟",
+    "department": "产品研发部",
+    "role": "EMPLOYEE",
+    "manager_employee_id": "EMP-20001",
+    "manager_name": "李敏",
+    "department_head_employee_id": "EMP-30001",
+    "department_head_name": "王强"
+  },
+  "leave_details": {
+    "leave_type": "ANNUAL_LEAVE",
+    "start_date": "2026-08-10",
+    "start_period": "FULL_DAY",
+    "end_date": "2026-08-12",
+    "end_period": "FULL_DAY",
+    "requested_working_days": 3.0,
+    "reason": "处理个人家庭事务",
+    "is_emergency": false,
+    "emergency_reason": null,
+    "employee_location": "苏州"
+  },
+  "leave_balance": {
+    "balance_type": "ANNUAL_LEAVE",
+    "balance_before": 5.0,
+    "requested_amount": 3.0,
+    "balance_after": 2.0,
+    "balance_sufficient": true
+  },
+  "work_handover": {
+    "handover_required": false,
+    "handover_person_employee_id": "EMP-10002",
+    "handover_person_name": "陈晨",
+    "ongoing_work": [
+      {
+        "task_name": "客户服务平台接口联调",
+        "current_status": "测试环境联调中",
+        "next_action": "跟进客户侧接口返回结果",
+        "deadline": "2026-08-14"
+      }
+    ],
+    "important_deadlines": [
+      "2026-08-14 客户服务平台接口联调检查"
+    ],
+    "document_locations": [
+      "公司知识库/客户服务平台/接口联调"
+    ],
+    "emergency_contact_method": "企业即时通信工具"
+  },
+  "contact_information": {
+    "emergency_contact_name": "李敏",
+    "emergency_contact_phone_masked": "138****1234"
+  },
+  "attachments": [],
+  "policy_check": {
+    "applicable_policy_id": "LEAVE_POLICY_001",
+    "applicable_policy_version": "1.0",
+    "leave_balance_checked": true,
+    "date_overlap_detected": false,
+    "required_materials": [],
+    "missing_materials": [],
+    "required_approvers": [
+      "DIRECT_MANAGER",
+      "DEPARTMENT_HEAD"
+    ],
+    "human_resources_review_required": false,
+    "policy_check_passed": true
+  },
+  "privacy": {
+    "contains_sensitive_medical_information": false,
+    "manager_visible_fields": [
+      "leave_type",
+      "start_date",
+      "end_date",
+      "requested_working_days",
+      "reason",
+      "work_handover"
+    ],
+    "restricted_fields": [
+      "emergency_contact_phone"
+    ]
+  },
+  "confirmation": {
+    "user_confirmed": false,
+    "confirmed_at": null
+  },
+  "submission": {
+    "submitted": false,
+    "submission_id": null,
+    "submitted_at": null,
+    "idempotency_key": null
+  },
+  "created_at": "2026-07-30T13:53:00+08:00",
+  "updated_at": "2026-07-30T13:53:00+08:00"
+}

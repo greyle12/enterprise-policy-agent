@@ -1,0 +1,307 @@
+﻿{
+  "tool_name": "search_policy",
+  "version": "1.0",
+  "implementation_status": "contract_only",
+  "description": "根据用户问题、用户权限、制度类型和生效日期检索企业制度条款，并返回可以引用的原文片段。",
+  "side_effect": "none",
+  "requires_user_confirmation": false,
+  "security_rules": [
+    "user_context必须来自可信身份认证层，不能直接使用大模型生成的身份信息",
+    "必须在检索阶段进行角色、部门、区域和数据级别过滤",
+    "无权限内容不得进入大模型上下文",
+    "不得在错误信息或日志中泄露无权限制度原文",
+    "查询历史制度时必须使用effective_date过滤制度版本"
+  ],
+  "input_schema": {
+    "type": "object",
+    "required": [
+      "query",
+      "user_context"
+    ],
+    "properties": {
+      "query": {
+        "type": "string",
+        "description": "用户需要查询的完整问题",
+        "min_length": 1,
+        "max_length": 2000
+      },
+      "user_context": {
+        "type": "object",
+        "description": "由登录认证系统提供的可信用户上下文",
+        "required": [
+          "employee_id",
+          "department",
+          "roles",
+          "region"
+        ],
+        "properties": {
+          "employee_id": {
+            "type": "string"
+          },
+          "department": {
+            "type": "string"
+          },
+          "roles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "min_items": 1
+          },
+          "region": {
+            "type": "string"
+          },
+          "security_clearance": {
+            "type": "string",
+            "enum": [
+              "public",
+              "internal",
+              "sensitive",
+              "core"
+            ],
+            "default": "internal"
+          }
+        }
+      },
+      "effective_date": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "format": "date",
+        "description": "查询指定日期当时有效的制度；为空时查询当前有效版本",
+        "default": null
+      },
+      "top_k": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20,
+        "default": 5
+      },
+      "filters": {
+        "type": "object",
+        "properties": {
+          "document_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "document_types": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "issuing_departments": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "default": {}
+      }
+    }
+  },
+  "output_schema": {
+    "type": "object",
+    "required": [
+      "success",
+      "query",
+      "results",
+      "retrieval_metadata"
+    ],
+    "properties": {
+      "success": {
+        "type": "boolean"
+      },
+      "query": {
+        "type": "string"
+      },
+      "normalized_query": {
+        "type": "string"
+      },
+      "results": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "required": [
+            "chunk_id",
+            "document_id",
+            "title",
+            "version",
+            "article",
+            "content",
+            "score",
+            "citation"
+          ],
+          "properties": {
+            "chunk_id": {
+              "type": "string"
+            },
+            "document_id": {
+              "type": "string"
+            },
+            "title": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            },
+            "article": {
+              "type": "string"
+            },
+            "page": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "content": {
+              "type": "string"
+            },
+            "score": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            },
+            "citation": {
+              "type": "string"
+            },
+            "source_path": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "retrieval_metadata": {
+        "type": "object",
+        "properties": {
+          "strategy": {
+            "type": "string"
+          },
+          "requested_top_k": {
+            "type": "integer"
+          },
+          "returned_count": {
+            "type": "integer"
+          },
+          "effective_date": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "permission_filter_applied": {
+            "type": "boolean"
+          },
+          "query_rewritten": {
+            "type": "boolean"
+          },
+          "rerank_applied": {
+            "type": "boolean"
+          }
+        }
+      },
+      "error": {
+        "type": [
+          "object",
+          "null"
+        ]
+      }
+    }
+  },
+  "example_input": {
+    "query": "普通员工去上海出差，每晚住宿费用上限是多少？",
+    "user_context": {
+      "employee_id": "EMP-10001",
+      "department": "产品研发部",
+      "roles": [
+        "EMPLOYEE"
+      ],
+      "region": "中国大陆",
+      "security_clearance": "internal"
+    },
+    "effective_date": "2026-07-20",
+    "top_k": 5,
+    "filters": {
+      "document_ids": [
+        "TRAVEL_POLICY_001"
+      ],
+      "document_types": [
+        "policy"
+      ],
+      "issuing_departments": [
+        "财务管理部"
+      ]
+    }
+  },
+  "example_output": {
+    "success": true,
+    "query": "普通员工去上海出差，每晚住宿费用上限是多少？",
+    "normalized_query": "普通员工前往上海出差适用的每晚住宿费用上限是多少？",
+    "results": [
+      {
+        "chunk_id": "TRAVEL_POLICY_001-V1.0-ARTICLE-007",
+        "document_id": "TRAVEL_POLICY_001",
+        "title": "差旅报销管理制度",
+        "version": "1.0",
+        "article": "第七条 城市分类",
+        "page": null,
+        "content": "一类城市包括北京、上海、广州和深圳。",
+        "score": 0.96,
+        "citation": "《差旅报销管理制度》V1.0 第七条",
+        "source_path": "data/policies/travel_reimbursement_policy_v1.md"
+      },
+      {
+        "chunk_id": "TRAVEL_POLICY_001-V1.0-ARTICLE-008",
+        "document_id": "TRAVEL_POLICY_001",
+        "title": "差旅报销管理制度",
+        "version": "1.0",
+        "article": "第八条 普通员工住宿标准",
+        "page": null,
+        "content": "普通员工在一类城市的住宿费用上限为每人每晚人民币500元。",
+        "score": 0.99,
+        "citation": "《差旅报销管理制度》V1.0 第八条",
+        "source_path": "data/policies/travel_reimbursement_policy_v1.md"
+      }
+    ],
+    "retrieval_metadata": {
+      "strategy": "hybrid",
+      "requested_top_k": 5,
+      "returned_count": 2,
+      "effective_date": "2026-07-20",
+      "permission_filter_applied": true,
+      "query_rewritten": true,
+      "rerank_applied": true
+    },
+    "error": null
+  },
+  "error_codes": [
+    {
+      "code": "INVALID_QUERY",
+      "description": "查询内容为空、过长或格式无效"
+    },
+    {
+      "code": "INVALID_USER_CONTEXT",
+      "description": "缺少可信员工身份、部门、角色或区域信息"
+    },
+    {
+      "code": "PERMISSION_DENIED",
+      "description": "用户没有访问所请求制度内容的权限"
+    },
+    {
+      "code": "NO_RELEVANT_POLICY_FOUND",
+      "description": "没有检索到足以回答问题的相关制度条款"
+    },
+    {
+      "code": "POLICY_VERSION_NOT_FOUND",
+      "description": "指定日期没有适用的制度版本"
+    },
+    {
+      "code": "RETRIEVAL_SERVICE_UNAVAILABLE",
+      "description": "向量库、关键词索引或重排服务暂时不可用"
+    }
+  ]
+}
