@@ -42,3 +42,5 @@ vector_store/
 build/
 dist/
 *.egg-info/
+
+.pytest_tmp/
