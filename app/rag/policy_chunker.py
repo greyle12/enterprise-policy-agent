@@ -13,7 +13,6 @@ from app.rag.policy_parser import (
 from app.schemas.chunk import PolicyChunk
 from app.schemas.policy import PolicyDocument
 
-
 CHINESE_NUMBER_PATTERN = (
     r"[一二三四五六七八九十百千零〇两0-9]+"
 )
