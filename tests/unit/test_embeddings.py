@@ -2,7 +2,12 @@ from collections.abc import Sequence
 
 import pytest
 
-from app.rag.embeddings import EmbeddingProvider, EmbeddingVector
+from app.rag.embeddings import (
+    BGE_QUERY_INSTRUCTION,
+    BGEEmbeddingProvider,
+    EmbeddingProvider,
+    EmbeddingVector,
+)
 
 
 class FakeEmbeddingProvider(EmbeddingProvider):
@@ -65,3 +70,76 @@ def test_embed_empty_document_collection() -> None:
     provider = FakeEmbeddingProvider()
 
     assert provider.embed_documents([]) == []
+
+
+class FakeArray:
+    def __init__(self, values: list[float] | list[list[float]]) -> None:
+        self._values = values
+
+    def tolist(self) -> list[float] | list[list[float]]:
+        return self._values
+
+
+class FakeSentenceTransformer:
+    def __init__(self) -> None:
+        self.calls: list[dict[str, object]] = []
+
+    def get_sentence_embedding_dimension(self) -> int:
+        return 3
+
+    def encode(
+        self,
+        sentences: str | list[str],
+        **kwargs: object,
+    ) -> FakeArray:
+        self.calls.append({"sentences": sentences, **kwargs})
+
+        if isinstance(sentences, str):
+            return FakeArray([float(len(sentences)), 0.0, 0.0])
+
+        return FakeArray(
+            [[float(len(text)), 0.0, 0.0] for text in sentences]
+        )
+
+
+def test_bge_provider_reports_model_dimension() -> None:
+    model = FakeSentenceTransformer()
+    provider = BGEEmbeddingProvider(model=model)
+
+    assert provider.dimension == 3
+
+
+def test_bge_provider_embeds_documents_without_query_instruction() -> None:
+    model = FakeSentenceTransformer()
+    provider = BGEEmbeddingProvider(model=model, batch_size=2)
+
+    vectors = provider.embed_documents(["采购申请", "差旅报销"])
+
+    call = model.calls[0]
+    assert call["sentences"] == ["采购申请", "差旅报销"]
+    assert call["batch_size"] == 2
+    assert call["normalize_embeddings"] is True
+    assert call["convert_to_numpy"] is True
+    assert call["show_progress_bar"] is False
+    assert len(vectors) == 2
+
+
+def test_bge_provider_adds_instruction_to_query() -> None:
+    model = FakeSentenceTransformer()
+    provider = BGEEmbeddingProvider(model=model)
+
+    provider.embed_query("差旅住宿标准是多少？")
+
+    call = model.calls[0]
+    assert call["sentences"] == (
+        f"{BGE_QUERY_INSTRUCTION}差旅住宿标准是多少？"
+    )
+    assert call["normalize_embeddings"] is True
+
+
+def test_bge_provider_skips_model_for_empty_documents() -> None:
+    model = FakeSentenceTransformer()
+    provider = BGEEmbeddingProvider(model=model)
+
+    assert provider.embed_documents([]) == []
+    assert model.calls == []
