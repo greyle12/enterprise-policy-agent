@@ -7,7 +7,6 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 POLICY_DIR = PROJECT_ROOT / "data" / "policies"

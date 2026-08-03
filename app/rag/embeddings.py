@@ -31,7 +31,7 @@ class _ArrayLike(Protocol):
 
 
 class _SentenceTransformerLike(Protocol):
-    def get_sentence_embedding_dimension(self) -> int | None:
+    def get_embedding_dimension(self) -> int | None:
         """返回模型向量维度。"""
 
     def encode(
@@ -64,7 +64,7 @@ class BGEEmbeddingProvider(EmbeddingProvider):
 
             model = SentenceTransformer(model_name, device=device)
 
-        dimension = model.get_sentence_embedding_dimension()
+        dimension = model.get_embedding_dimension()
         if dimension is None:
             raise ValueError("embedding model did not report its dimension")
 

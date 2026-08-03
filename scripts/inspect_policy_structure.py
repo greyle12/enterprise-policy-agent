@@ -5,7 +5,6 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 if str(PROJECT_ROOT) not in sys.path:
@@ -13,7 +12,6 @@ if str(PROJECT_ROOT) not in sys.path:
 
 
 from app.rag.policy_parser import parse_policy_directory
-
 
 POLICY_DIRECTORY = PROJECT_ROOT / "data" / "policies"
 
