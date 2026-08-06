@@ -6,6 +6,11 @@ from pathlib import Path
 
 from fastapi import FastAPI
 
+from app.agent.intent_classifier import IntentClassifier
+from app.agent.router import AgentRouter
+from app.api.routes.agent_messages import (
+    router as agent_messages_router,
+)
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
@@ -62,12 +67,20 @@ async def _lifespan(
     service, llm_client = (
         _build_policy_answer_service()
     )
+    agent_router = AgentRouter(
+        intent_classifier=IntentClassifier(
+            llm_client=llm_client,
+        ),
+        policy_answer_service=service,
+    )
     application.state.policy_answer_service = service
+    application.state.agent_router = agent_router
 
     try:
         yield
     finally:
         await llm_client.close()
+        del application.state.agent_router
         del application.state.policy_answer_service
 
 
@@ -88,6 +101,10 @@ def create_app(
     )
     application.include_router(
         policy_answers_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        agent_messages_router,
         prefix="/api/v1",
     )
 
