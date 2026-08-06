@@ -7,6 +7,10 @@ from typing import Protocol
 from app.agent.intent import IntentClassification, IntentType
 from app.rag.policy_answer_service import PolicyAnswer
 from app.rag.policy_context import PolicyCitation
+from app.tools.material_models import (
+    MaterialCheckAnswer,
+    MaterialCheckResult,
+)
 
 
 class AgentResponseStatus(StrEnum):
@@ -41,6 +45,18 @@ class PolicyQuestionAnswerer(Protocol):
         ...
 
 
+class MaterialChecker(Protocol):
+    """AgentRouter 依赖的最小材料检查接口。"""
+
+    async def check(
+        self,
+        user_input: str,
+    ) -> MaterialCheckAnswer:
+        """查询材料要求或比对用户已经提供的材料。"""
+
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class AgentRouteResult:
     """统一 Agent 路由的一次结构化结果。"""
@@ -50,6 +66,7 @@ class AgentRouteResult:
     status: AgentResponseStatus
     reply: str
     citations: tuple[PolicyCitation, ...] = ()
+    material_check: MaterialCheckResult | None = None
 
 
 _UNKNOWN_REPLY = (
@@ -58,9 +75,6 @@ _UNKNOWN_REPLY = (
 )
 
 _UNAVAILABLE_REPLIES = {
-    IntentType.MATERIAL_CHECK: (
-        "已识别为材料检查请求，但材料检查能力暂不可用。"
-    ),
     IntentType.APPROVAL_QUERY: (
         "已识别为审批流程查询，但审批判断能力暂不可用。"
     ),
@@ -78,9 +92,11 @@ class AgentRouter:
         *,
         intent_classifier: IntentDetector,
         policy_answer_service: PolicyQuestionAnswerer,
+        material_checker: MaterialChecker,
     ) -> None:
         self._intent_classifier = intent_classifier
         self._policy_answer_service = policy_answer_service
+        self._material_checker = material_checker
 
     async def route(
         self,
@@ -108,6 +124,26 @@ class AgentRouter:
                 status=AgentResponseStatus.COMPLETED,
                 reply=answer.answer,
                 citations=answer.citations,
+            )
+
+        if classification.intent is IntentType.MATERIAL_CHECK:
+            answer = await self._material_checker.check(
+                normalized_input
+            )
+            status = (
+                AgentResponseStatus.NEEDS_CLARIFICATION
+                if answer.result.clarification_question
+                is not None
+                else AgentResponseStatus.COMPLETED
+            )
+
+            return AgentRouteResult(
+                request=normalized_input,
+                classification=classification,
+                status=status,
+                reply=answer.reply,
+                citations=answer.result.citations,
+                material_check=answer.result,
             )
 
         if classification.intent is IntentType.UNKNOWN:

@@ -14,6 +14,7 @@ from app.llm.openai_compatible_client import (
 from app.rag.embeddings import BGEEmbeddingProvider
 from app.rag.policy_answer_service import PolicyAnswerService
 from app.rag.policy_retriever import PolicyRetriever
+from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
@@ -27,7 +28,7 @@ _SMOKE_CASES = (
     (
         "出差报销需要准备哪些材料？",
         IntentType.MATERIAL_CHECK,
-        AgentResponseStatus.UNAVAILABLE,
+        AgentResponseStatus.COMPLETED,
     ),
     (
         "采购一台办公电脑需要走什么审批？",
@@ -66,6 +67,11 @@ async def _main() -> None:
             retriever=retriever,
             llm_client=client,
         ),
+        material_checker=(
+            RequiredMaterialsChecker.from_policy_directory(
+                _POLICY_DIRECTORY
+            )
+        ),
     )
     failures: list[str] = []
 
@@ -83,6 +89,11 @@ async def _main() -> None:
                 result.classification.intent is expected_intent
                 and result.status is expected_status
                 and has_expected_citations
+                and (
+                    result.material_check is not None
+                    if expected_intent is IntentType.MATERIAL_CHECK
+                    else result.material_check is None
+                )
             )
 
             print(
@@ -101,6 +112,25 @@ async def _main() -> None:
                             citation.source_id
                             for citation in result.citations
                         ],
+                        "material_check": (
+                            {
+                                "application_type": (
+                                    result.material_check.application_type
+                                ),
+                                "mode": result.material_check.mode,
+                                "required_count": len(
+                                    result.material_check.required_materials
+                                ),
+                                "missing_count": len(
+                                    result.material_check.missing_materials
+                                ),
+                                "materials_complete": (
+                                    result.material_check.materials_complete
+                                ),
+                            }
+                            if result.material_check is not None
+                            else None
+                        ),
                         "passed": passed,
                     },
                     ensure_ascii=False,

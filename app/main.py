@@ -23,6 +23,7 @@ from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
@@ -72,6 +73,11 @@ async def _lifespan(
             llm_client=llm_client,
         ),
         policy_answer_service=service,
+        material_checker=(
+            RequiredMaterialsChecker.from_policy_directory(
+                _POLICY_DIRECTORY
+            )
+        ),
     )
     application.state.policy_answer_service = service
     application.state.agent_router = agent_router
