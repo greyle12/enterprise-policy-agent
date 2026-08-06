@@ -23,6 +23,7 @@ from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.tools.approval_check import ApprovalRuleChecker
 from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -75,6 +76,11 @@ async def _lifespan(
         policy_answer_service=service,
         material_checker=(
             RequiredMaterialsChecker.from_policy_directory(
+                _POLICY_DIRECTORY
+            )
+        ),
+        approval_checker=(
+            ApprovalRuleChecker.from_policy_directory(
                 _POLICY_DIRECTORY
             )
         ),

@@ -1,4 +1,5 @@
 import asyncio
+from decimal import Decimal
 
 import pytest
 
@@ -9,6 +10,15 @@ from app.agent.router import (
 )
 from app.rag.policy_answer_service import PolicyAnswer
 from app.rag.policy_context import PolicyCitation
+from app.tools.approval_models import (
+    ApprovalAction,
+    ApprovalApplicationType,
+    ApprovalCheckAnswer,
+    ApprovalCheckResult,
+    ApprovalLevel,
+    ApprovalStep,
+    ApproverCode,
+)
 from app.tools.material_models import (
     ApplicationType,
     MaterialCheckAnswer,
@@ -56,6 +66,19 @@ class FakeMaterialChecker:
         self,
         user_input: str,
     ) -> MaterialCheckAnswer:
+        self.calls.append(user_input)
+        return self.answer_result
+
+
+class FakeApprovalChecker:
+    def __init__(self, answer: ApprovalCheckAnswer) -> None:
+        self.answer_result = answer
+        self.calls: list[str] = []
+
+    async def check(
+        self,
+        user_input: str,
+    ) -> ApprovalCheckAnswer:
         self.calls.append(user_input)
         return self.answer_result
 
@@ -124,6 +147,60 @@ def _material_answer(
     )
 
 
+def _approval_answer(
+    *,
+    clarification_question: str | None = None,
+) -> ApprovalCheckAnswer:
+    citation = PolicyCitation(
+        source_id="S1",
+        chunk_id="procurement-approval-001",
+        document_title="采购管理办法",
+        chapter_title="第四章 金额分级与审批",
+        article_label="第十二条",
+        article_title="一般采购审批",
+        score=1.0,
+    )
+    result = ApprovalCheckResult(
+        application_type=ApprovalApplicationType.PURCHASE,
+        approval_level=(
+            None
+            if clarification_question is not None
+            else ApprovalLevel.GENERAL_PURCHASE
+        ),
+        amount=(
+            None
+            if clarification_question is not None
+            else Decimal(6000)
+        ),
+        leave_days=None,
+        steps=(
+            ()
+            if clarification_question is not None
+            else (
+                ApprovalStep(
+                    sequence=1,
+                    approver=ApproverCode.DIRECT_MANAGER,
+                    display_name="直属经理",
+                    action=ApprovalAction.APPROVE,
+                    reason="制度要求",
+                ),
+            )
+        ),
+        special_conditions=(),
+        clarification_question=clarification_question,
+        notes=(),
+        citations=(citation,),
+    )
+    return ApprovalCheckAnswer(
+        request="预计总金额6000元的采购需要谁审批？",
+        result=result,
+        reply=(
+            clarification_question
+            or "审批路线为直属经理。[S1]"
+        ),
+    )
+
+
 def test_routes_policy_query_to_answer_service() -> None:
     classifier = FakeIntentClassifier(
         _classification(IntentType.POLICY_QUERY)
@@ -137,10 +214,12 @@ def test_routes_policy_query_to_answer_service() -> None:
         )
     )
     material_checker = FakeMaterialChecker(_material_answer())
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     result = asyncio.run(
@@ -154,6 +233,7 @@ def test_routes_policy_query_to_answer_service() -> None:
     assert classifier.calls == ["出差住宿标准是多少？"]
     assert answer_service.calls == ["出差住宿标准是多少？"]
     assert material_checker.calls == []
+    assert approval_checker.calls == []
 
 
 def test_routes_material_check_to_material_tool() -> None:
@@ -169,10 +249,12 @@ def test_routes_material_check_to_material_tool() -> None:
     )
     material_answer = _material_answer()
     material_checker = FakeMaterialChecker(material_answer)
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     result = asyncio.run(
@@ -185,6 +267,7 @@ def test_routes_material_check_to_material_tool() -> None:
     assert result.citations == material_answer.result.citations
     assert material_checker.calls == ["出差报销需要哪些材料？"]
     assert answer_service.calls == []
+    assert approval_checker.calls == []
 
 
 def test_material_check_can_request_clarification() -> None:
@@ -202,10 +285,12 @@ def test_material_check_can_request_clarification() -> None:
     material_checker = FakeMaterialChecker(
         _material_answer(clarification_question=question)
     )
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     result = asyncio.run(router.route("报销需要哪些材料？"))
@@ -217,12 +302,80 @@ def test_material_check_can_request_clarification() -> None:
     assert result.reply == question
     assert result.material_check is not None
     assert answer_service.calls == []
+    assert approval_checker.calls == []
+
+
+def test_routes_approval_query_to_approval_tool() -> None:
+    classifier = FakeIntentClassifier(
+        _classification(IntentType.APPROVAL_QUERY)
+    )
+    answer_service = FakePolicyAnswerService(
+        PolicyAnswer(
+            question="不应调用",
+            answer="不应调用",
+            citations=(),
+        )
+    )
+    material_checker = FakeMaterialChecker(_material_answer())
+    approval_answer = _approval_answer()
+    approval_checker = FakeApprovalChecker(approval_answer)
+    router = AgentRouter(
+        intent_classifier=classifier,
+        policy_answer_service=answer_service,
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+    )
+
+    user_input = "预计总金额6000元的采购需要谁审批？"
+    result = asyncio.run(router.route(f"  {user_input}  "))
+
+    assert result.status is AgentResponseStatus.COMPLETED
+    assert result.reply == approval_answer.reply
+    assert result.approval_check == approval_answer.result
+    assert result.citations == approval_answer.result.citations
+    assert approval_checker.calls == [user_input]
+    assert answer_service.calls == []
+    assert material_checker.calls == []
+
+
+def test_approval_check_can_request_clarification() -> None:
+    classifier = FakeIntentClassifier(
+        _classification(IntentType.APPROVAL_QUERY)
+    )
+    answer_service = FakePolicyAnswerService(
+        PolicyAnswer(
+            question="不应调用",
+            answer="不应调用",
+            citations=(),
+        )
+    )
+    material_checker = FakeMaterialChecker(_material_answer())
+    question = "请补充预计采购总金额。"
+    approval_checker = FakeApprovalChecker(
+        _approval_answer(clarification_question=question)
+    )
+    router = AgentRouter(
+        intent_classifier=classifier,
+        policy_answer_service=answer_service,
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+    )
+
+    result = asyncio.run(router.route("采购电脑需要谁审批？"))
+
+    assert (
+        result.status
+        is AgentResponseStatus.NEEDS_CLARIFICATION
+    )
+    assert result.reply == question
+    assert result.approval_check is not None
+    assert answer_service.calls == []
+    assert material_checker.calls == []
 
 
 @pytest.mark.parametrize(
     ("intent", "expected_reply_fragment"),
     [
-        (IntentType.APPROVAL_QUERY, "审批流程"),
         (IntentType.DRAFT_GENERATION, "申请草稿"),
     ],
 )
@@ -241,10 +394,12 @@ def test_known_intent_without_tool_returns_unavailable(
         )
     )
     material_checker = FakeMaterialChecker(_material_answer())
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     result = asyncio.run(
@@ -256,6 +411,7 @@ def test_known_intent_without_tool_returns_unavailable(
     assert result.citations == ()
     assert answer_service.calls == []
     assert material_checker.calls == []
+    assert approval_checker.calls == []
 
 
 def test_unknown_intent_requests_clarification() -> None:
@@ -270,10 +426,12 @@ def test_unknown_intent_requests_clarification() -> None:
         )
     )
     material_checker = FakeMaterialChecker(_material_answer())
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     result = asyncio.run(
@@ -288,6 +446,7 @@ def test_unknown_intent_requests_clarification() -> None:
     assert result.citations == ()
     assert answer_service.calls == []
     assert material_checker.calls == []
+    assert approval_checker.calls == []
 
 
 @pytest.mark.parametrize("user_input", ["", "   ", "\n"])
@@ -305,10 +464,12 @@ def test_rejects_blank_input_before_classification(
         )
     )
     material_checker = FakeMaterialChecker(_material_answer())
+    approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
+        approval_checker=approval_checker,
     )
 
     with pytest.raises(
@@ -320,3 +481,4 @@ def test_rejects_blank_input_before_classification(
     assert classifier.calls == []
     assert answer_service.calls == []
     assert material_checker.calls == []
+    assert approval_checker.calls == []

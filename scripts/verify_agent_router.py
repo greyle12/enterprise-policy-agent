@@ -14,6 +14,7 @@ from app.llm.openai_compatible_client import (
 from app.rag.embeddings import BGEEmbeddingProvider
 from app.rag.policy_answer_service import PolicyAnswerService
 from app.rag.policy_retriever import PolicyRetriever
+from app.tools.approval_check import ApprovalRuleChecker
 from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -31,9 +32,9 @@ _SMOKE_CASES = (
         AgentResponseStatus.COMPLETED,
     ),
     (
-        "采购一台办公电脑需要走什么审批？",
+        "采购三台办公显示器，每台2000元，需要走什么审批？",
         IntentType.APPROVAL_QUERY,
-        AgentResponseStatus.UNAVAILABLE,
+        AgentResponseStatus.COMPLETED,
     ),
     (
         "帮我生成一份采购申请草稿。",
@@ -72,6 +73,11 @@ async def _main() -> None:
                 _POLICY_DIRECTORY
             )
         ),
+        approval_checker=(
+            ApprovalRuleChecker.from_policy_directory(
+                _POLICY_DIRECTORY
+            )
+        ),
     )
     failures: list[str] = []
 
@@ -93,6 +99,11 @@ async def _main() -> None:
                     result.material_check is not None
                     if expected_intent is IntentType.MATERIAL_CHECK
                     else result.material_check is None
+                )
+                and (
+                    result.approval_check is not None
+                    if expected_intent is IntentType.APPROVAL_QUERY
+                    else result.approval_check is None
                 )
             )
 
@@ -129,6 +140,25 @@ async def _main() -> None:
                                 ),
                             }
                             if result.material_check is not None
+                            else None
+                        ),
+                        "approval_check": (
+                            {
+                                "application_type": (
+                                    result.approval_check.application_type
+                                ),
+                                "approval_level": (
+                                    result.approval_check.approval_level
+                                ),
+                                "amount": str(
+                                    result.approval_check.amount
+                                ),
+                                "approvers": [
+                                    step.approver
+                                    for step in result.approval_check.steps
+                                ],
+                            }
+                            if result.approval_check is not None
                             else None
                         ),
                         "passed": passed,

@@ -9,6 +9,8 @@ from app.api.dependencies import get_agent_router
 from app.api.schemas.agent_messages import (
     AgentMessageRequest,
     AgentMessageResponse,
+    ApprovalCheckResponse,
+    ApprovalStepResponse,
     IntentClassificationResponse,
     MaterialCheckResponse,
     MaterialRequirementResponse,
@@ -88,6 +90,36 @@ async def handle_agent_message(
             notes=list(result.material_check.notes),
         )
 
+    approval_check = None
+    if result.approval_check is not None:
+        approval_check = ApprovalCheckResponse(
+            application_type=(
+                result.approval_check.application_type
+            ),
+            approval_level=(
+                result.approval_check.approval_level
+            ),
+            amount=result.approval_check.amount,
+            leave_days=result.approval_check.leave_days,
+            steps=[
+                ApprovalStepResponse(
+                    sequence=item.sequence,
+                    approver=item.approver,
+                    display_name=item.display_name,
+                    action=item.action,
+                    reason=item.reason,
+                )
+                for item in result.approval_check.steps
+            ],
+            special_conditions=list(
+                result.approval_check.special_conditions
+            ),
+            clarification_question=(
+                result.approval_check.clarification_question
+            ),
+            notes=list(result.approval_check.notes),
+        )
+
     return AgentMessageResponse(
         request=result.request,
         classification=IntentClassificationResponse(
@@ -102,4 +134,5 @@ async def handle_agent_message(
             for citation in result.citations
         ],
         material_check=material_check,
+        approval_check=approval_check,
     )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from decimal import Decimal
 
 import pytest
 from fastapi.testclient import TestClient
@@ -13,6 +14,14 @@ from app.agent.router import (
 from app.api.dependencies import get_agent_router
 from app.main import create_app
 from app.rag.policy_context import PolicyCitation
+from app.tools.approval_models import (
+    ApprovalAction,
+    ApprovalApplicationType,
+    ApprovalCheckResult,
+    ApprovalLevel,
+    ApprovalStep,
+    ApproverCode,
+)
 from app.tools.material_models import (
     ApplicationType,
     MaterialCheckMode,
@@ -103,14 +112,14 @@ def test_routes_agent_message_and_returns_citations() -> None:
 def test_returns_unavailable_without_citations() -> None:
     router = FakeAgentRouter(
         AgentRouteResult(
-            request="采购需要走什么审批？",
+            request="帮我生成采购申请草稿。",
             classification=IntentClassification(
-                intent=IntentType.APPROVAL_QUERY,
+                intent=IntentType.DRAFT_GENERATION,
                 confidence=0.96,
-                reason="询问采购审批",
+                reason="请求生成采购申请草稿",
             ),
             status=AgentResponseStatus.UNAVAILABLE,
-            reply="审批判断能力暂不可用。",
+            reply="申请草稿生成能力暂不可用。",
         )
     )
     _use_fake_router(router)
@@ -118,12 +127,101 @@ def test_returns_unavailable_without_citations() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/agent/messages",
-            json={"message": "采购需要走什么审批？"},
+            json={"message": "帮我生成采购申请草稿。"},
         )
 
     assert response.status_code == 200
     assert response.json()["status"] == "unavailable"
     assert response.json()["citations"] == []
+
+
+def test_serializes_structured_approval_check_result() -> None:
+    citation = PolicyCitation(
+        source_id="S1",
+        chunk_id="procurement-approval-001",
+        document_title="采购管理办法",
+        chapter_title="第四章 金额分级与审批",
+        article_label="第十二条",
+        article_title="一般采购审批",
+        score=1.0,
+    )
+    approval_check = ApprovalCheckResult(
+        application_type=ApprovalApplicationType.PURCHASE,
+        approval_level=ApprovalLevel.GENERAL_PURCHASE,
+        amount=Decimal(6000),
+        leave_days=None,
+        steps=(
+            ApprovalStep(
+                sequence=1,
+                approver=ApproverCode.DIRECT_MANAGER,
+                display_name="直属经理",
+                action=ApprovalAction.APPROVE,
+                reason="采购申请首先由直属经理审批。",
+            ),
+            ApprovalStep(
+                sequence=2,
+                approver=ApproverCode.DEPARTMENT_HEAD,
+                display_name="部门负责人",
+                action=ApprovalAction.APPROVE,
+                reason="预计采购总金额超过5,000元。",
+            ),
+        ),
+        special_conditions=(),
+        clarification_question=None,
+        notes=("采购金额按含税总成本计算。",),
+        citations=(citation,),
+    )
+    router = FakeAgentRouter(
+        AgentRouteResult(
+            request="预计总金额6000元的采购需要谁审批？",
+            classification=IntentClassification(
+                intent=IntentType.APPROVAL_QUERY,
+                confidence=0.99,
+                reason="查询采购审批路径",
+            ),
+            status=AgentResponseStatus.COMPLETED,
+            reply="直属经理 → 部门负责人。[S1]",
+            citations=(citation,),
+            approval_check=approval_check,
+        )
+    )
+    _use_fake_router(router)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/agent/messages",
+            json={
+                "message": "预计总金额6000元的采购需要谁审批？"
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "completed"
+    assert payload["citations"] == ["S1"]
+    assert payload["approval_check"] == {
+        "application_type": "purchase",
+        "approval_level": "general_purchase",
+        "amount": "6000",
+        "steps": [
+            {
+                "sequence": 1,
+                "approver": "DIRECT_MANAGER",
+                "display_name": "直属经理",
+                "action": "approve",
+                "reason": "采购申请首先由直属经理审批。",
+            },
+            {
+                "sequence": 2,
+                "approver": "DEPARTMENT_HEAD",
+                "display_name": "部门负责人",
+                "action": "approve",
+                "reason": "预计采购总金额超过5,000元。",
+            },
+        ],
+        "special_conditions": [],
+        "notes": ["采购金额按含税总成本计算。"],
+    }
 
 
 def test_serializes_structured_material_check_result() -> None:

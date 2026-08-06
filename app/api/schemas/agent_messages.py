@@ -1,11 +1,18 @@
 from __future__ import annotations
 
+from decimal import Decimal
 from typing import Annotated
 
 from pydantic import BaseModel, StringConstraints
 
 from app.agent.intent import IntentType
 from app.agent.router import AgentResponseStatus
+from app.tools.approval_models import (
+    ApprovalAction,
+    ApprovalApplicationType,
+    ApprovalLevel,
+    ApproverCode,
+)
 from app.tools.material_models import (
     ApplicationType,
     MaterialCheckMode,
@@ -76,6 +83,29 @@ class MaterialCheckResponse(BaseModel):
     notes: list[str]
 
 
+class ApprovalStepResponse(BaseModel):
+    """审批路线中的一个有序节点。"""
+
+    sequence: int
+    approver: ApproverCode
+    display_name: str
+    action: ApprovalAction
+    reason: str
+
+
+class ApprovalCheckResponse(BaseModel):
+    """审批工具的结构化规则判断结果。"""
+
+    application_type: ApprovalApplicationType | None
+    approval_level: ApprovalLevel | None
+    amount: Decimal | None
+    leave_days: Decimal | None
+    steps: list[ApprovalStepResponse]
+    special_conditions: list[str]
+    clarification_question: str | None
+    notes: list[str]
+
+
 class AgentMessageResponse(BaseModel):
     """统一 Agent 入口的路由结果。"""
 
@@ -85,3 +115,4 @@ class AgentMessageResponse(BaseModel):
     reply: str
     citations: list[str]
     material_check: MaterialCheckResponse | None = None
+    approval_check: ApprovalCheckResponse | None = None

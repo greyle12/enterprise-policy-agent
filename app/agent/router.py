@@ -7,6 +7,10 @@ from typing import Protocol
 from app.agent.intent import IntentClassification, IntentType
 from app.rag.policy_answer_service import PolicyAnswer
 from app.rag.policy_context import PolicyCitation
+from app.tools.approval_models import (
+    ApprovalCheckAnswer,
+    ApprovalCheckResult,
+)
 from app.tools.material_models import (
     MaterialCheckAnswer,
     MaterialCheckResult,
@@ -57,6 +61,18 @@ class MaterialChecker(Protocol):
         ...
 
 
+class ApprovalChecker(Protocol):
+    """AgentRouter 依赖的最小审批判断接口。"""
+
+    async def check(
+        self,
+        user_input: str,
+    ) -> ApprovalCheckAnswer:
+        """根据确定性制度规则计算审批路线。"""
+
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class AgentRouteResult:
     """统一 Agent 路由的一次结构化结果。"""
@@ -67,6 +83,7 @@ class AgentRouteResult:
     reply: str
     citations: tuple[PolicyCitation, ...] = ()
     material_check: MaterialCheckResult | None = None
+    approval_check: ApprovalCheckResult | None = None
 
 
 _UNKNOWN_REPLY = (
@@ -75,9 +92,6 @@ _UNKNOWN_REPLY = (
 )
 
 _UNAVAILABLE_REPLIES = {
-    IntentType.APPROVAL_QUERY: (
-        "已识别为审批流程查询，但审批判断能力暂不可用。"
-    ),
     IntentType.DRAFT_GENERATION: (
         "已识别为申请草稿生成请求，但草稿生成能力暂不可用。"
     ),
@@ -93,10 +107,12 @@ class AgentRouter:
         intent_classifier: IntentDetector,
         policy_answer_service: PolicyQuestionAnswerer,
         material_checker: MaterialChecker,
+        approval_checker: ApprovalChecker,
     ) -> None:
         self._intent_classifier = intent_classifier
         self._policy_answer_service = policy_answer_service
         self._material_checker = material_checker
+        self._approval_checker = approval_checker
 
     async def route(
         self,
@@ -144,6 +160,26 @@ class AgentRouter:
                 reply=answer.reply,
                 citations=answer.result.citations,
                 material_check=answer.result,
+            )
+
+        if classification.intent is IntentType.APPROVAL_QUERY:
+            answer = await self._approval_checker.check(
+                normalized_input
+            )
+            status = (
+                AgentResponseStatus.NEEDS_CLARIFICATION
+                if answer.result.clarification_question
+                is not None
+                else AgentResponseStatus.COMPLETED
+            )
+
+            return AgentRouteResult(
+                request=normalized_input,
+                classification=classification,
+                status=status,
+                reply=answer.reply,
+                citations=answer.result.citations,
+                approval_check=answer.result,
             )
 
         if classification.intent is IntentType.UNKNOWN:
