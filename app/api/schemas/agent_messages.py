@@ -7,7 +7,10 @@ from typing import Annotated
 from pydantic import BaseModel, StringConstraints
 
 from app.agent.intent import IntentType
-from app.agent.router import AgentResponseStatus
+from app.agent.router import (
+    AgentResponseStatus,
+    AgentWorkflowNode,
+)
 from app.tools.approval_models import (
     ApprovalAction,
     ApprovalApplicationType,
@@ -202,6 +205,23 @@ class DraftGenerationResponse(BaseModel):
     clarification_question: str | None
 
 
+class AgentWorkflowStepResponse(BaseModel):
+    """一次请求在 LangGraph 中实际执行的一个节点。"""
+
+    sequence: int
+    node: AgentWorkflowNode
+    outcome: str
+
+
+class AgentWorkflowTraceResponse(BaseModel):
+    """供前端展示和排障的最小工作流轨迹。"""
+
+    name: str
+    version: str
+    steps: list[AgentWorkflowStepResponse]
+    terminal_node: AgentWorkflowNode
+
+
 class AgentMessageResponse(BaseModel):
     """统一 Agent 入口的路由结果。"""
 
@@ -213,3 +233,4 @@ class AgentMessageResponse(BaseModel):
     material_check: MaterialCheckResponse | None = None
     approval_check: ApprovalCheckResponse | None = None
     application_draft: DraftGenerationResponse | None = None
+    workflow: AgentWorkflowTraceResponse | None = None

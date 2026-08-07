@@ -7,6 +7,8 @@ from app.agent.intent import IntentClassification, IntentType
 from app.agent.router import (
     AgentResponseStatus,
     AgentRouter,
+    AgentRouteResult,
+    AgentWorkflowNode,
 )
 from app.rag.policy_answer_service import PolicyAnswer
 from app.rag.policy_context import PolicyCitation
@@ -247,6 +249,22 @@ def _draft_answer(
     )
 
 
+def _assert_workflow_path(
+    result: AgentRouteResult,
+    action_node: AgentWorkflowNode,
+) -> None:
+    assert result.workflow is not None
+    assert result.workflow.name == "enterprise_policy_workflow"
+    assert result.workflow.version == "1.0"
+    assert [step.sequence for step in result.workflow.steps] == [1, 2]
+    assert [step.node for step in result.workflow.steps] == [
+        AgentWorkflowNode.CLASSIFY_INTENT,
+        action_node,
+    ]
+    assert result.workflow.terminal_node is action_node
+    assert result.workflow.steps[-1].outcome == result.status.value
+
+
 def test_routes_policy_query_to_answer_service() -> None:
     classifier = FakeIntentClassifier(
         _classification(IntentType.POLICY_QUERY)
@@ -281,6 +299,10 @@ def test_routes_policy_query_to_answer_service() -> None:
     assert answer_service.calls == ["出差住宿标准是多少？"]
     assert material_checker.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.ANSWER_POLICY,
+    )
 
 
 def test_routes_material_check_to_material_tool() -> None:
@@ -316,6 +338,10 @@ def test_routes_material_check_to_material_tool() -> None:
     assert material_checker.calls == ["出差报销需要哪些材料？"]
     assert answer_service.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.CHECK_MATERIALS,
+    )
 
 
 def test_material_check_can_request_clarification() -> None:
@@ -352,6 +378,10 @@ def test_material_check_can_request_clarification() -> None:
     assert result.material_check is not None
     assert answer_service.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.CHECK_MATERIALS,
+    )
 
 
 def test_routes_approval_query_to_approval_tool() -> None:
@@ -386,6 +416,10 @@ def test_routes_approval_query_to_approval_tool() -> None:
     assert approval_checker.calls == [user_input]
     assert answer_service.calls == []
     assert material_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.CHECK_APPROVAL,
+    )
 
 
 def test_approval_check_can_request_clarification() -> None:
@@ -422,6 +456,10 @@ def test_approval_check_can_request_clarification() -> None:
     assert result.approval_check is not None
     assert answer_service.calls == []
     assert material_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.CHECK_APPROVAL,
+    )
 
 
 def test_routes_draft_generation_to_draft_tool() -> None:
@@ -458,6 +496,10 @@ def test_routes_draft_generation_to_draft_tool() -> None:
     assert answer_service.calls == []
     assert material_checker.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.GENERATE_DRAFT,
+    )
 
 
 def test_draft_generation_can_request_clarification() -> None:
@@ -497,6 +539,10 @@ def test_draft_generation_can_request_clarification() -> None:
     assert answer_service.calls == []
     assert material_checker.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.GENERATE_DRAFT,
+    )
 
 
 def test_unknown_intent_requests_clarification() -> None:
@@ -533,6 +579,35 @@ def test_unknown_intent_requests_clarification() -> None:
     assert answer_service.calls == []
     assert material_checker.calls == []
     assert approval_checker.calls == []
+    _assert_workflow_path(
+        result,
+        AgentWorkflowNode.REQUEST_CLARIFICATION,
+    )
+
+
+def test_compiles_expected_langgraph_topology() -> None:
+    router = AgentRouter(
+        intent_classifier=FakeIntentClassifier(
+            _classification(IntentType.UNKNOWN)
+        ),
+        policy_answer_service=FakePolicyAnswerService(
+            PolicyAnswer(
+                question="不应调用",
+                answer="不应调用",
+                citations=(),
+            )
+        ),
+        material_checker=FakeMaterialChecker(_material_answer()),
+        approval_checker=FakeApprovalChecker(_approval_answer()),
+        draft_generator=FakeDraftGenerator(_draft_answer()),
+    )
+
+    mermaid = router.draw_workflow_mermaid()
+
+    for node in AgentWorkflowNode:
+        assert node.value in mermaid
+    assert "__start__" in mermaid
+    assert "__end__" in mermaid
 
 
 @pytest.mark.parametrize("user_input", ["", "   ", "\n"])

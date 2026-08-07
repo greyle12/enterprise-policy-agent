@@ -6,7 +6,11 @@ from pathlib import Path
 
 from app.agent.intent import IntentType
 from app.agent.intent_classifier import IntentClassifier
-from app.agent.router import AgentResponseStatus, AgentRouter
+from app.agent.router import (
+    AgentResponseStatus,
+    AgentRouter,
+    AgentWorkflowNode,
+)
 from app.core.config import get_settings
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
@@ -119,6 +123,10 @@ async def _main() -> None:
             passed = (
                 result.classification.intent is expected_intent
                 and result.status is expected_status
+                and result.workflow is not None
+                and len(result.workflow.steps) == 2
+                and result.workflow.steps[0].node
+                is AgentWorkflowNode.CLASSIFY_INTENT
                 and has_expected_citations
                 and (
                     result.material_check is not None
@@ -148,6 +156,21 @@ async def _main() -> None:
                             result.classification.confidence
                         ),
                         "status": result.status,
+                        "workflow": (
+                            {
+                                "name": result.workflow.name,
+                                "version": result.workflow.version,
+                                "nodes": [
+                                    step.node
+                                    for step in result.workflow.steps
+                                ],
+                                "terminal_node": (
+                                    result.workflow.terminal_node
+                                ),
+                            }
+                            if result.workflow is not None
+                            else None
+                        ),
                         "reply": result.reply,
                         "citations": [
                             citation.source_id

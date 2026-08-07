@@ -11,6 +11,9 @@ from app.agent.intent import IntentClassification, IntentType
 from app.agent.router import (
     AgentResponseStatus,
     AgentRouteResult,
+    AgentWorkflowNode,
+    AgentWorkflowStep,
+    AgentWorkflowTrace,
 )
 from app.api.dependencies import get_agent_router
 from app.main import create_app
@@ -93,6 +96,23 @@ def test_routes_agent_message_and_returns_citations() -> None:
             status=AgentResponseStatus.COMPLETED,
             reply="普通员工住宿标准为500元。[S1]",
             citations=(citation,),
+            workflow=AgentWorkflowTrace(
+                name="enterprise_policy_workflow",
+                version="1.0",
+                steps=(
+                    AgentWorkflowStep(
+                        sequence=1,
+                        node=AgentWorkflowNode.CLASSIFY_INTENT,
+                        outcome="policy_query",
+                    ),
+                    AgentWorkflowStep(
+                        sequence=2,
+                        node=AgentWorkflowNode.ANSWER_POLICY,
+                        outcome="completed",
+                    ),
+                ),
+                terminal_node=AgentWorkflowNode.ANSWER_POLICY,
+            ),
         )
     )
     _use_fake_router(router)
@@ -116,6 +136,23 @@ def test_routes_agent_message_and_returns_citations() -> None:
         "status": "completed",
         "reply": "普通员工住宿标准为500元。[S1]",
         "citations": ["S1"],
+        "workflow": {
+            "name": "enterprise_policy_workflow",
+            "version": "1.0",
+            "steps": [
+                {
+                    "sequence": 1,
+                    "node": "classify_intent",
+                    "outcome": "policy_query",
+                },
+                {
+                    "sequence": 2,
+                    "node": "answer_policy",
+                    "outcome": "completed",
+                },
+            ],
+            "terminal_node": "answer_policy",
+        },
     }
     assert router.calls == ["出差住宿标准是多少？"]
 

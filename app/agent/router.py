@@ -1,115 +1,33 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from enum import StrEnum
-from typing import Protocol
-
-from app.agent.intent import IntentClassification, IntentType
-from app.rag.policy_answer_service import PolicyAnswer
-from app.rag.policy_context import PolicyCitation
-from app.tools.approval_models import (
-    ApprovalCheckAnswer,
-    ApprovalCheckResult,
+from app.agent.workflow import (
+    AgentWorkflow,
+    ApplicationDraftCreator,
+    ApprovalChecker,
+    IntentDetector,
+    MaterialChecker,
+    PolicyQuestionAnswerer,
 )
-from app.tools.draft_models import (
-    DraftGenerationAnswer,
-    DraftGenerationResult,
-)
-from app.tools.material_models import (
-    MaterialCheckAnswer,
-    MaterialCheckResult,
+from app.agent.workflow_models import (
+    AgentResponseStatus,
+    AgentRouteResult,
+    AgentWorkflowNode,
+    AgentWorkflowStep,
+    AgentWorkflowTrace,
 )
 
+__all__ = [
+    "AgentResponseStatus",
+    "AgentRouteResult",
+    "AgentRouter",
+    "AgentWorkflowNode",
+    "AgentWorkflowStep",
+    "AgentWorkflowTrace",
+]
 
-class AgentResponseStatus(StrEnum):
-    """统一 Agent 入口可能返回的处理状态。"""
-
-    COMPLETED = "completed"
-    NEEDS_CLARIFICATION = "needs_clarification"
-    UNAVAILABLE = "unavailable"
-
-
-class IntentDetector(Protocol):
-    """AgentRouter 依赖的最小意图识别接口。"""
-
-    async def classify(
-        self,
-        user_input: str,
-    ) -> IntentClassification:
-        """识别用户输入的主要意图。"""
-
-        ...
-
-
-class PolicyQuestionAnswerer(Protocol):
-    """AgentRouter 依赖的最小制度问答接口。"""
-
-    async def answer(
-        self,
-        question: str,
-    ) -> PolicyAnswer:
-        """根据制度证据回答问题。"""
-
-        ...
-
-
-class MaterialChecker(Protocol):
-    """AgentRouter 依赖的最小材料检查接口。"""
-
-    async def check(
-        self,
-        user_input: str,
-    ) -> MaterialCheckAnswer:
-        """查询材料要求或比对用户已经提供的材料。"""
-
-        ...
-
-
-class ApprovalChecker(Protocol):
-    """AgentRouter 依赖的最小审批判断接口。"""
-
-    async def check(
-        self,
-        user_input: str,
-    ) -> ApprovalCheckAnswer:
-        """根据确定性制度规则计算审批路线。"""
-
-        ...
-
-
-class ApplicationDraftCreator(Protocol):
-    """AgentRouter 依赖的最小申请草稿生成接口。"""
-
-    async def generate(
-        self,
-        user_input: str,
-    ) -> DraftGenerationAnswer:
-        """生成未确认、未提交的结构化申请草稿。"""
-
-        ...
-
-
-@dataclass(frozen=True, slots=True)
-class AgentRouteResult:
-    """统一 Agent 路由的一次结构化结果。"""
-
-    request: str
-    classification: IntentClassification
-    status: AgentResponseStatus
-    reply: str
-    citations: tuple[PolicyCitation, ...] = ()
-    material_check: MaterialCheckResult | None = None
-    approval_check: ApprovalCheckResult | None = None
-    application_draft: DraftGenerationResult | None = None
-
-
-_UNKNOWN_REPLY = (
-    "我还不能确定你希望查询制度、检查材料、判断审批流程，"
-    "还是生成申请草稿。请补充具体事项和目标。"
-)
 
 class AgentRouter:
-    """先识别意图，再把请求交给对应业务能力。"""
+    """保留统一路由接口，并将实际编排委托给 LangGraph 工作流。"""
 
     def __init__(
         self,
@@ -120,111 +38,20 @@ class AgentRouter:
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
     ) -> None:
-        self._intent_classifier = intent_classifier
-        self._policy_answer_service = policy_answer_service
-        self._material_checker = material_checker
-        self._approval_checker = approval_checker
-        self._draft_generator = draft_generator
-
-    async def route(
-        self,
-        user_input: str,
-    ) -> AgentRouteResult:
-        """路由一次用户请求，未接入的能力不会误执行。"""
-
-        normalized_input = user_input.strip()
-
-        if not normalized_input:
-            raise ValueError("user_input must not be blank")
-
-        classification = await self._intent_classifier.classify(
-            normalized_input
+        self._workflow = AgentWorkflow(
+            intent_classifier=intent_classifier,
+            policy_answer_service=policy_answer_service,
+            material_checker=material_checker,
+            approval_checker=approval_checker,
+            draft_generator=draft_generator,
         )
 
-        if classification.intent is IntentType.POLICY_QUERY:
-            answer = await self._policy_answer_service.answer(
-                normalized_input
-            )
+    async def route(self, user_input: str) -> AgentRouteResult:
+        """执行一次 LangGraph 工作流并返回结构化结果。"""
 
-            return AgentRouteResult(
-                request=normalized_input,
-                classification=classification,
-                status=AgentResponseStatus.COMPLETED,
-                reply=answer.answer,
-                citations=answer.citations,
-            )
+        return await self._workflow.run(user_input)
 
-        if classification.intent is IntentType.MATERIAL_CHECK:
-            answer = await self._material_checker.check(
-                normalized_input
-            )
-            status = (
-                AgentResponseStatus.NEEDS_CLARIFICATION
-                if answer.result.clarification_question
-                is not None
-                else AgentResponseStatus.COMPLETED
-            )
+    def draw_workflow_mermaid(self) -> str:
+        """返回编译后的 LangGraph 拓扑，便于本地验收。"""
 
-            return AgentRouteResult(
-                request=normalized_input,
-                classification=classification,
-                status=status,
-                reply=answer.reply,
-                citations=answer.result.citations,
-                material_check=answer.result,
-            )
-
-        if classification.intent is IntentType.APPROVAL_QUERY:
-            answer = await self._approval_checker.check(
-                normalized_input
-            )
-            status = (
-                AgentResponseStatus.NEEDS_CLARIFICATION
-                if answer.result.clarification_question
-                is not None
-                else AgentResponseStatus.COMPLETED
-            )
-
-            return AgentRouteResult(
-                request=normalized_input,
-                classification=classification,
-                status=status,
-                reply=answer.reply,
-                citations=answer.result.citations,
-                approval_check=answer.result,
-            )
-
-        if classification.intent is IntentType.DRAFT_GENERATION:
-            answer = await self._draft_generator.generate(
-                normalized_input
-            )
-            status = (
-                AgentResponseStatus.NEEDS_CLARIFICATION
-                if answer.result.clarification_question
-                is not None
-                else AgentResponseStatus.COMPLETED
-            )
-
-            return AgentRouteResult(
-                request=normalized_input,
-                classification=classification,
-                status=status,
-                reply=answer.reply,
-                citations=answer.result.citations,
-                application_draft=answer.result,
-            )
-
-        if classification.intent is IntentType.UNKNOWN:
-            return AgentRouteResult(
-                request=normalized_input,
-                classification=classification,
-                status=(
-                    AgentResponseStatus.NEEDS_CLARIFICATION
-                ),
-                reply=_UNKNOWN_REPLY,
-            )
-
-        raise RuntimeError(
-            "unsupported intent returned by classifier: "
-            f"{classification.intent}"
-        )
+        return self._workflow.draw_mermaid()

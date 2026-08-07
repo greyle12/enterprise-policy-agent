@@ -4,11 +4,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.agent.router import AgentRouter
+from app.agent.router import AgentRouter, AgentWorkflowTrace
 from app.api.dependencies import get_agent_router
 from app.api.schemas.agent_messages import (
     AgentMessageRequest,
     AgentMessageResponse,
+    AgentWorkflowStepResponse,
+    AgentWorkflowTraceResponse,
     ApplicationDraftResponse,
     ApprovalCheckResponse,
     ApprovalStepResponse,
@@ -190,6 +192,24 @@ def _draft_response(
     )
 
 
+def _workflow_response(
+    trace: AgentWorkflowTrace,
+) -> AgentWorkflowTraceResponse:
+    return AgentWorkflowTraceResponse(
+        name=trace.name,
+        version=trace.version,
+        steps=[
+            AgentWorkflowStepResponse(
+                sequence=step.sequence,
+                node=step.node,
+                outcome=step.outcome,
+            )
+            for step in trace.steps
+        ],
+        terminal_node=trace.terminal_node,
+    )
+
+
 @router.post(
     "",
     response_model=AgentMessageResponse,
@@ -238,4 +258,9 @@ async def handle_agent_message(
         material_check=material_check,
         approval_check=approval_check,
         application_draft=application_draft,
+        workflow=(
+            _workflow_response(result.workflow)
+            if result.workflow is not None
+            else None
+        ),
     )
