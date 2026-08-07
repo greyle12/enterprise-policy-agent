@@ -522,6 +522,23 @@ def _detect_application_type(text: str) -> ApplicationType | None:
     ):
         return ApplicationType.TRAVEL_REIMBURSEMENT
 
+    if "费用报销" in text or (
+        "报销" in text
+        and any(
+            word in text
+            for word in (
+                "会议费",
+                "培训费",
+                "招待费",
+                "办公费",
+                "通信费",
+                "市内交通费",
+                "餐费",
+            )
+        )
+    ):
+        return ApplicationType.EXPENSE_REIMBURSEMENT
+
     if any(
         word in text
         for word in (
@@ -551,23 +568,6 @@ def _detect_application_type(text: str) -> ApplicationType | None:
         )
     ):
         return ApplicationType.LEAVE
-
-    if "费用报销" in text or (
-        "报销" in text
-        and any(
-            word in text
-            for word in (
-                "会议费",
-                "培训费",
-                "招待费",
-                "办公费",
-                "通信费",
-                "市内交通费",
-                "餐费",
-            )
-        )
-    ):
-        return ApplicationType.EXPENSE_REIMBURSEMENT
 
     return None
 

@@ -19,6 +19,10 @@ from app.tools.approval_models import (
     ApprovalStep,
     ApproverCode,
 )
+from app.tools.draft_models import (
+    DraftGenerationAnswer,
+    DraftGenerationResult,
+)
 from app.tools.material_models import (
     ApplicationType,
     MaterialCheckAnswer,
@@ -79,6 +83,19 @@ class FakeApprovalChecker:
         self,
         user_input: str,
     ) -> ApprovalCheckAnswer:
+        self.calls.append(user_input)
+        return self.answer_result
+
+
+class FakeDraftGenerator:
+    def __init__(self, answer: DraftGenerationAnswer) -> None:
+        self.answer_result = answer
+        self.calls: list[str] = []
+
+    async def generate(
+        self,
+        user_input: str,
+    ) -> DraftGenerationAnswer:
         self.calls.append(user_input)
         return self.answer_result
 
@@ -201,6 +218,35 @@ def _approval_answer(
     )
 
 
+def _draft_answer(
+    *,
+    clarification_question: str | None = None,
+) -> DraftGenerationAnswer:
+    citation = PolicyCitation(
+        source_id="S1",
+        chunk_id="purchase-draft-001",
+        document_title="采购管理办法",
+        chapter_title="第三章 采购申请",
+        article_label="第九条",
+        article_title="采购申请必填信息",
+        score=1.0,
+    )
+    result = DraftGenerationResult(
+        application_type=ApplicationType.PURCHASE,
+        draft=None,
+        clarification_question=clarification_question,
+        citations=(citation,),
+    )
+    return DraftGenerationAnswer(
+        request="帮我生成采购申请草稿。",
+        result=result,
+        reply=(
+            clarification_question
+            or "已生成采购申请草稿。[S1]"
+        ),
+    )
+
+
 def test_routes_policy_query_to_answer_service() -> None:
     classifier = FakeIntentClassifier(
         _classification(IntentType.POLICY_QUERY)
@@ -220,6 +266,7 @@ def test_routes_policy_query_to_answer_service() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     result = asyncio.run(
@@ -255,6 +302,7 @@ def test_routes_material_check_to_material_tool() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     result = asyncio.run(
@@ -291,6 +339,7 @@ def test_material_check_can_request_clarification() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     result = asyncio.run(router.route("报销需要哪些材料？"))
@@ -324,6 +373,7 @@ def test_routes_approval_query_to_approval_tool() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     user_input = "预计总金额6000元的采购需要谁审批？"
@@ -359,6 +409,7 @@ def test_approval_check_can_request_clarification() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     result = asyncio.run(router.route("采购电脑需要谁审批？"))
@@ -373,18 +424,9 @@ def test_approval_check_can_request_clarification() -> None:
     assert material_checker.calls == []
 
 
-@pytest.mark.parametrize(
-    ("intent", "expected_reply_fragment"),
-    [
-        (IntentType.DRAFT_GENERATION, "申请草稿"),
-    ],
-)
-def test_known_intent_without_tool_returns_unavailable(
-    intent: IntentType,
-    expected_reply_fragment: str,
-) -> None:
+def test_routes_draft_generation_to_draft_tool() -> None:
     classifier = FakeIntentClassifier(
-        _classification(intent)
+        _classification(IntentType.DRAFT_GENERATION)
     )
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
@@ -395,20 +437,63 @@ def test_known_intent_without_tool_returns_unavailable(
     )
     material_checker = FakeMaterialChecker(_material_answer())
     approval_checker = FakeApprovalChecker(_approval_answer())
+    draft_answer = _draft_answer()
+    draft_generator = FakeDraftGenerator(draft_answer)
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=draft_generator,
     )
 
-    result = asyncio.run(
-        router.route("帮我处理这个请求")
+    user_input = "帮我生成采购申请草稿。"
+    result = asyncio.run(router.route(f"  {user_input}  "))
+
+    assert result.status is AgentResponseStatus.COMPLETED
+    assert result.reply == draft_answer.reply
+    assert result.application_draft == draft_answer.result
+    assert result.citations == draft_answer.result.citations
+    assert draft_generator.calls == [user_input]
+    assert answer_service.calls == []
+    assert material_checker.calls == []
+    assert approval_checker.calls == []
+
+
+def test_draft_generation_can_request_clarification() -> None:
+    classifier = FakeIntentClassifier(
+        _classification(IntentType.DRAFT_GENERATION)
+    )
+    answer_service = FakePolicyAnswerService(
+        PolicyAnswer(
+            question="不应调用",
+            answer="不应调用",
+            citations=(),
+        )
+    )
+    material_checker = FakeMaterialChecker(_material_answer())
+    approval_checker = FakeApprovalChecker(_approval_answer())
+    question = "请补充采购事项、数量和预计单价。"
+    draft_generator = FakeDraftGenerator(
+        _draft_answer(clarification_question=question)
+    )
+    router = AgentRouter(
+        intent_classifier=classifier,
+        policy_answer_service=answer_service,
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+        draft_generator=draft_generator,
     )
 
-    assert result.status is AgentResponseStatus.UNAVAILABLE
-    assert expected_reply_fragment in result.reply
-    assert result.citations == ()
+    result = asyncio.run(router.route("帮我生成采购申请草稿。"))
+
+    assert (
+        result.status
+        is AgentResponseStatus.NEEDS_CLARIFICATION
+    )
+    assert result.reply == question
+    assert result.application_draft is not None
+    assert draft_generator.calls == ["帮我生成采购申请草稿。"]
     assert answer_service.calls == []
     assert material_checker.calls == []
     assert approval_checker.calls == []
@@ -432,6 +517,7 @@ def test_unknown_intent_requests_clarification() -> None:
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     result = asyncio.run(
@@ -470,6 +556,7 @@ def test_rejects_blank_input_before_classification(
         policy_answer_service=answer_service,
         material_checker=material_checker,
         approval_checker=approval_checker,
+        draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
     with pytest.raises(

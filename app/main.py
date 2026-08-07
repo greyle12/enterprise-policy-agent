@@ -24,11 +24,21 @@ from app.rag.policy_answer_service import (
 )
 from app.rag.policy_retriever import PolicyRetriever
 from app.tools.approval_check import ApprovalRuleChecker
+from app.tools.draft_generation import ApplicationDraftGenerator
+from app.tools.draft_models import DraftUserContext
 from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
 _EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
+_DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
+    employee_id="DEMO-EMP-001",
+    employee_name="演示用户",
+    department="演示部门",
+    roles=("EMPLOYEE",),
+    region="中国大陆",
+    identity_source="trusted_demo_context",
+)
 
 
 def _build_policy_answer_service() -> tuple[
@@ -69,19 +79,29 @@ async def _lifespan(
     service, llm_client = (
         _build_policy_answer_service()
     )
+    material_checker = (
+        RequiredMaterialsChecker.from_policy_directory(
+            _POLICY_DIRECTORY
+        )
+    )
+    approval_checker = (
+        ApprovalRuleChecker.from_policy_directory(
+            _POLICY_DIRECTORY
+        )
+    )
     agent_router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=llm_client,
         ),
         policy_answer_service=service,
-        material_checker=(
-            RequiredMaterialsChecker.from_policy_directory(
-                _POLICY_DIRECTORY
-            )
-        ),
-        approval_checker=(
-            ApprovalRuleChecker.from_policy_directory(
-                _POLICY_DIRECTORY
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+        draft_generator=(
+            ApplicationDraftGenerator.from_policy_directory(
+                _POLICY_DIRECTORY,
+                material_checker=material_checker,
+                approval_checker=approval_checker,
+                user_context=_DEMO_DRAFT_USER_CONTEXT,
             )
         ),
     )

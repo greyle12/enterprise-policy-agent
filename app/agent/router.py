@@ -11,6 +11,10 @@ from app.tools.approval_models import (
     ApprovalCheckAnswer,
     ApprovalCheckResult,
 )
+from app.tools.draft_models import (
+    DraftGenerationAnswer,
+    DraftGenerationResult,
+)
 from app.tools.material_models import (
     MaterialCheckAnswer,
     MaterialCheckResult,
@@ -73,6 +77,18 @@ class ApprovalChecker(Protocol):
         ...
 
 
+class ApplicationDraftCreator(Protocol):
+    """AgentRouter 依赖的最小申请草稿生成接口。"""
+
+    async def generate(
+        self,
+        user_input: str,
+    ) -> DraftGenerationAnswer:
+        """生成未确认、未提交的结构化申请草稿。"""
+
+        ...
+
+
 @dataclass(frozen=True, slots=True)
 class AgentRouteResult:
     """统一 Agent 路由的一次结构化结果。"""
@@ -84,19 +100,13 @@ class AgentRouteResult:
     citations: tuple[PolicyCitation, ...] = ()
     material_check: MaterialCheckResult | None = None
     approval_check: ApprovalCheckResult | None = None
+    application_draft: DraftGenerationResult | None = None
 
 
 _UNKNOWN_REPLY = (
     "我还不能确定你希望查询制度、检查材料、判断审批流程，"
     "还是生成申请草稿。请补充具体事项和目标。"
 )
-
-_UNAVAILABLE_REPLIES = {
-    IntentType.DRAFT_GENERATION: (
-        "已识别为申请草稿生成请求，但草稿生成能力暂不可用。"
-    ),
-}
-
 
 class AgentRouter:
     """先识别意图，再把请求交给对应业务能力。"""
@@ -108,11 +118,13 @@ class AgentRouter:
         policy_answer_service: PolicyQuestionAnswerer,
         material_checker: MaterialChecker,
         approval_checker: ApprovalChecker,
+        draft_generator: ApplicationDraftCreator,
     ) -> None:
         self._intent_classifier = intent_classifier
         self._policy_answer_service = policy_answer_service
         self._material_checker = material_checker
         self._approval_checker = approval_checker
+        self._draft_generator = draft_generator
 
     async def route(
         self,
@@ -182,6 +194,26 @@ class AgentRouter:
                 approval_check=answer.result,
             )
 
+        if classification.intent is IntentType.DRAFT_GENERATION:
+            answer = await self._draft_generator.generate(
+                normalized_input
+            )
+            status = (
+                AgentResponseStatus.NEEDS_CLARIFICATION
+                if answer.result.clarification_question
+                is not None
+                else AgentResponseStatus.COMPLETED
+            )
+
+            return AgentRouteResult(
+                request=normalized_input,
+                classification=classification,
+                status=status,
+                reply=answer.reply,
+                citations=answer.result.citations,
+                application_draft=answer.result,
+            )
+
         if classification.intent is IntentType.UNKNOWN:
             return AgentRouteResult(
                 request=normalized_input,
@@ -192,11 +224,7 @@ class AgentRouter:
                 reply=_UNKNOWN_REPLY,
             )
 
-        return AgentRouteResult(
-            request=normalized_input,
-            classification=classification,
-            status=AgentResponseStatus.UNAVAILABLE,
-            reply=_UNAVAILABLE_REPLIES[
-                classification.intent
-            ],
+        raise RuntimeError(
+            "unsupported intent returned by classifier: "
+            f"{classification.intent}"
         )

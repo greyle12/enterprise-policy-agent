@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -12,6 +13,11 @@ from app.tools.approval_models import (
     ApprovalApplicationType,
     ApprovalLevel,
     ApproverCode,
+)
+from app.tools.draft_models import (
+    DraftFieldSource,
+    DraftStatus,
+    ValidationSeverity,
 )
 from app.tools.material_models import (
     ApplicationType,
@@ -106,6 +112,96 @@ class ApprovalCheckResponse(BaseModel):
     notes: list[str]
 
 
+class DraftUserContextResponse(BaseModel):
+    """由可信身份层注入的草稿申请人。"""
+
+    employee_id: str
+    employee_name: str
+    department: str
+    roles: list[str]
+    region: str
+    identity_source: str
+
+
+class DraftFieldResponse(BaseModel):
+    """草稿中一项已提取、计算或可信注入的字段。"""
+
+    field_name: str
+    display_name: str
+    value: bool | int | Decimal | str
+    source: DraftFieldSource
+    sensitive: bool
+
+
+class MissingDraftFieldResponse(BaseModel):
+    """草稿仍缺少的一项必填字段。"""
+
+    field_name: str
+    display_name: str
+    question: str
+
+
+class DraftValidationIssueResponse(BaseModel):
+    """草稿生成期间发现的一项校验问题。"""
+
+    code: str
+    severity: ValidationSeverity
+    message: str
+    blocking: bool
+
+
+class DraftPolicySnapshotResponse(BaseModel):
+    """生成草稿时使用的制度版本。"""
+
+    document_id: str
+    document_title: str
+    version: str
+    effective_date: date
+
+
+class DraftAuditMetadataResponse(BaseModel):
+    """草稿的最小审计与幂等信息。"""
+
+    session_id: str
+    request_id: str
+    idempotency_key: str
+    created_at: datetime
+    created_by: str
+    identity_source: str
+    persisted: bool
+
+
+class ApplicationDraftResponse(BaseModel):
+    """供前端展示和后续确认的结构化申请草稿。"""
+
+    draft_id: str
+    application_type: ApplicationType
+    title: str
+    status: DraftStatus
+    applicant: DraftUserContextResponse
+    fields: list[DraftFieldResponse]
+    missing_fields: list[MissingDraftFieldResponse]
+    material_check: MaterialCheckResponse
+    approval_check: ApprovalCheckResponse
+    policy_snapshots: list[DraftPolicySnapshotResponse]
+    validation_issues: list[DraftValidationIssueResponse]
+    summary_lines: list[str]
+    warnings: list[str]
+    ready_for_confirmation: bool
+    confirmation_required: bool
+    user_confirmed: bool
+    submitted: bool
+    audit_metadata: DraftAuditMetadataResponse
+
+
+class DraftGenerationResponse(BaseModel):
+    """草稿工具的结构化生成结果。"""
+
+    application_type: ApplicationType | None
+    draft: ApplicationDraftResponse | None
+    clarification_question: str | None
+
+
 class AgentMessageResponse(BaseModel):
     """统一 Agent 入口的路由结果。"""
 
@@ -116,3 +212,4 @@ class AgentMessageResponse(BaseModel):
     citations: list[str]
     material_check: MaterialCheckResponse | None = None
     approval_check: ApprovalCheckResponse | None = None
+    application_draft: DraftGenerationResponse | None = None

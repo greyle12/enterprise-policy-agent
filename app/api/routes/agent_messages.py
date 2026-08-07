@@ -9,19 +9,185 @@ from app.api.dependencies import get_agent_router
 from app.api.schemas.agent_messages import (
     AgentMessageRequest,
     AgentMessageResponse,
+    ApplicationDraftResponse,
     ApprovalCheckResponse,
     ApprovalStepResponse,
+    DraftAuditMetadataResponse,
+    DraftFieldResponse,
+    DraftGenerationResponse,
+    DraftPolicySnapshotResponse,
+    DraftUserContextResponse,
+    DraftValidationIssueResponse,
     IntentClassificationResponse,
     MaterialCheckResponse,
     MaterialRequirementResponse,
+    MissingDraftFieldResponse,
     MissingMaterialResponse,
     ProvidedMaterialResponse,
 )
+from app.tools.approval_models import ApprovalCheckResult
+from app.tools.draft_models import DraftGenerationResult
+from app.tools.material_models import MaterialCheckResult
 
 router = APIRouter(
     prefix="/agent/messages",
     tags=["agent"],
 )
+
+
+def _material_response(
+    result: MaterialCheckResult,
+) -> MaterialCheckResponse:
+    return MaterialCheckResponse(
+        application_type=result.application_type,
+        mode=result.mode,
+        required_materials=[
+            MaterialRequirementResponse(
+                material_type=item.material_type,
+                display_name=item.display_name,
+                reason=item.reason,
+                required_count=item.required_count,
+                sensitive=item.sensitive,
+            )
+            for item in result.required_materials
+        ],
+        provided_materials=[
+            ProvidedMaterialResponse(
+                material_type=item.material_type,
+                display_name=item.display_name,
+                provided_count=item.provided_count,
+            )
+            for item in result.provided_materials
+        ],
+        missing_materials=[
+            MissingMaterialResponse(
+                material_type=item.material_type,
+                display_name=item.display_name,
+                missing_count=item.missing_count,
+                reason=item.reason,
+                sensitive=item.sensitive,
+            )
+            for item in result.missing_materials
+        ],
+        materials_complete=result.materials_complete,
+        clarification_question=result.clarification_question,
+        notes=list(result.notes),
+    )
+
+
+def _approval_response(
+    result: ApprovalCheckResult,
+) -> ApprovalCheckResponse:
+    return ApprovalCheckResponse(
+        application_type=result.application_type,
+        approval_level=result.approval_level,
+        amount=result.amount,
+        leave_days=result.leave_days,
+        steps=[
+            ApprovalStepResponse(
+                sequence=item.sequence,
+                approver=item.approver,
+                display_name=item.display_name,
+                action=item.action,
+                reason=item.reason,
+            )
+            for item in result.steps
+        ],
+        special_conditions=list(result.special_conditions),
+        clarification_question=result.clarification_question,
+        notes=list(result.notes),
+    )
+
+
+def _draft_response(
+    result: DraftGenerationResult,
+) -> DraftGenerationResponse:
+    draft_response = None
+    if result.draft is not None:
+        draft = result.draft
+        draft_response = ApplicationDraftResponse(
+            draft_id=draft.draft_id,
+            application_type=draft.application_type,
+            title=draft.title,
+            status=draft.status,
+            applicant=DraftUserContextResponse(
+                employee_id=draft.applicant.employee_id,
+                employee_name=draft.applicant.employee_name,
+                department=draft.applicant.department,
+                roles=list(draft.applicant.roles),
+                region=draft.applicant.region,
+                identity_source=draft.applicant.identity_source,
+            ),
+            fields=[
+                DraftFieldResponse(
+                    field_name=item.field_name,
+                    display_name=item.display_name,
+                    value=item.value,
+                    source=item.source,
+                    sensitive=item.sensitive,
+                )
+                for item in draft.fields
+            ],
+            missing_fields=[
+                MissingDraftFieldResponse(
+                    field_name=item.field_name,
+                    display_name=item.display_name,
+                    question=item.question,
+                )
+                for item in draft.missing_fields
+            ],
+            material_check=_material_response(
+                draft.material_check
+            ),
+            approval_check=_approval_response(
+                draft.approval_check
+            ),
+            policy_snapshots=[
+                DraftPolicySnapshotResponse(
+                    document_id=item.document_id,
+                    document_title=item.document_title,
+                    version=item.version,
+                    effective_date=item.effective_date,
+                )
+                for item in draft.policy_snapshots
+            ],
+            validation_issues=[
+                DraftValidationIssueResponse(
+                    code=item.code,
+                    severity=item.severity,
+                    message=item.message,
+                    blocking=item.blocking,
+                )
+                for item in draft.validation_issues
+            ],
+            summary_lines=list(draft.summary_lines),
+            warnings=list(draft.warnings),
+            ready_for_confirmation=(
+                draft.ready_for_confirmation
+            ),
+            confirmation_required=draft.confirmation_required,
+            user_confirmed=draft.user_confirmed,
+            submitted=draft.submitted,
+            audit_metadata=DraftAuditMetadataResponse(
+                session_id=draft.audit_metadata.session_id,
+                request_id=draft.audit_metadata.request_id,
+                idempotency_key=(
+                    draft.audit_metadata.idempotency_key
+                ),
+                created_at=draft.audit_metadata.created_at,
+                created_by=draft.audit_metadata.created_by,
+                identity_source=(
+                    draft.audit_metadata.identity_source
+                ),
+                persisted=draft.audit_metadata.persisted,
+            ),
+        )
+
+    return DraftGenerationResponse(
+        application_type=result.application_type,
+        draft=draft_response,
+        clarification_question=result.clarification_question,
+    )
 
 
 @router.post(
@@ -40,85 +206,21 @@ async def handle_agent_message(
 
     result = await agent_router.route(request.message)
 
-    material_check = None
-    if result.material_check is not None:
-        material_check = MaterialCheckResponse(
-            application_type=(
-                result.material_check.application_type
-            ),
-            mode=result.material_check.mode,
-            required_materials=[
-                MaterialRequirementResponse(
-                    material_type=item.material_type,
-                    display_name=item.display_name,
-                    reason=item.reason,
-                    required_count=item.required_count,
-                    sensitive=item.sensitive,
-                )
-                for item in (
-                    result.material_check.required_materials
-                )
-            ],
-            provided_materials=[
-                ProvidedMaterialResponse(
-                    material_type=item.material_type,
-                    display_name=item.display_name,
-                    provided_count=item.provided_count,
-                )
-                for item in (
-                    result.material_check.provided_materials
-                )
-            ],
-            missing_materials=[
-                MissingMaterialResponse(
-                    material_type=item.material_type,
-                    display_name=item.display_name,
-                    missing_count=item.missing_count,
-                    reason=item.reason,
-                    sensitive=item.sensitive,
-                )
-                for item in (
-                    result.material_check.missing_materials
-                )
-            ],
-            materials_complete=(
-                result.material_check.materials_complete
-            ),
-            clarification_question=(
-                result.material_check.clarification_question
-            ),
-            notes=list(result.material_check.notes),
-        )
-
-    approval_check = None
-    if result.approval_check is not None:
-        approval_check = ApprovalCheckResponse(
-            application_type=(
-                result.approval_check.application_type
-            ),
-            approval_level=(
-                result.approval_check.approval_level
-            ),
-            amount=result.approval_check.amount,
-            leave_days=result.approval_check.leave_days,
-            steps=[
-                ApprovalStepResponse(
-                    sequence=item.sequence,
-                    approver=item.approver,
-                    display_name=item.display_name,
-                    action=item.action,
-                    reason=item.reason,
-                )
-                for item in result.approval_check.steps
-            ],
-            special_conditions=list(
-                result.approval_check.special_conditions
-            ),
-            clarification_question=(
-                result.approval_check.clarification_question
-            ),
-            notes=list(result.approval_check.notes),
-        )
+    material_check = (
+        _material_response(result.material_check)
+        if result.material_check is not None
+        else None
+    )
+    approval_check = (
+        _approval_response(result.approval_check)
+        if result.approval_check is not None
+        else None
+    )
+    application_draft = (
+        _draft_response(result.application_draft)
+        if result.application_draft is not None
+        else None
+    )
 
     return AgentMessageResponse(
         request=result.request,
@@ -135,4 +237,5 @@ async def handle_agent_message(
         ],
         material_check=material_check,
         approval_check=approval_check,
+        application_draft=application_draft,
     )

@@ -15,6 +15,8 @@ from app.rag.embeddings import BGEEmbeddingProvider
 from app.rag.policy_answer_service import PolicyAnswerService
 from app.rag.policy_retriever import PolicyRetriever
 from app.tools.approval_check import ApprovalRuleChecker
+from app.tools.draft_generation import ApplicationDraftGenerator
+from app.tools.draft_models import DraftUserContext
 from app.tools.material_check import RequiredMaterialsChecker
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -37,9 +39,15 @@ _SMOKE_CASES = (
         AgentResponseStatus.COMPLETED,
     ),
     (
-        "帮我生成一份采购申请草稿。",
+        (
+            "帮我生成采购申请草稿，采购3台27英寸办公显示器，每台2000元，"
+            "采购目的为给新员工配置办公设备，采购类别为IT设备，规格为27英寸2K，"
+            "预算编号RD-2026，交付日期2026-08-15，使用地点苏州办公室，"
+            "推荐供应商为苏州科技有限公司，推荐理由为历史合作交付稳定，普通采购，"
+            "已准备技术需求说明、信息技术评审意见、产品规格说明和2家供应商报价。"
+        ),
         IntentType.DRAFT_GENERATION,
-        AgentResponseStatus.UNAVAILABLE,
+        AgentResponseStatus.COMPLETED,
     ),
     (
         "给我讲一个笑话。",
@@ -60,6 +68,16 @@ async def _main() -> None:
     client = OpenAICompatibleLLMClient.from_settings(
         get_settings()
     )
+    material_checker = (
+        RequiredMaterialsChecker.from_policy_directory(
+            _POLICY_DIRECTORY
+        )
+    )
+    approval_checker = (
+        ApprovalRuleChecker.from_policy_directory(
+            _POLICY_DIRECTORY
+        )
+    )
     router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=client,
@@ -68,14 +86,21 @@ async def _main() -> None:
             retriever=retriever,
             llm_client=client,
         ),
-        material_checker=(
-            RequiredMaterialsChecker.from_policy_directory(
-                _POLICY_DIRECTORY
-            )
-        ),
-        approval_checker=(
-            ApprovalRuleChecker.from_policy_directory(
-                _POLICY_DIRECTORY
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+        draft_generator=(
+            ApplicationDraftGenerator.from_policy_directory(
+                _POLICY_DIRECTORY,
+                material_checker=material_checker,
+                approval_checker=approval_checker,
+                user_context=DraftUserContext(
+                    employee_id="DEMO-EMP-001",
+                    employee_name="演示用户",
+                    department="演示部门",
+                    roles=("EMPLOYEE",),
+                    region="中国大陆",
+                    identity_source="trusted_demo_context",
+                ),
             )
         ),
     )
@@ -104,6 +129,11 @@ async def _main() -> None:
                     result.approval_check is not None
                     if expected_intent is IntentType.APPROVAL_QUERY
                     else result.approval_check is None
+                )
+                and (
+                    result.application_draft is not None
+                    if expected_intent is IntentType.DRAFT_GENERATION
+                    else result.application_draft is None
                 )
             )
 
@@ -159,6 +189,25 @@ async def _main() -> None:
                                 ],
                             }
                             if result.approval_check is not None
+                            else None
+                        ),
+                        "application_draft": (
+                            {
+                                "application_type": (
+                                    result.application_draft.application_type
+                                ),
+                                "draft_status": (
+                                    result.application_draft.draft.status
+                                    if result.application_draft.draft is not None
+                                    else None
+                                ),
+                                "ready_for_confirmation": (
+                                    result.application_draft.draft.ready_for_confirmation
+                                    if result.application_draft.draft is not None
+                                    else False
+                                ),
+                            }
+                            if result.application_draft is not None
                             else None
                         ),
                         "passed": passed,

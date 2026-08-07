@@ -253,6 +253,19 @@ def _detect_application_type(
     if any(word in text for word in ("差旅", "出差")):
         return ApprovalApplicationType.TRAVEL
 
+    if "费用报销" in text or any(
+        word in text
+        for word in (
+            "办公费报销",
+            "会议费报销",
+            "培训费报销",
+            "招待费报销",
+            "通信费报销",
+            "市内交通费报销",
+        )
+    ):
+        return ApprovalApplicationType.EXPENSE_REIMBURSEMENT
+
     if any(
         word in text
         for word in (
@@ -284,19 +297,6 @@ def _detect_application_type(
         )
     ):
         return ApprovalApplicationType.LEAVE
-
-    if "费用报销" in text or any(
-        word in text
-        for word in (
-            "办公费报销",
-            "会议费报销",
-            "培训费报销",
-            "招待费报销",
-            "通信费报销",
-            "市内交通费报销",
-        )
-    ):
-        return ApprovalApplicationType.EXPENSE_REIMBURSEMENT
 
     return None
 

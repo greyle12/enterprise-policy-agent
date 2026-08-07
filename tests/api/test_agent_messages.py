@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 import pytest
@@ -21,6 +22,16 @@ from app.tools.approval_models import (
     ApprovalLevel,
     ApprovalStep,
     ApproverCode,
+)
+from app.tools.draft_models import (
+    ApplicationDraft,
+    DraftAuditMetadata,
+    DraftField,
+    DraftFieldSource,
+    DraftGenerationResult,
+    DraftPolicySnapshot,
+    DraftStatus,
+    DraftUserContext,
 )
 from app.tools.material_models import (
     ApplicationType,
@@ -109,7 +120,8 @@ def test_routes_agent_message_and_returns_citations() -> None:
     assert router.calls == ["出差住宿标准是多少？"]
 
 
-def test_returns_unavailable_without_citations() -> None:
+def test_returns_draft_clarification_without_citations() -> None:
+    clarification = "请补充采购事项、数量和预计单价。"
     router = FakeAgentRouter(
         AgentRouteResult(
             request="帮我生成采购申请草稿。",
@@ -118,8 +130,14 @@ def test_returns_unavailable_without_citations() -> None:
                 confidence=0.96,
                 reason="请求生成采购申请草稿",
             ),
-            status=AgentResponseStatus.UNAVAILABLE,
-            reply="申请草稿生成能力暂不可用。",
+            status=AgentResponseStatus.NEEDS_CLARIFICATION,
+            reply=clarification,
+            application_draft=DraftGenerationResult(
+                application_type=ApplicationType.PURCHASE,
+                draft=None,
+                clarification_question=clarification,
+                citations=(),
+            ),
         )
     )
     _use_fake_router(router)
@@ -131,8 +149,163 @@ def test_returns_unavailable_without_citations() -> None:
         )
 
     assert response.status_code == 200
-    assert response.json()["status"] == "unavailable"
-    assert response.json()["citations"] == []
+    payload = response.json()
+    assert payload["status"] == "needs_clarification"
+    assert payload["citations"] == []
+    assert payload["application_draft"] == {
+        "application_type": "purchase",
+        "clarification_question": clarification,
+    }
+
+
+def test_serializes_structured_application_draft() -> None:
+    citation = PolicyCitation(
+        source_id="S1",
+        chunk_id="purchase-draft-001",
+        document_title="采购管理办法",
+        chapter_title="第三章 采购申请",
+        article_label="第九条",
+        article_title="采购申请必填信息",
+        score=1.0,
+    )
+    material_check = MaterialCheckResult(
+        application_type=ApplicationType.PURCHASE,
+        mode=MaterialCheckMode.COMPARISON,
+        required_materials=(
+            MaterialRequirement(
+                material_type="product_specification",
+                display_name="产品规格说明",
+                reason="货物采购需要产品规格说明。",
+            ),
+        ),
+        provided_materials=(
+            ProvidedMaterial(
+                material_type="product_specification",
+                display_name="产品规格说明",
+                provided_count=1,
+            ),
+        ),
+        missing_materials=(),
+        materials_complete=True,
+        clarification_question=None,
+        notes=(),
+        citations=(citation,),
+    )
+    approval_check = ApprovalCheckResult(
+        application_type=ApprovalApplicationType.PURCHASE,
+        approval_level=ApprovalLevel.GENERAL_PURCHASE,
+        amount=Decimal(6000),
+        leave_days=None,
+        steps=(
+            ApprovalStep(
+                sequence=1,
+                approver=ApproverCode.DIRECT_MANAGER,
+                display_name="直属经理",
+                action=ApprovalAction.APPROVE,
+                reason="制度要求。",
+            ),
+        ),
+        special_conditions=(),
+        clarification_question=None,
+        notes=(),
+        citations=(citation,),
+    )
+    draft = ApplicationDraft(
+        draft_id="PURCHASE-DRAFT-ABC123",
+        application_type=ApplicationType.PURCHASE,
+        title="采购申请草稿",
+        status=DraftStatus.WAITING_FOR_CONFIRMATION,
+        applicant=DraftUserContext(
+            employee_id="DEMO-EMP-001",
+            employee_name="演示用户",
+            department="演示部门",
+            roles=("EMPLOYEE",),
+            region="中国大陆",
+            identity_source="trusted_demo_context",
+        ),
+        fields=(
+            DraftField(
+                field_name="item_name",
+                display_name="采购事项",
+                value="办公显示器",
+                source=DraftFieldSource.USER_INPUT,
+            ),
+            DraftField(
+                field_name="estimated_total_amount",
+                display_name="预计总金额（元）",
+                value=Decimal(6000),
+                source=DraftFieldSource.CALCULATED,
+            ),
+        ),
+        missing_fields=(),
+        material_check=material_check,
+        approval_check=approval_check,
+        policy_snapshots=(
+            DraftPolicySnapshot(
+                document_id="PROCUREMENT_POLICY_001",
+                document_title="采购管理办法",
+                version="1.0",
+                effective_date=date(2026, 1, 1),
+            ),
+        ),
+        validation_issues=(),
+        summary_lines=("采购事项：办公显示器", "预计总金额：6,000元"),
+        warnings=("草稿尚未确认，也没有提交审批。",),
+        ready_for_confirmation=True,
+        confirmation_required=True,
+        user_confirmed=False,
+        submitted=False,
+        audit_metadata=DraftAuditMetadata(
+            session_id="STATELESS-DEMO",
+            request_id="REQUEST-ABC123",
+            idempotency_key="draft:purchase:ABC123",
+            created_at=datetime(2026, 8, 7, 10, 30, tzinfo=UTC),
+            created_by="DEMO-EMP-001",
+            identity_source="trusted_demo_context",
+            persisted=False,
+        ),
+    )
+    route_result = AgentRouteResult(
+        request="帮我生成采购申请草稿。",
+        classification=IntentClassification(
+            intent=IntentType.DRAFT_GENERATION,
+            confidence=0.99,
+            reason="生成采购申请草稿",
+        ),
+        status=AgentResponseStatus.COMPLETED,
+        reply="已生成采购申请草稿。[S1]",
+        citations=(citation,),
+        application_draft=DraftGenerationResult(
+            application_type=ApplicationType.PURCHASE,
+            draft=draft,
+            clarification_question=None,
+            citations=(citation,),
+        ),
+    )
+    _use_fake_router(FakeAgentRouter(route_result))
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/agent/messages",
+            json={"message": "帮我生成采购申请草稿。"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "completed"
+    assert payload["citations"] == ["S1"]
+    draft_payload = payload["application_draft"]["draft"]
+    assert draft_payload["draft_id"] == "PURCHASE-DRAFT-ABC123"
+    assert draft_payload["status"] == "waiting_for_confirmation"
+    assert draft_payload["applicant"]["employee_id"] == "DEMO-EMP-001"
+    assert draft_payload["fields"][1]["value"] == "6000"
+    assert draft_payload["material_check"]["materials_complete"] is True
+    assert draft_payload["approval_check"]["amount"] == "6000"
+    assert draft_payload["policy_snapshots"][0]["version"] == "1.0"
+    assert draft_payload["ready_for_confirmation"] is True
+    assert draft_payload["user_confirmed"] is False
+    assert draft_payload["submitted"] is False
+    assert draft_payload["audit_metadata"]["persisted"] is False
 
 
 def test_serializes_structured_approval_check_result() -> None:
