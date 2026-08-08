@@ -1602,6 +1602,7 @@ class ApplicationDraftGenerator:
         digest = sha256(
             (
                 f"{application_type.value}\0{self._user_context.employee_id}\0"
+                f"{active_session_id}\0"
                 f"{normalized_input}"
             ).encode()
         ).hexdigest().upper()
@@ -1766,6 +1767,8 @@ class ApplicationDraftGenerator:
             cancelled_at=None,
             user_confirmed=False,
             submitted=False,
+            submission_id=None,
+            submitted_at=None,
         )
         revised_result = replace(
             revised_answer.result,

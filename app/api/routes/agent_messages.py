@@ -30,11 +30,17 @@ from app.api.schemas.agent_messages import (
     MaterialRequirementResponse,
     MissingDraftFieldResponse,
     MissingMaterialResponse,
+    MockApprovalSubmissionResponse,
     ProvidedMaterialResponse,
+    SubmissionAuditRecordResponse,
+    SubmittedApplicationResponse,
+    SubmittedApprovalStepResponse,
+    SubmittedApprovalWorkflowResponse,
 )
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
 from app.tools.material_models import MaterialCheckResult
+from app.tools.submission_models import MockApprovalSubmissionResult
 
 router = APIRouter(
     prefix="/agent/messages",
@@ -191,12 +197,74 @@ def _draft_response(
             revision=draft.revision,
             confirmed_at=draft.confirmed_at,
             cancelled_at=draft.cancelled_at,
+            submission_id=draft.submission_id,
+            submitted_at=draft.submitted_at,
         )
 
     return DraftGenerationResponse(
         application_type=result.application_type,
         draft=draft_response,
         clarification_question=result.clarification_question,
+    )
+
+
+def _submission_response(
+    result: MockApprovalSubmissionResult,
+) -> MockApprovalSubmissionResponse:
+    submission = result.submission_result
+    workflow = result.approval_workflow
+    audit = result.audit_record
+    return MockApprovalSubmissionResponse(
+        success=result.success,
+        duplicate_submission=result.duplicate_submission,
+        submission_result=SubmittedApplicationResponse(
+            submission_id=submission.submission_id,
+            draft_id=submission.draft_id,
+            application_type=submission.application_type,
+            status=submission.status,
+            submitted_at=submission.submitted_at,
+            submitted_by=submission.submitted_by,
+            idempotency_key=submission.idempotency_key,
+        ),
+        approval_workflow=SubmittedApprovalWorkflowResponse(
+            workflow_id=workflow.workflow_id,
+            current_step=workflow.current_step,
+            steps=[
+                SubmittedApprovalStepResponse(
+                    sequence=step.sequence,
+                    approver=step.approver,
+                    display_name=step.display_name,
+                    status=step.status,
+                )
+                for step in workflow.steps
+            ],
+        ),
+        audit_record=SubmissionAuditRecordResponse(
+            audit_id=audit.audit_id,
+            event=audit.event,
+            session_id=audit.session_id,
+            request_id=audit.request_id,
+            draft_id=audit.draft_id,
+            draft_revision=audit.draft_revision,
+            submission_id=audit.submission_id,
+            submission_idempotency_key=(
+                audit.submission_idempotency_key
+            ),
+            actor_employee_id=audit.actor_employee_id,
+            recorded_at=audit.recorded_at,
+            confirmation_text_recorded=(
+                audit.confirmation_text_recorded
+            ),
+            confirmation_text_sha256=(
+                audit.confirmation_text_sha256
+            ),
+            duplicate_submission=audit.duplicate_submission,
+            sensitive_fields_recorded=(
+                audit.sensitive_fields_recorded
+            ),
+        ),
+        storage_backend=result.storage_backend,
+        survives_process_restart=result.survives_process_restart,
     )
 
 
@@ -287,6 +355,11 @@ async def handle_agent_message(
         material_check=material_check,
         approval_check=approval_check,
         application_draft=application_draft,
+        submission=(
+            _submission_response(result.submission)
+            if result.submission is not None
+            else None
+        ),
         workflow=(
             _workflow_response(result.workflow)
             if result.workflow is not None

@@ -3,6 +3,7 @@ from __future__ import annotations
 from app.agent.workflow import (
     AgentWorkflow,
     ApplicationDraftCreator,
+    ApplicationSubmitter,
     ApprovalChecker,
     IntentDetector,
     MaterialChecker,
@@ -17,6 +18,7 @@ from app.agent.workflow_models import (
     AgentWorkflowStep,
     AgentWorkflowTrace,
 )
+from app.tools.mock_approval_submission import MockApprovalSubmitter
 
 __all__ = [
     "AgentResponseStatus",
@@ -41,6 +43,7 @@ class AgentRouter:
         material_checker: MaterialChecker,
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
+        submission_service: ApplicationSubmitter | None = None,
     ) -> None:
         self._workflow = AgentWorkflow(
             intent_classifier=intent_classifier,
@@ -48,6 +51,9 @@ class AgentRouter:
             material_checker=material_checker,
             approval_checker=approval_checker,
             draft_generator=draft_generator,
+            submission_service=(
+                submission_service or MockApprovalSubmitter()
+            ),
         )
 
     async def route(

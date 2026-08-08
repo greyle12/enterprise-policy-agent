@@ -46,6 +46,16 @@ from app.tools.material_models import (
     MissingMaterial,
     ProvidedMaterial,
 )
+from app.tools.submission_models import (
+    ApprovalWorkflowStepStatus,
+    MockApprovalSubmissionResult,
+    SubmissionAuditEvent,
+    SubmissionAuditRecord,
+    SubmissionStatus,
+    SubmittedApplication,
+    SubmittedApprovalStep,
+    SubmittedApprovalWorkflow,
+)
 
 app = create_app(enable_lifespan=False)
 
@@ -563,6 +573,162 @@ def test_serializes_structured_material_check_result() -> None:
         "materials_complete": False,
         "notes": ["仅根据当前消息中的材料比对。"],
     }
+
+
+def test_serializes_mock_approval_submission_result() -> None:
+    submitted_at = datetime(2026, 8, 8, 10, 30, tzinfo=UTC)
+    submission_id = "MOCK-PUR-20260808-ABC123DEF456"
+    idempotency_key = "submission:PURCHASE-DRAFT-001:r1:abc123"
+    submission = MockApprovalSubmissionResult(
+        success=True,
+        duplicate_submission=False,
+        submission_result=SubmittedApplication(
+            submission_id=submission_id,
+            draft_id="PURCHASE-DRAFT-001",
+            application_type=ApplicationType.PURCHASE,
+            status=SubmissionStatus.APPROVAL_IN_PROGRESS,
+            submitted_at=submitted_at,
+            submitted_by="DEMO-EMP-001",
+            idempotency_key=idempotency_key,
+        ),
+        approval_workflow=SubmittedApprovalWorkflow(
+            workflow_id=f"WF-{submission_id}",
+            current_step=1,
+            steps=(
+                SubmittedApprovalStep(
+                    sequence=1,
+                    approver=ApproverCode.DIRECT_MANAGER,
+                    display_name="直属经理",
+                    status=ApprovalWorkflowStepStatus.PENDING,
+                ),
+                SubmittedApprovalStep(
+                    sequence=2,
+                    approver=ApproverCode.DEPARTMENT_HEAD,
+                    display_name="部门负责人",
+                    status=ApprovalWorkflowStepStatus.WAITING,
+                ),
+            ),
+        ),
+        audit_record=SubmissionAuditRecord(
+            audit_id="AUDIT-001",
+            event=SubmissionAuditEvent.SUBMITTED,
+            session_id="swagger-submit-001",
+            request_id="SUBMIT-REQUEST-001",
+            draft_id="PURCHASE-DRAFT-001",
+            draft_revision=1,
+            submission_id=submission_id,
+            submission_idempotency_key=idempotency_key,
+            actor_employee_id="DEMO-EMP-001",
+            recorded_at=submitted_at,
+            confirmation_text_recorded=True,
+            confirmation_text_sha256="a" * 64,
+            duplicate_submission=False,
+        ),
+    )
+    router = FakeAgentRouter(
+        AgentRouteResult(
+            request="提交审批",
+            classification=IntentClassification(
+                intent=IntentType.DRAFT_SUBMISSION,
+                confidence=1.0,
+                reason="用户明确提交已确认草稿。",
+            ),
+            status=AgentResponseStatus.SUBMITTED,
+            reply=f"草稿已成功模拟提交审批。模拟审批单号：{submission_id}。",
+            submission=submission,
+            workflow=AgentWorkflowTrace(
+                name="enterprise_policy_workflow",
+                version="1.2",
+                steps=(
+                    AgentWorkflowStep(
+                        sequence=1,
+                        node=AgentWorkflowNode.RESOLVE_TURN,
+                        outcome="submit_draft",
+                    ),
+                    AgentWorkflowStep(
+                        sequence=2,
+                        node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                        outcome="submitted",
+                    ),
+                ),
+                terminal_node=AgentWorkflowNode.SUBMIT_APPROVAL,
+            ),
+            session=AgentSessionInfo(
+                session_id="swagger-submit-001",
+                turn_number=3,
+                phase=AgentSessionPhase.SUBMITTED,
+                active_draft_id="PURCHASE-DRAFT-001",
+                draft_revision=1,
+                pending_confirmation=False,
+            ),
+        )
+    )
+    _use_fake_router(router)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/agent/messages",
+            json={
+                "message": "提交审批",
+                "session_id": "swagger-submit-001",
+            },
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["status"] == "submitted"
+    assert payload["classification"]["intent"] == "draft_submission"
+    assert payload["submission"] == {
+        "success": True,
+        "duplicate_submission": False,
+        "submission_result": {
+            "submission_id": submission_id,
+            "draft_id": "PURCHASE-DRAFT-001",
+            "application_type": "purchase",
+            "status": "approval_in_progress",
+            "submitted_at": "2026-08-08T10:30:00Z",
+            "submitted_by": "DEMO-EMP-001",
+            "idempotency_key": idempotency_key,
+        },
+        "approval_workflow": {
+            "workflow_id": f"WF-{submission_id}",
+            "current_step": 1,
+            "steps": [
+                {
+                    "sequence": 1,
+                    "approver": "DIRECT_MANAGER",
+                    "display_name": "直属经理",
+                    "status": "pending",
+                },
+                {
+                    "sequence": 2,
+                    "approver": "DEPARTMENT_HEAD",
+                    "display_name": "部门负责人",
+                    "status": "waiting",
+                },
+            ],
+        },
+        "audit_record": {
+            "audit_id": "AUDIT-001",
+            "event": "submitted",
+            "session_id": "swagger-submit-001",
+            "request_id": "SUBMIT-REQUEST-001",
+            "draft_id": "PURCHASE-DRAFT-001",
+            "draft_revision": 1,
+            "submission_id": submission_id,
+            "submission_idempotency_key": idempotency_key,
+            "actor_employee_id": "DEMO-EMP-001",
+            "recorded_at": "2026-08-08T10:30:00Z",
+            "confirmation_text_recorded": True,
+            "confirmation_text_sha256": "a" * 64,
+            "duplicate_submission": False,
+            "sensitive_fields_recorded": False,
+        },
+        "storage_backend": "in_memory",
+        "survives_process_restart": False,
+    }
+    assert payload["session"]["phase"] == "submitted"
+    assert payload["workflow"]["terminal_node"] == "submit_approval"
 
 
 def test_rejects_blank_agent_message() -> None:

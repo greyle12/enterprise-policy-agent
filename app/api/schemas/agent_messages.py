@@ -27,6 +27,11 @@ from app.tools.material_models import (
     ApplicationType,
     MaterialCheckMode,
 )
+from app.tools.submission_models import (
+    ApprovalWorkflowStepStatus,
+    SubmissionAuditEvent,
+    SubmissionStatus,
+)
 
 _MessageText = Annotated[
     str,
@@ -210,6 +215,8 @@ class ApplicationDraftResponse(BaseModel):
     revision: int
     confirmed_at: datetime | None
     cancelled_at: datetime | None
+    submission_id: str | None
+    submitted_at: datetime | None
 
 
 class DraftGenerationResponse(BaseModel):
@@ -218,6 +225,66 @@ class DraftGenerationResponse(BaseModel):
     application_type: ApplicationType | None
     draft: ApplicationDraftResponse | None
     clarification_question: str | None
+
+
+class SubmittedApplicationResponse(BaseModel):
+    """首次模拟提交生成的正式申请信息。"""
+
+    submission_id: str
+    draft_id: str
+    application_type: ApplicationType
+    status: SubmissionStatus
+    submitted_at: datetime
+    submitted_by: str
+    idempotency_key: str
+
+
+class SubmittedApprovalStepResponse(BaseModel):
+    """提交后模拟审批流中的一个节点。"""
+
+    sequence: int
+    approver: ApproverCode
+    display_name: str
+    status: ApprovalWorkflowStepStatus
+
+
+class SubmittedApprovalWorkflowResponse(BaseModel):
+    """提交时冻结的模拟审批路线。"""
+
+    workflow_id: str
+    current_step: int
+    steps: list[SubmittedApprovalStepResponse]
+
+
+class SubmissionAuditRecordResponse(BaseModel):
+    """不含草稿正文和敏感字段的提交审计事件。"""
+
+    audit_id: str
+    event: SubmissionAuditEvent
+    session_id: str
+    request_id: str
+    draft_id: str
+    draft_revision: int
+    submission_id: str
+    submission_idempotency_key: str
+    actor_employee_id: str
+    recorded_at: datetime
+    confirmation_text_recorded: bool
+    confirmation_text_sha256: str
+    duplicate_submission: bool
+    sensitive_fields_recorded: bool
+
+
+class MockApprovalSubmissionResponse(BaseModel):
+    """模拟提交工具的完整结构化结果。"""
+
+    success: bool
+    duplicate_submission: bool
+    submission_result: SubmittedApplicationResponse
+    approval_workflow: SubmittedApprovalWorkflowResponse
+    audit_record: SubmissionAuditRecordResponse
+    storage_backend: str
+    survives_process_restart: bool
 
 
 class AgentWorkflowStepResponse(BaseModel):
@@ -262,5 +329,6 @@ class AgentMessageResponse(BaseModel):
     material_check: MaterialCheckResponse | None = None
     approval_check: ApprovalCheckResponse | None = None
     application_draft: DraftGenerationResponse | None = None
+    submission: MockApprovalSubmissionResponse | None = None
     workflow: AgentWorkflowTraceResponse | None = None
     session: AgentSessionResponse | None = None

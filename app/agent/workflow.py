@@ -5,6 +5,7 @@ import re
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 from datetime import UTC, datetime
+from hashlib import sha256
 from typing import Protocol, cast
 from uuid import uuid4
 
@@ -32,11 +33,17 @@ from app.tools.draft_models import (
     DraftGenerationAnswer,
     DraftGenerationResult,
     DraftStatus,
+    DraftUserContext,
 )
 from app.tools.material_models import MaterialCheckAnswer
+from app.tools.mock_approval_submission import (
+    SubmissionConflictError,
+    SubmissionPreconditionError,
+)
+from app.tools.submission_models import MockApprovalSubmissionResult
 
 _WORKFLOW_NAME = "enterprise_policy_workflow"
-_WORKFLOW_VERSION = "1.1"
+_WORKFLOW_VERSION = "1.2"
 _SESSION_ID_PATTERN = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}"
 )
@@ -73,6 +80,14 @@ _CHECKPOINT_ALLOWED_TYPES = (
     ("app.tools.material_models", "MaterialRequirement"),
     ("app.tools.material_models", "MissingMaterial"),
     ("app.tools.material_models", "ProvidedMaterial"),
+    ("app.tools.submission_models", "ApprovalWorkflowStepStatus"),
+    ("app.tools.submission_models", "MockApprovalSubmissionResult"),
+    ("app.tools.submission_models", "SubmissionAuditEvent"),
+    ("app.tools.submission_models", "SubmissionAuditRecord"),
+    ("app.tools.submission_models", "SubmissionStatus"),
+    ("app.tools.submission_models", "SubmittedApplication"),
+    ("app.tools.submission_models", "SubmittedApprovalStep"),
+    ("app.tools.submission_models", "SubmittedApprovalWorkflow"),
 )
 
 _UNKNOWN_REPLY = (
@@ -97,8 +112,15 @@ _CONFIRM_COMMANDS = {
     "确认草稿",
     "确认无误",
     "我确认",
-    "确认提交",
     "同意",
+}
+_SUBMIT_COMMANDS = {
+    "提交",
+    "提交审批",
+    "提交申请",
+    "正式提交",
+    "确认提交",
+    "确认提交审批",
 }
 _CANCEL_COMMANDS = {
     "取消",
@@ -203,6 +225,24 @@ class ApplicationDraftCreator(Protocol):
         ...
 
 
+class ApplicationSubmitter(Protocol):
+    """工作流依赖的模拟审批提交接口。"""
+
+    async def submit(
+        self,
+        draft: ApplicationDraft,
+        *,
+        confirmation_text: str,
+        user_context: DraftUserContext,
+        session_id: str,
+        request_id: str,
+        submission_idempotency_key: str,
+    ) -> MockApprovalSubmissionResult:
+        """验证已确认草稿并执行一次幂等的模拟提交。"""
+
+        ...
+
+
 def _request_from(state: AgentWorkflowState) -> str:
     request = state.get("request")
     if not isinstance(request, str) or not request:
@@ -262,6 +302,8 @@ def _explicit_draft_action(
     text: str,
 ) -> AgentTurnAction | None:
     command = _normalized_command(text)
+    if command in _SUBMIT_COMMANDS:
+        return AgentTurnAction.SUBMIT_DRAFT
     if command in _CONFIRM_COMMANDS:
         return AgentTurnAction.CONFIRM_DRAFT
     if command in _CANCEL_COMMANDS:
@@ -286,10 +328,13 @@ def _infer_turn_action(
     text: str,
     active: DraftGenerationResult | None,
 ) -> AgentTurnAction:
+    explicit = _explicit_draft_action(text)
+    if explicit is AgentTurnAction.SUBMIT_DRAFT:
+        return explicit
+
     if active is None or active.draft is None:
         return AgentTurnAction.NEW_REQUEST
 
-    explicit = _explicit_draft_action(text)
     if explicit is not None:
         return explicit
 
@@ -317,6 +362,11 @@ def _classification_for_action(
             IntentType.DRAFT_CONFIRMATION,
             "用户明确确认当前会话中的草稿。",
         )
+    if action is AgentTurnAction.SUBMIT_DRAFT:
+        return _synthetic_classification(
+            IntentType.DRAFT_SUBMISSION,
+            "用户明确要求提交当前会话中已经确认的草稿。",
+        )
     if action is AgentTurnAction.CANCEL_DRAFT:
         return _synthetic_classification(
             IntentType.DRAFT_CANCELLATION,
@@ -333,6 +383,8 @@ def _phase_for_draft(
         return AgentSessionPhase.COLLECTING_INFORMATION
     if draft.status is DraftStatus.CONFIRMED:
         return AgentSessionPhase.CONFIRMED
+    if draft.status is DraftStatus.SUBMITTED:
+        return AgentSessionPhase.SUBMITTED
     if draft.status is DraftStatus.CANCELLED:
         return AgentSessionPhase.CANCELLED
     if draft.ready_for_confirmation:
@@ -364,6 +416,26 @@ def _can_await_confirmation(
     )
 
 
+def _submission_idempotency_key(draft: ApplicationDraft) -> str:
+    digest = sha256(
+        (
+            f"{draft.audit_metadata.idempotency_key}\0"
+            f"{draft.draft_id}\0{draft.revision}\0submit"
+        ).encode()
+    ).hexdigest()[:24]
+    return f"submission:{draft.draft_id}:r{draft.revision}:{digest}"
+
+
+def _submission_request_id(state: AgentWorkflowState) -> str:
+    digest = sha256(
+        (
+            f"{_session_id_from(state)}\0"
+            f"{state.get('turn_number', 0)}\0{_request_from(state)}"
+        ).encode()
+    ).hexdigest()[:16].upper()
+    return f"SUBMIT-REQUEST-{digest}"
+
+
 class AgentWorkflow:
     """用 checkpoint、人工中断和条件路由编排多轮办理。"""
 
@@ -375,6 +447,7 @@ class AgentWorkflow:
         material_checker: MaterialChecker,
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
+        submission_service: ApplicationSubmitter,
         checkpointer: InMemorySaver | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
@@ -383,6 +456,7 @@ class AgentWorkflow:
         self._material_checker = material_checker
         self._approval_checker = approval_checker
         self._draft_generator = draft_generator
+        self._submission_service = submission_service
         self._checkpointer = checkpointer or InMemorySaver(
             serde=JsonPlusSerializer(
                 allowed_msgpack_modules=(
@@ -437,6 +511,10 @@ class AgentWorkflow:
             self._confirm_draft,
         )
         builder.add_node(
+            AgentWorkflowNode.SUBMIT_APPROVAL.value,
+            self._submit_approval,
+        )
+        builder.add_node(
             AgentWorkflowNode.CANCEL_DRAFT.value,
             self._cancel_draft,
         )
@@ -461,6 +539,9 @@ class AgentWorkflow:
                 ),
                 AgentTurnAction.CONFIRM_DRAFT.value: (
                     AgentWorkflowNode.CONFIRM_DRAFT.value
+                ),
+                AgentTurnAction.SUBMIT_DRAFT.value: (
+                    AgentWorkflowNode.SUBMIT_APPROVAL.value
                 ),
                 AgentTurnAction.CANCEL_DRAFT.value: (
                     AgentWorkflowNode.CANCEL_DRAFT.value
@@ -501,6 +582,17 @@ class AgentWorkflow:
                 },
             )
 
+        builder.add_conditional_edges(
+            AgentWorkflowNode.SUBMIT_APPROVAL.value,
+            self._select_after_submission,
+            {
+                AgentWorkflowNode.AWAIT_CONFIRMATION.value: (
+                    AgentWorkflowNode.AWAIT_CONFIRMATION.value
+                ),
+                END: END,
+            },
+        )
+
         builder.add_edge(
             AgentWorkflowNode.AWAIT_CONFIRMATION.value,
             AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value,
@@ -514,6 +606,9 @@ class AgentWorkflow:
                 ),
                 AgentTurnAction.CONFIRM_DRAFT.value: (
                     AgentWorkflowNode.CONFIRM_DRAFT.value
+                ),
+                AgentTurnAction.SUBMIT_DRAFT.value: (
+                    AgentWorkflowNode.SUBMIT_APPROVAL.value
                 ),
                 AgentTurnAction.CANCEL_DRAFT.value: (
                     AgentWorkflowNode.CANCEL_DRAFT.value
@@ -552,6 +647,7 @@ class AgentWorkflow:
             "material_check": None,
             "approval_check": None,
             "application_draft": None,
+            "submission": None,
             "trace_steps": (step,),
         }
 
@@ -594,6 +690,15 @@ class AgentWorkflow:
     @staticmethod
     def _select_after_draft(state: AgentWorkflowState) -> str:
         if _can_await_confirmation(state):
+            return AgentWorkflowNode.AWAIT_CONFIRMATION.value
+        return END
+
+    @staticmethod
+    def _select_after_submission(state: AgentWorkflowState) -> str:
+        if (
+            state.get("session_phase")
+            is AgentSessionPhase.AWAITING_CONFIRMATION
+        ):
             return AgentWorkflowNode.AWAIT_CONFIRMATION.value
         return END
 
@@ -720,6 +825,28 @@ class AgentWorkflow:
                 ),
             }
 
+        if active.draft.status is DraftStatus.SUBMITTED:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            return {
+                "classification": _synthetic_classification(
+                    IntentType.DRAFT_UPDATE,
+                    "已提交草稿不可继续修改。",
+                ),
+                "status": status,
+                "reply": (
+                    "当前草稿已经提交审批，不能再修改。"
+                    "如需变更，请新建一份申请草稿。"
+                ),
+                "citations": active.citations,
+                "application_draft": active,
+                "session_phase": AgentSessionPhase.SUBMITTED,
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.UPDATE_DRAFT,
+                    outcome="rejected_after_submission",
+                ),
+            }
+
         request = _request_from(state)
         messages = state.get("draft_messages", ())
         answer = await self._draft_generator.revise(
@@ -793,6 +920,7 @@ class AgentWorkflow:
                 "revision": active.draft.revision,
                 "allowed_actions": [
                     AgentTurnAction.CONFIRM_DRAFT.value,
+                    AgentTurnAction.SUBMIT_DRAFT.value,
                     AgentTurnAction.UPDATE_DRAFT.value,
                     AgentTurnAction.CANCEL_DRAFT.value,
                 ],
@@ -837,6 +965,15 @@ class AgentWorkflow:
             phase = AgentSessionPhase.IDLE
             updated = None
             citations = ()
+        elif active.draft.status is DraftStatus.SUBMITTED:
+            status = AgentResponseStatus.SUBMITTED
+            reply = (
+                "当前草稿已经提交审批，无需再次确认。"
+                f"模拟审批单号：{active.draft.submission_id}。"
+            )
+            phase = AgentSessionPhase.SUBMITTED
+            updated = active
+            citations = active.citations
         elif active.draft.status is DraftStatus.CANCELLED:
             reply = "当前草稿已经取消，不能再确认；请重新生成草稿。"
             phase = AgentSessionPhase.CANCELLED
@@ -865,10 +1002,17 @@ class AgentWorkflow:
                 submitted=False,
                 confirmed_at=confirmed_at,
                 cancelled_at=None,
+                submission_id=None,
+                submitted_at=None,
                 warnings=tuple(
                     dict.fromkeys(
                         (
-                            *active.draft.warnings,
+                            *(
+                                warning
+                                for warning in active.draft.warnings
+                                if warning
+                                != "草稿尚未确认，也没有提交审批。"
+                            ),
                             "草稿已由用户确认，但尚未提交审批。",
                         )
                     )
@@ -911,6 +1055,187 @@ class AgentWorkflow:
             )
         return update
 
+    async def _submit_approval(
+        self,
+        state: AgentWorkflowState,
+    ) -> AgentWorkflowState:
+        active = _active_draft_from(state)
+        classification = _synthetic_classification(
+            IntentType.DRAFT_SUBMISSION,
+            "用户明确要求提交当前会话中已经确认的草稿。",
+        )
+        if active is None or active.draft is None:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            return {
+                "classification": classification,
+                "status": status,
+                "reply": "当前会话没有可提交的草稿，请先生成并确认草稿。",
+                "citations": (),
+                "session_phase": AgentSessionPhase.IDLE,
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                    outcome="draft_missing",
+                ),
+            }
+
+        draft = active.draft
+        if draft.status is DraftStatus.CANCELLED:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            return {
+                "classification": classification,
+                "status": status,
+                "reply": "当前草稿已经取消，不能提交；请重新生成草稿。",
+                "citations": active.citations,
+                "application_draft": active,
+                "session_phase": AgentSessionPhase.CANCELLED,
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                    outcome="draft_cancelled",
+                ),
+            }
+
+        if draft.status not in {
+            DraftStatus.CONFIRMED,
+            DraftStatus.SUBMITTED,
+        }:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            phase = _phase_for_draft(active)
+            reply = (
+                "草稿尚未经过明确确认，请先回复“确认草稿”，"
+                "确认成功后再单独回复“提交审批”。"
+                if draft.ready_for_confirmation
+                else (
+                    active.clarification_question
+                    or "草稿信息或材料尚未齐全，暂时不能提交审批。"
+                )
+            )
+            return {
+                "classification": classification,
+                "status": status,
+                "reply": reply,
+                "citations": active.citations,
+                "application_draft": active,
+                "session_phase": phase,
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                    outcome="draft_confirmation_required",
+                ),
+            }
+
+        try:
+            submission = await self._submission_service.submit(
+                draft,
+                confirmation_text=_request_from(state),
+                user_context=draft.applicant,
+                session_id=_session_id_from(state),
+                request_id=_submission_request_id(state),
+                submission_idempotency_key=(
+                    _submission_idempotency_key(draft)
+                ),
+            )
+        except SubmissionPreconditionError as exc:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            return {
+                "classification": classification,
+                "status": status,
+                "reply": exc.user_message,
+                "citations": active.citations,
+                "application_draft": active,
+                "session_phase": _phase_for_draft(active),
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                    outcome=exc.code,
+                ),
+            }
+        except SubmissionConflictError:
+            status = AgentResponseStatus.UNAVAILABLE
+            return {
+                "classification": classification,
+                "status": status,
+                "reply": (
+                    "检测到提交幂等状态冲突，未创建新的审批申请。"
+                    "请保留当前会话并联系系统管理员检查。"
+                ),
+                "citations": active.citations,
+                "application_draft": active,
+                "session_phase": _phase_for_draft(active),
+                "trace_steps": _trace_step(
+                    state,
+                    node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                    outcome="idempotency_conflict",
+                ),
+            }
+
+        submitted = submission.submission_result
+        submitted_draft = replace(
+            draft,
+            status=DraftStatus.SUBMITTED,
+            ready_for_confirmation=False,
+            confirmation_required=False,
+            user_confirmed=True,
+            submitted=True,
+            submission_id=submitted.submission_id,
+            submitted_at=submitted.submitted_at,
+            cancelled_at=None,
+            warnings=tuple(
+                dict.fromkeys(
+                    (
+                        *(
+                            warning
+                            for warning in draft.warnings
+                            if warning
+                            not in {
+                                "草稿尚未确认，也没有提交审批。",
+                                "草稿已由用户确认，但尚未提交审批。",
+                            }
+                        ),
+                        "草稿已模拟提交审批；提交和审计记录仅保存在当前进程内。",
+                    )
+                )
+            ),
+        )
+        updated = replace(
+            active,
+            draft=submitted_draft,
+            clarification_question=None,
+        )
+        status = AgentResponseStatus.SUBMITTED
+        reply = (
+            (
+                "该草稿此前已经提交，本次请求按幂等规则返回首次提交结果，"
+                "没有创建新的审批申请。"
+            )
+            if submission.duplicate_submission
+            else "草稿已成功模拟提交审批。"
+        )
+        reply += (
+            f"模拟审批单号：{submitted.submission_id}；"
+            f"当前状态：{submitted.status.value}。"
+        )
+        return {
+            "classification": classification,
+            "status": status,
+            "reply": reply,
+            "citations": updated.citations,
+            "application_draft": updated,
+            "active_draft": updated,
+            "submission": submission,
+            "session_phase": AgentSessionPhase.SUBMITTED,
+            "trace_steps": _trace_step(
+                state,
+                node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                outcome=(
+                    "idempotent_replay"
+                    if submission.duplicate_submission
+                    else status.value
+                ),
+            ),
+        }
+
     async def _cancel_draft(
         self,
         state: AgentWorkflowState,
@@ -922,6 +1247,15 @@ class AgentWorkflow:
             updated = None
             citations = ()
             phase = AgentSessionPhase.IDLE
+        elif active.draft.status is DraftStatus.SUBMITTED:
+            status = AgentResponseStatus.NEEDS_CLARIFICATION
+            reply = (
+                "当前草稿已经提交审批，不能再按草稿取消。"
+                "本阶段尚未实现审批撤回。"
+            )
+            updated = active
+            citations = active.citations
+            phase = AgentSessionPhase.SUBMITTED
         else:
             cancelled_at = self._clock()
             if cancelled_at.tzinfo is None:
@@ -935,6 +1269,8 @@ class AgentWorkflow:
                 submitted=False,
                 confirmed_at=None,
                 cancelled_at=cancelled_at,
+                submission_id=None,
+                submitted_at=None,
             )
             updated = replace(
                 active,
@@ -1071,6 +1407,7 @@ class AgentWorkflow:
             material_check=state.get("material_check"),
             approval_check=state.get("approval_check"),
             application_draft=state.get("application_draft"),
+            submission=state.get("submission"),
             workflow=AgentWorkflowTrace(
                 name=_WORKFLOW_NAME,
                 version=_WORKFLOW_VERSION,
@@ -1170,6 +1507,7 @@ class AgentWorkflow:
                     "material_check": None,
                     "approval_check": None,
                     "application_draft": None,
+                    "submission": None,
                     "trace_steps": (
                         AgentWorkflowStep(
                             sequence=1,

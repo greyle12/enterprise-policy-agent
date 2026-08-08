@@ -15,6 +15,7 @@ class IntentType(StrEnum):
     DRAFT_GENERATION = "draft_generation"
     DRAFT_UPDATE = "draft_update"
     DRAFT_CONFIRMATION = "draft_confirmation"
+    DRAFT_SUBMISSION = "draft_submission"
     DRAFT_CANCELLATION = "draft_cancellation"
     UNKNOWN = "unknown"
 

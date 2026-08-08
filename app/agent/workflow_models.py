@@ -9,6 +9,7 @@ from app.rag.policy_context import PolicyCitation
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
 from app.tools.material_models import MaterialCheckResult
+from app.tools.submission_models import MockApprovalSubmissionResult
 
 
 class AgentResponseStatus(StrEnum):
@@ -18,6 +19,7 @@ class AgentResponseStatus(StrEnum):
     NEEDS_CLARIFICATION = "needs_clarification"
     AWAITING_CONFIRMATION = "awaiting_confirmation"
     CONFIRMED = "confirmed"
+    SUBMITTED = "submitted"
     CANCELLED = "cancelled"
     UNAVAILABLE = "unavailable"
 
@@ -29,6 +31,7 @@ class AgentSessionPhase(StrEnum):
     COLLECTING_INFORMATION = "collecting_information"
     AWAITING_CONFIRMATION = "awaiting_confirmation"
     CONFIRMED = "confirmed"
+    SUBMITTED = "submitted"
     CANCELLED = "cancelled"
 
 
@@ -38,6 +41,7 @@ class AgentTurnAction(StrEnum):
     NEW_REQUEST = "new_request"
     UPDATE_DRAFT = "update_draft"
     CONFIRM_DRAFT = "confirm_draft"
+    SUBMIT_DRAFT = "submit_draft"
     CANCEL_DRAFT = "cancel_draft"
 
 
@@ -54,6 +58,7 @@ class AgentWorkflowNode(StrEnum):
     AWAIT_CONFIRMATION = "await_confirmation"
     HUMAN_CONFIRMATION_GATE = "human_confirmation_gate"
     CONFIRM_DRAFT = "confirm_draft"
+    SUBMIT_APPROVAL = "submit_approval"
     CANCEL_DRAFT = "cancel_draft"
     REQUEST_CLARIFICATION = "request_clarification"
 
@@ -104,6 +109,7 @@ class AgentRouteResult:
     material_check: MaterialCheckResult | None = None
     approval_check: ApprovalCheckResult | None = None
     application_draft: DraftGenerationResult | None = None
+    submission: MockApprovalSubmissionResult | None = None
     workflow: AgentWorkflowTrace | None = None
     session: AgentSessionInfo | None = None
 
@@ -123,6 +129,7 @@ class AgentWorkflowState(TypedDict, total=False):
     material_check: MaterialCheckResult | None
     approval_check: ApprovalCheckResult | None
     application_draft: DraftGenerationResult | None
+    submission: MockApprovalSubmissionResult | None
     active_draft: DraftGenerationResult | None
     draft_messages: tuple[str, ...]
     trace_steps: tuple[AgentWorkflowStep, ...]

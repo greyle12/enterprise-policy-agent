@@ -19,6 +19,7 @@ class DraftStatus(StrEnum):
     WAITING_FOR_MATERIALS = "waiting_for_materials"
     WAITING_FOR_CONFIRMATION = "waiting_for_confirmation"
     CONFIRMED = "confirmed"
+    SUBMITTED = "submitted"
     CANCELLED = "cancelled"
 
 
@@ -129,6 +130,8 @@ class ApplicationDraft:
     revision: int = 1
     confirmed_at: datetime | None = None
     cancelled_at: datetime | None = None
+    submission_id: str | None = None
+    submitted_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)
