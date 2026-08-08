@@ -25,28 +25,38 @@ class FakeLLMClient:
     ("response", "expected_intent"),
     [
         (
-            '{"intent":"policy_query","confidence":0.96,'
-            '"reason":"询问住宿制度标准"}',
+            (
+                '{"intent":"policy_query","confidence":0.96,'
+                '"reason":"询问住宿制度标准"}'
+            ),
             IntentType.POLICY_QUERY,
         ),
         (
-            '{"intent":"material_check","confidence":0.95,'
-            '"reason":"询问报销所需材料"}',
+            (
+                '{"intent":"material_check","confidence":0.95,'
+                '"reason":"询问报销所需材料"}'
+            ),
             IntentType.MATERIAL_CHECK,
         ),
         (
-            '{"intent":"approval_query","confidence":0.94,'
-            '"reason":"询问采购审批路径"}',
+            (
+                '{"intent":"approval_query","confidence":0.94,'
+                '"reason":"询问采购审批路径"}'
+            ),
             IntentType.APPROVAL_QUERY,
         ),
         (
-            '{"intent":"draft_generation","confidence":0.93,'
-            '"reason":"要求生成采购申请草稿"}',
+            (
+                '{"intent":"draft_generation","confidence":0.93,'
+                '"reason":"要求生成采购申请草稿"}'
+            ),
             IntentType.DRAFT_GENERATION,
         ),
         (
-            '{"intent":"unknown","confidence":0.91,'
-            '"reason":"与企业制度无关"}',
+            (
+                '{"intent":"unknown","confidence":0.91,'
+                '"reason":"与企业制度无关"}'
+            ),
             IntentType.UNKNOWN,
         ),
     ],
@@ -170,6 +180,31 @@ def test_falls_back_to_unknown_below_confidence_threshold() -> None:
     assert result.intent is IntentType.UNKNOWN
     assert result.confidence == 0.59
     assert "低于阈值" in result.reason
+
+
+@pytest.mark.parametrize(
+    "workflow_only_intent",
+    [
+        "draft_update",
+        "draft_confirmation",
+        "draft_cancellation",
+    ],
+)
+def test_llm_cannot_select_workflow_only_intent(
+    workflow_only_intent: str,
+) -> None:
+    classifier = IntentClassifier(
+        llm_client=FakeLLMClient(
+            "{"
+            f'"intent":"{workflow_only_intent}",'
+            '"confidence":1.0,"reason":"尝试越过会话状态机"}'
+        )
+    )
+
+    result = asyncio.run(classifier.classify("确认草稿"))
+
+    assert result.intent is IntentType.UNKNOWN
+    assert "会话工作流" in result.reason
 
 
 @pytest.mark.parametrize(

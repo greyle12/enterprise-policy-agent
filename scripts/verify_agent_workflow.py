@@ -60,7 +60,7 @@ _CASES = (
     (
         _COMPLETE_PURCHASE_DRAFT,
         IntentType.DRAFT_GENERATION,
-        AgentResponseStatus.COMPLETED,
+        AgentResponseStatus.AWAITING_CONFIRMATION,
     ),
     (
         "给我讲一个笑话。",
@@ -88,7 +88,7 @@ class DeterministicIntentClassifier:
         return IntentClassification(
             intent=intent,
             confidence=1.0,
-            reason="Day 12 确定性工作流验收分类。",
+            reason="确定性工作流验收分类。",
         )
 
 
@@ -132,7 +132,7 @@ def _build_router() -> AgentRouter:
             region="中国大陆",
             identity_source="trusted_demo_context",
         ),
-        session_id="DAY12-VERIFY",
+        session_id="WORKFLOW-VERIFY",
     )
     return AgentRouter(
         intent_classifier=DeterministicIntentClassifier(),
@@ -167,15 +167,26 @@ async def _main() -> None:
             else []
         )
         expected_nodes = [
+            AgentWorkflowNode.RESOLVE_TURN,
             AgentWorkflowNode.CLASSIFY_INTENT,
             expected_action_node,
         ]
+        if expected_status is AgentResponseStatus.AWAITING_CONFIRMATION:
+            expected_nodes.append(
+                AgentWorkflowNode.AWAIT_CONFIRMATION
+            )
+            expected_terminal_node = (
+                AgentWorkflowNode.AWAIT_CONFIRMATION
+            )
+        else:
+            expected_terminal_node = expected_action_node
         passed = (
             result.classification.intent is expected_intent
             and result.status is expected_status
             and actual_nodes == expected_nodes
             and result.workflow is not None
-            and result.workflow.terminal_node is expected_action_node
+            and result.workflow.terminal_node
+            is expected_terminal_node
         )
 
         print(

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 from collections.abc import Callable, Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, date, datetime
 from decimal import Decimal, InvalidOperation
 from hashlib import sha256
@@ -159,6 +159,45 @@ _DATE_PATTERN = re.compile(
     r"(?P<iso>20\d{2}[-/.](?:1[0-2]|0?[1-9])[-/.](?:3[01]|[12]\d|0?[1-9]))"
     r"|(?P<zh>20\d{2}年(?:1[0-2]|0?[1-9])月(?:3[01]|[12]\d|0?[1-9])日)"
 )
+
+_REVISION_WORD_PATTERN = re.compile(
+    r"(?:修改|更改|调整|变更|改)(?:成|为|到)"
+)
+
+_APPLICATION_TYPE_CUES = {
+    ApplicationType.PURCHASE: "采购",
+    ApplicationType.TRAVEL_REIMBURSEMENT: "差旅报销",
+    ApplicationType.LEAVE: "请假",
+    ApplicationType.EXPENSE_REIMBURSEMENT: "费用报销",
+}
+
+_PURCHASE_CATEGORY_TEXT = {
+    "IT_EQUIPMENT": "IT设备",
+    "SERVICE": "服务",
+    "GOODS": "货物",
+}
+
+_LEAVE_TYPE_TEXT = {
+    "SICK_LEAVE": "病假",
+    "MARRIAGE_LEAVE": "婚假",
+    "BEREAVEMENT_LEAVE": "丧假",
+    "PATERNITY_LEAVE": "陪产假",
+    "MATERNITY_LEAVE": "产假",
+    "PARENTAL_LEAVE": "育儿假",
+    "WORK_INJURY_LEAVE": "工伤假",
+    "ANNUAL_LEAVE": "年假",
+    "COMPENSATORY_LEAVE": "调休",
+    "PERSONAL_LEAVE": "事假",
+}
+
+_EXPENSE_CATEGORY_TEXT = {
+    "BUSINESS_ENTERTAINMENT": "业务招待费",
+    "MEETING": "会议费",
+    "TRAINING": "培训费",
+    "OFFICE": "办公费",
+    "COMMUNICATION": "通信费",
+    "LOCAL_TRANSPORTATION": "市内交通费",
+}
 
 
 class DraftPolicyCatalog:
@@ -1095,6 +1134,270 @@ def _format_value(value: str | int | Decimal | bool) -> str:
     return str(value)
 
 
+def _field_map(
+    draft: ApplicationDraft,
+) -> dict[str, DraftField]:
+    return {field.field_name: field for field in draft.fields}
+
+
+def _field_text(
+    fields: dict[str, DraftField],
+    field_name: str,
+) -> str | None:
+    field = fields.get(field_name)
+    if field is None:
+        return None
+    return _format_value(field.value)
+
+
+def _append_labeled(
+    parts: list[str],
+    fields: dict[str, DraftField],
+    field_name: str,
+    label: str,
+) -> None:
+    value = _field_text(fields, field_name)
+    if value is not None:
+        parts.append(f"{label}为{value}")
+
+
+def _purchase_revision_overrides(
+    text: str,
+) -> tuple[DraftField, ...]:
+    """补足原始单轮抽取器无法识别的常见采购修改短句。"""
+
+    overrides: list[DraftField] = []
+    quantity_match = re.search(
+        r"(?:采购数量|数量)\s*(?:修改|更改|调整|变更|改)?"
+        r"(?:成|为|到|是|：|:)?\s*"
+        r"(?P<count>\d+|[一二两三四五六七八九十]+)\s*"
+        r"(?P<unit>台|个|套|件|份)?",
+        text,
+    )
+    if quantity_match is not None:
+        parsed = _parse_small_number(quantity_match.group("count"))
+        if parsed is not None and parsed == parsed.to_integral_value():
+            overrides.append(
+                DraftField(
+                    field_name="quantity",
+                    display_name="采购数量",
+                    value=int(parsed),
+                    source=DraftFieldSource.USER_INPUT,
+                )
+            )
+            unit = quantity_match.group("unit")
+            if unit is not None:
+                overrides.append(
+                    DraftField(
+                        field_name="unit",
+                        display_name="计量单位",
+                        value=unit,
+                        source=DraftFieldSource.USER_INPUT,
+                    )
+                )
+
+    item_match = re.search(
+        r"(?:采购事项|采购物品|物品名称|商品名称)\s*"
+        r"(?:修改|更改|调整|变更|改)?(?:成|为|到|是|：|:)?\s*"
+        rf"(?P<item>{_VALUE_BOUNDARY})",
+        text,
+    )
+    if item_match is not None:
+        item = _normalize_text_value(item_match.group("item"))
+        if item is not None:
+            overrides.append(
+                DraftField(
+                    field_name="item_name",
+                    display_name="采购事项",
+                    value=item,
+                    source=DraftFieldSource.USER_INPUT,
+                )
+            )
+
+    return tuple(overrides)
+
+
+def _normalize_revision_text(text: str) -> str:
+    normalized = text.strip()
+    normalized = _REVISION_WORD_PATTERN.sub("为", normalized)
+    return normalized
+
+
+def _render_purchase_request(
+    fields: dict[str, DraftField],
+) -> str:
+    parts = ["帮我生成采购申请草稿"]
+    item = _field_text(fields, "item_name")
+    quantity = _field_text(fields, "quantity")
+    unit = _field_text(fields, "unit") or "件"
+    if item is not None and quantity is not None:
+        parts.append(f"采购{quantity}{unit}{item}")
+
+    unit_price = _field_text(fields, "estimated_unit_price")
+    if unit_price is not None:
+        parts.append(f"每{unit}{unit_price}元")
+
+    total = fields.get("estimated_total_amount")
+    if total is not None and total.source is DraftFieldSource.USER_INPUT:
+        parts.append(f"预计总金额为{_format_value(total.value)}元")
+
+    _append_labeled(parts, fields, "purpose", "采购目的")
+    category = _field_text(fields, "category")
+    if category is not None:
+        parts.append(
+            "采购类别为"
+            + _PURCHASE_CATEGORY_TEXT.get(category, category)
+        )
+    _append_labeled(parts, fields, "specification", "规格")
+    _append_labeled(parts, fields, "budget_code", "预算编号")
+    _append_labeled(parts, fields, "cost_center", "成本中心")
+    _append_labeled(
+        parts,
+        fields,
+        "expected_delivery_date",
+        "交付日期",
+    )
+    _append_labeled(parts, fields, "delivery_location", "使用地点")
+    _append_labeled(parts, fields, "supplier_name", "推荐供应商")
+    _append_labeled(parts, fields, "supplier_reason", "推荐理由")
+
+    it_field = fields.get("involves_it_or_data")
+    if it_field is not None:
+        parts.append(
+            "涉及信息系统或数据处理"
+            if it_field.value is True
+            else "不涉及信息系统，不涉及数据处理"
+        )
+    emergency_field = fields.get("is_emergency")
+    if emergency_field is not None:
+        parts.append(
+            "紧急采购"
+            if emergency_field.value is True
+            else "普通采购"
+        )
+    return "，".join(parts) + "。"
+
+
+def _render_travel_request(
+    fields: dict[str, DraftField],
+) -> str:
+    parts = ["帮我生成差旅报销草稿"]
+    _append_labeled(
+        parts,
+        fields,
+        "travel_application_id",
+        "出差申请编号",
+    )
+    _append_labeled(parts, fields, "departure_city", "出发地")
+    _append_labeled(parts, fields, "destination_city", "目的地")
+    _append_labeled(parts, fields, "start_date", "开始日期")
+    _append_labeled(parts, fields, "end_date", "结束日期")
+    _append_labeled(parts, fields, "business_purpose", "出差事由")
+    _append_labeled(parts, fields, "project_name", "项目名称")
+    _append_labeled(parts, fields, "cost_center", "成本中心")
+    amount = _field_text(fields, "total_reimbursement_amount")
+    if amount is not None:
+        parts.append(f"报销总金额为{amount}元")
+    _append_labeled(parts, fields, "expense_details", "费用明细")
+    return "，".join(parts) + "。"
+
+
+def _render_leave_request(
+    fields: dict[str, DraftField],
+) -> str:
+    parts = ["帮我生成请假申请草稿"]
+    leave_type = _field_text(fields, "leave_type")
+    leave_days = _field_text(fields, "leave_days")
+    if leave_type is not None:
+        leave_label = _LEAVE_TYPE_TEXT.get(leave_type, leave_type)
+        if leave_days is not None:
+            parts.append(f"请{leave_days}天{leave_label}")
+        else:
+            parts.append(leave_label)
+    _append_labeled(parts, fields, "start_date", "开始日期")
+    _append_labeled(parts, fields, "end_date", "结束日期")
+
+    start_period = _field_text(fields, "start_period")
+    end_period = _field_text(fields, "end_period")
+    if start_period == "FULL_DAY" and end_period == "FULL_DAY":
+        parts.append("全天")
+    else:
+        _append_labeled(parts, fields, "start_period", "开始时段")
+        _append_labeled(parts, fields, "end_period", "结束时段")
+
+    _append_labeled(parts, fields, "reason", "请假原因")
+    _append_labeled(parts, fields, "handover_person", "交接人")
+    _append_labeled(parts, fields, "emergency_contact", "紧急联系人")
+    emergency_field = fields.get("is_emergency")
+    if emergency_field is not None:
+        parts.append(
+            "紧急请假"
+            if emergency_field.value is True
+            else "普通请假"
+        )
+    return "，".join(parts) + "。"
+
+
+def _render_expense_request(
+    fields: dict[str, DraftField],
+) -> str:
+    parts = ["帮我生成费用报销草稿"]
+    category = _field_text(fields, "expense_category")
+    if category is not None:
+        parts.append(
+            "费用类别为"
+            + _EXPENSE_CATEGORY_TEXT.get(category, category)
+        )
+    amount = _field_text(fields, "amount")
+    if amount is not None:
+        parts.append(f"报销金额为{amount}元")
+    _append_labeled(parts, fields, "business_purpose", "业务目的")
+    _append_labeled(parts, fields, "expense_date", "发生日期")
+    _append_labeled(parts, fields, "budget_code", "预算编号")
+    _append_labeled(parts, fields, "cost_center", "成本中心")
+    _append_labeled(parts, fields, "payee", "收款对象")
+
+    contract_field = fields.get("involves_contract")
+    if contract_field is not None:
+        parts.append(
+            "涉及合同"
+            if contract_field.value is True
+            else "不涉及合同"
+        )
+    purchase_field = fields.get("involves_purchase")
+    if purchase_field is not None:
+        parts.append(
+            "涉及采购"
+            if purchase_field.value is True
+            else "不涉及采购"
+        )
+    return "，".join(parts) + "。"
+
+
+def _render_revision_request(
+    application_type: ApplicationType,
+    fields: dict[str, DraftField],
+    context_messages: Sequence[str],
+) -> str:
+    if application_type is ApplicationType.PURCHASE:
+        canonical = _render_purchase_request(fields)
+    elif application_type is ApplicationType.TRAVEL_REIMBURSEMENT:
+        canonical = _render_travel_request(fields)
+    elif application_type is ApplicationType.LEAVE:
+        canonical = _render_leave_request(fields)
+    else:
+        canonical = _render_expense_request(fields)
+
+    context = "\n".join(
+        message.strip()
+        for message in context_messages
+        if message.strip()
+    )
+    if not context:
+        return canonical
+    return f"{canonical}\n历史补充记录：\n{context}"
+
+
 def _summary_lines(
     title: str,
     extraction: _ExtractionResult,
@@ -1220,10 +1523,22 @@ class ApplicationDraftGenerator:
             session_id=session_id,
         )
 
-    async def generate(self, user_input: str) -> DraftGenerationAnswer:
+    async def generate(
+        self,
+        user_input: str,
+        *,
+        session_id: str | None = None,
+    ) -> DraftGenerationAnswer:
         normalized_input = user_input.strip()
         if not normalized_input:
             raise ValueError("user_input must not be blank")
+        active_session_id = (
+            session_id.strip()
+            if session_id is not None
+            else self._session_id
+        )
+        if not active_session_id:
+            raise ValueError("session_id must not be blank")
 
         application_type = _detect_application_type(normalized_input)
         if application_type is None:
@@ -1323,7 +1638,7 @@ class ApplicationDraftGenerator:
             user_confirmed=False,
             submitted=False,
             audit_metadata=DraftAuditMetadata(
-                session_id=self._session_id,
+                session_id=active_session_id,
                 request_id=f"REQUEST-{digest[:16]}",
                 idempotency_key=(
                     f"draft:{application_type.value}:"
@@ -1345,4 +1660,127 @@ class ApplicationDraftGenerator:
             request=normalized_input,
             result=result,
             reply=_format_reply(draft, clarification_question, citations),
+        )
+
+    async def revise(
+        self,
+        previous_draft: ApplicationDraft,
+        user_input: str,
+        *,
+        session_id: str | None = None,
+        context_messages: Sequence[str] = (),
+    ) -> DraftGenerationAnswer:
+        """合并一轮补充或修改，并重新执行材料、审批与草稿校验。"""
+
+        normalized_input = user_input.strip()
+        if not normalized_input:
+            raise ValueError("user_input must not be blank")
+
+        normalized_revision = _normalize_revision_text(
+            normalized_input
+        )
+        previous_fields = _field_map(previous_draft)
+        cue = _APPLICATION_TYPE_CUES[
+            previous_draft.application_type
+        ]
+        probe_parts = [cue]
+        if previous_draft.application_type is ApplicationType.PURCHASE:
+            direct_overrides = _purchase_revision_overrides(
+                normalized_revision,
+            )
+            direct_map = {
+                field.field_name: field
+                for field in direct_overrides
+            }
+            item = _field_text(
+                {**previous_fields, **direct_map},
+                "item_name",
+            )
+            quantity = _field_text(
+                {**previous_fields, **direct_map},
+                "quantity",
+            )
+            unit = _field_text(
+                {**previous_fields, **direct_map},
+                "unit",
+            ) or "件"
+            if item is not None and quantity is not None:
+                probe_parts.append(
+                    f"采购{quantity}{unit}{item}"
+                )
+        else:
+            direct_overrides = ()
+        probe_parts.append(normalized_revision)
+
+        probe_answer = await self.generate(
+            "，".join(probe_parts),
+            session_id=session_id,
+        )
+        merged_fields = dict(previous_fields)
+        if probe_answer.result.draft is not None:
+            for field in probe_answer.result.draft.fields:
+                if field.field_name == "calculated_total_amount":
+                    continue
+                merged_fields[field.field_name] = field
+        for field in direct_overrides:
+            merged_fields[field.field_name] = field
+
+        revision_request = _render_revision_request(
+            previous_draft.application_type,
+            merged_fields,
+            (*context_messages, normalized_input),
+        )
+        revised_answer = await self.generate(
+            revision_request,
+            session_id=session_id,
+        )
+        revised_draft = revised_answer.result.draft
+        if revised_draft is None:
+            raise RuntimeError(
+                "draft revision unexpectedly lost application type"
+            )
+
+        revised_audit = replace(
+            revised_draft.audit_metadata,
+            session_id=(
+                session_id.strip()
+                if session_id is not None
+                else previous_draft.audit_metadata.session_id
+            ),
+            idempotency_key=(
+                previous_draft.audit_metadata.idempotency_key
+            ),
+            created_at=previous_draft.audit_metadata.created_at,
+            created_by=previous_draft.audit_metadata.created_by,
+            identity_source=(
+                previous_draft.audit_metadata.identity_source
+            ),
+            persisted=False,
+        )
+        revised_draft = replace(
+            revised_draft,
+            draft_id=previous_draft.draft_id,
+            audit_metadata=revised_audit,
+            revision=previous_draft.revision + 1,
+            confirmed_at=None,
+            cancelled_at=None,
+            user_confirmed=False,
+            submitted=False,
+        )
+        revised_result = replace(
+            revised_answer.result,
+            draft=revised_draft,
+        )
+        return DraftGenerationAnswer(
+            request=normalized_input,
+            result=revised_result,
+            reply=(
+                f"已更新{revised_draft.title}（第"
+                f"{revised_draft.revision}版）。\n"
+                + _format_reply(
+                    revised_draft,
+                    revised_result.clarification_question,
+                    revised_result.citations,
+                )
+            ),
         )

@@ -18,6 +18,8 @@ class DraftStatus(StrEnum):
     WAITING_FOR_INFORMATION = "waiting_for_information"
     WAITING_FOR_MATERIALS = "waiting_for_materials"
     WAITING_FOR_CONFIRMATION = "waiting_for_confirmation"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
 
 
 class DraftFieldSource(StrEnum):
@@ -124,6 +126,9 @@ class ApplicationDraft:
     user_confirmed: bool
     submitted: bool
     audit_metadata: DraftAuditMetadata
+    revision: int = 1
+    confirmed_at: datetime | None = None
+    cancelled_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True)

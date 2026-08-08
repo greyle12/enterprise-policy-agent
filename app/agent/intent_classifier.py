@@ -39,6 +39,14 @@ intent 必须是五个允许值之一；confidence 必须是 0 到 1 之间的�
 
 _PARSE_FALLBACK_REASON = "模型分类结果无法解析，已安全降级为 unknown。"
 
+_LLM_CLASSIFIABLE_INTENTS = {
+    IntentType.POLICY_QUERY,
+    IntentType.MATERIAL_CHECK,
+    IntentType.APPROVAL_QUERY,
+    IntentType.DRAFT_GENERATION,
+    IntentType.UNKNOWN,
+}
+
 
 def _strip_optional_json_fence(response: str) -> str:
     """移除包裹整个 JSON 对象的可选 Markdown 代码块。"""
@@ -124,6 +132,14 @@ class IntentClassifier:
             )
         except ValidationError:
             return _unknown_classification()
+
+        if classification.intent not in _LLM_CLASSIFIABLE_INTENTS:
+            return _unknown_classification(
+                reason=(
+                    "模型返回了仅允许由会话工作流判定的意图，"
+                    "已安全降级为 unknown。"
+                )
+            )
 
         if (
             classification.intent is not IntentType.UNKNOWN

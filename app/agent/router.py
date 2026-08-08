@@ -11,6 +11,8 @@ from app.agent.workflow import (
 from app.agent.workflow_models import (
     AgentResponseStatus,
     AgentRouteResult,
+    AgentSessionInfo,
+    AgentSessionPhase,
     AgentWorkflowNode,
     AgentWorkflowStep,
     AgentWorkflowTrace,
@@ -20,6 +22,8 @@ __all__ = [
     "AgentResponseStatus",
     "AgentRouteResult",
     "AgentRouter",
+    "AgentSessionInfo",
+    "AgentSessionPhase",
     "AgentWorkflowNode",
     "AgentWorkflowStep",
     "AgentWorkflowTrace",
@@ -46,10 +50,23 @@ class AgentRouter:
             draft_generator=draft_generator,
         )
 
-    async def route(self, user_input: str) -> AgentRouteResult:
-        """执行一次 LangGraph 工作流并返回结构化结果。"""
+    async def route(
+        self,
+        user_input: str,
+        *,
+        session_id: str | None = None,
+    ) -> AgentRouteResult:
+        """执行或恢复 LangGraph 会话并返回结构化结果。"""
 
-        return await self._workflow.run(user_input)
+        return await self._workflow.run(
+            user_input,
+            session_id=session_id,
+        )
+
+    async def clear_session(self, session_id: str) -> None:
+        """清除一个演示会话的内存 checkpoint。"""
+
+        await self._workflow.clear_session(session_id)
 
     def draw_workflow_mermaid(self) -> str:
         """返回编译后的 LangGraph 拓扑，便于本地验收。"""

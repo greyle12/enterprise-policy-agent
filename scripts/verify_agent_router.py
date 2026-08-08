@@ -51,7 +51,7 @@ _SMOKE_CASES = (
             "已准备技术需求说明、信息技术评审意见、产品规格说明和2家供应商报价。"
         ),
         IntentType.DRAFT_GENERATION,
-        AgentResponseStatus.COMPLETED,
+        AgentResponseStatus.AWAITING_CONFIRMATION,
     ),
     (
         "给我讲一个笑话。",
@@ -117,15 +117,28 @@ async def _main() -> None:
             result = await router.route(user_input)
             has_expected_citations = (
                 bool(result.citations)
-                if expected_status is AgentResponseStatus.COMPLETED
+                if expected_status
+                in {
+                    AgentResponseStatus.COMPLETED,
+                    AgentResponseStatus.AWAITING_CONFIRMATION,
+                }
                 else not result.citations
+            )
+            expected_step_count = (
+                4
+                if expected_status
+                is AgentResponseStatus.AWAITING_CONFIRMATION
+                else 3
             )
             passed = (
                 result.classification.intent is expected_intent
                 and result.status is expected_status
                 and result.workflow is not None
-                and len(result.workflow.steps) == 2
+                and len(result.workflow.steps)
+                == expected_step_count
                 and result.workflow.steps[0].node
+                is AgentWorkflowNode.RESOLVE_TURN
+                and result.workflow.steps[1].node
                 is AgentWorkflowNode.CLASSIFY_INTENT
                 and has_expected_citations
                 and (

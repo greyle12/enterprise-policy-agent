@@ -4,11 +4,16 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends
 
-from app.agent.router import AgentRouter, AgentWorkflowTrace
+from app.agent.router import (
+    AgentRouter,
+    AgentSessionInfo,
+    AgentWorkflowTrace,
+)
 from app.api.dependencies import get_agent_router
 from app.api.schemas.agent_messages import (
     AgentMessageRequest,
     AgentMessageResponse,
+    AgentSessionResponse,
     AgentWorkflowStepResponse,
     AgentWorkflowTraceResponse,
     ApplicationDraftResponse,
@@ -183,6 +188,9 @@ def _draft_response(
                 ),
                 persisted=draft.audit_metadata.persisted,
             ),
+            revision=draft.revision,
+            confirmed_at=draft.confirmed_at,
+            cancelled_at=draft.cancelled_at,
         )
 
     return DraftGenerationResponse(
@@ -207,6 +215,24 @@ def _workflow_response(
             for step in trace.steps
         ],
         terminal_node=trace.terminal_node,
+        interrupted=trace.interrupted,
+    )
+
+
+def _session_response(
+    session: AgentSessionInfo,
+) -> AgentSessionResponse:
+    return AgentSessionResponse(
+        session_id=session.session_id,
+        turn_number=session.turn_number,
+        phase=session.phase,
+        active_draft_id=session.active_draft_id,
+        draft_revision=session.draft_revision,
+        pending_confirmation=session.pending_confirmation,
+        checkpoint_backend=session.checkpoint_backend,
+        survives_process_restart=(
+            session.survives_process_restart
+        ),
     )
 
 
@@ -224,7 +250,10 @@ async def handle_agent_message(
 ) -> AgentMessageResponse:
     """识别用户意图并路由到对应 Agent 能力。"""
 
-    result = await agent_router.route(request.message)
+    result = await agent_router.route(
+        request.message,
+        session_id=request.session_id,
+    )
 
     material_check = (
         _material_response(result.material_check)
@@ -261,6 +290,11 @@ async def handle_agent_message(
         workflow=(
             _workflow_response(result.workflow)
             if result.workflow is not None
+            else None
+        ),
+        session=(
+            _session_response(result.session)
+            if result.session is not None
             else None
         ),
     )

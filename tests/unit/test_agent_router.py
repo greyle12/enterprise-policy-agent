@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Sequence
 from decimal import Decimal
 
 import pytest
@@ -22,6 +23,7 @@ from app.tools.approval_models import (
     ApproverCode,
 )
 from app.tools.draft_models import (
+    ApplicationDraft,
     DraftGenerationAnswer,
     DraftGenerationResult,
 )
@@ -97,6 +99,19 @@ class FakeDraftGenerator:
     async def generate(
         self,
         user_input: str,
+        *,
+        session_id: str | None = None,
+    ) -> DraftGenerationAnswer:
+        self.calls.append(user_input)
+        return self.answer_result
+
+    async def revise(
+        self,
+        previous_draft: ApplicationDraft,
+        user_input: str,
+        *,
+        session_id: str | None = None,
+        context_messages: Sequence[str] = (),
     ) -> DraftGenerationAnswer:
         self.calls.append(user_input)
         return self.answer_result
@@ -255,14 +270,22 @@ def _assert_workflow_path(
 ) -> None:
     assert result.workflow is not None
     assert result.workflow.name == "enterprise_policy_workflow"
-    assert result.workflow.version == "1.0"
-    assert [step.sequence for step in result.workflow.steps] == [1, 2]
+    assert result.workflow.version == "1.1"
+    assert [step.sequence for step in result.workflow.steps] == [
+        1,
+        2,
+        3,
+    ]
     assert [step.node for step in result.workflow.steps] == [
+        AgentWorkflowNode.RESOLVE_TURN,
         AgentWorkflowNode.CLASSIFY_INTENT,
         action_node,
     ]
     assert result.workflow.terminal_node is action_node
     assert result.workflow.steps[-1].outcome == result.status.value
+    assert result.session is not None
+    assert result.session.turn_number == 1
+    assert result.session.survives_process_restart is False
 
 
 def test_routes_policy_query_to_answer_service() -> None:

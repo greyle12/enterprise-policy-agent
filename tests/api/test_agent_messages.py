@@ -11,6 +11,8 @@ from app.agent.intent import IntentClassification, IntentType
 from app.agent.router import (
     AgentResponseStatus,
     AgentRouteResult,
+    AgentSessionInfo,
+    AgentSessionPhase,
     AgentWorkflowNode,
     AgentWorkflowStep,
     AgentWorkflowTrace,
@@ -52,12 +54,16 @@ class FakeAgentRouter:
     def __init__(self, result: AgentRouteResult) -> None:
         self.result = result
         self.calls: list[str] = []
+        self.session_ids: list[str | None] = []
 
     async def route(
         self,
         user_input: str,
+        *,
+        session_id: str | None = None,
     ) -> AgentRouteResult:
         self.calls.append(user_input)
+        self.session_ids.append(session_id)
         return self.result
 
 
@@ -98,7 +104,7 @@ def test_routes_agent_message_and_returns_citations() -> None:
             citations=(citation,),
             workflow=AgentWorkflowTrace(
                 name="enterprise_policy_workflow",
-                version="1.0",
+                version="1.1",
                 steps=(
                     AgentWorkflowStep(
                         sequence=1,
@@ -113,6 +119,14 @@ def test_routes_agent_message_and_returns_citations() -> None:
                 ),
                 terminal_node=AgentWorkflowNode.ANSWER_POLICY,
             ),
+            session=AgentSessionInfo(
+                session_id="swagger-demo-001",
+                turn_number=1,
+                phase=AgentSessionPhase.IDLE,
+                active_draft_id=None,
+                draft_revision=None,
+                pending_confirmation=False,
+            ),
         )
     )
     _use_fake_router(router)
@@ -121,7 +135,8 @@ def test_routes_agent_message_and_returns_citations() -> None:
         response = client.post(
             "/api/v1/agent/messages",
             json={
-                "message": "  出差住宿标准是多少？  "
+                "message": "  出差住宿标准是多少？  ",
+                "session_id": "swagger-demo-001",
             },
         )
 
@@ -138,7 +153,7 @@ def test_routes_agent_message_and_returns_citations() -> None:
         "citations": ["S1"],
         "workflow": {
             "name": "enterprise_policy_workflow",
-            "version": "1.0",
+            "version": "1.1",
             "steps": [
                 {
                     "sequence": 1,
@@ -152,9 +167,19 @@ def test_routes_agent_message_and_returns_citations() -> None:
                 },
             ],
             "terminal_node": "answer_policy",
+            "interrupted": False,
+        },
+        "session": {
+            "session_id": "swagger-demo-001",
+            "turn_number": 1,
+            "phase": "idle",
+            "pending_confirmation": False,
+            "checkpoint_backend": "in_memory",
+            "survives_process_restart": False,
         },
     }
     assert router.calls == ["出差住宿标准是多少？"]
+    assert router.session_ids == ["swagger-demo-001"]
 
 
 def test_returns_draft_clarification_without_citations() -> None:
@@ -343,6 +368,9 @@ def test_serializes_structured_application_draft() -> None:
     assert draft_payload["user_confirmed"] is False
     assert draft_payload["submitted"] is False
     assert draft_payload["audit_metadata"]["persisted"] is False
+    assert draft_payload["revision"] == 1
+    assert "confirmed_at" not in draft_payload
+    assert "cancelled_at" not in draft_payload
 
 
 def test_serializes_structured_approval_check_result() -> None:
@@ -556,6 +584,38 @@ def test_rejects_blank_agent_message() -> None:
         response = client.post(
             "/api/v1/agent/messages",
             json={"message": "   "},
+        )
+
+    assert response.status_code == 422
+    assert router.calls == []
+
+
+@pytest.mark.parametrize(
+    "session_id",
+    ["contains space", "slash/not-allowed", "x" * 65],
+)
+def test_rejects_invalid_session_id(session_id: str) -> None:
+    router = FakeAgentRouter(
+        AgentRouteResult(
+            request="不应调用",
+            classification=IntentClassification(
+                intent=IntentType.UNKNOWN,
+                confidence=1.0,
+                reason="不应调用",
+            ),
+            status=AgentResponseStatus.NEEDS_CLARIFICATION,
+            reply="不应调用",
+        )
+    )
+    _use_fake_router(router)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/agent/messages",
+            json={
+                "message": "查询制度",
+                "session_id": session_id,
+            },
         )
 
     assert response.status_code == 422

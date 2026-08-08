@@ -13,6 +13,9 @@ class IntentType(StrEnum):
     MATERIAL_CHECK = "material_check"
     APPROVAL_QUERY = "approval_query"
     DRAFT_GENERATION = "draft_generation"
+    DRAFT_UPDATE = "draft_update"
+    DRAFT_CONFIRMATION = "draft_confirmation"
+    DRAFT_CANCELLATION = "draft_cancellation"
     UNKNOWN = "unknown"
 
 

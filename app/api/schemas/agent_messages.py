@@ -9,6 +9,7 @@ from pydantic import BaseModel, StringConstraints
 from app.agent.intent import IntentType
 from app.agent.router import (
     AgentResponseStatus,
+    AgentSessionPhase,
     AgentWorkflowNode,
 )
 from app.tools.approval_models import (
@@ -36,11 +37,22 @@ _MessageText = Annotated[
     ),
 ]
 
+_SessionId = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$",
+    ),
+]
+
 
 class AgentMessageRequest(BaseModel):
     """统一 Agent 入口的用户消息。"""
 
     message: _MessageText
+    session_id: _SessionId | None = None
 
 
 class IntentClassificationResponse(BaseModel):
@@ -195,6 +207,9 @@ class ApplicationDraftResponse(BaseModel):
     user_confirmed: bool
     submitted: bool
     audit_metadata: DraftAuditMetadataResponse
+    revision: int
+    confirmed_at: datetime | None
+    cancelled_at: datetime | None
 
 
 class DraftGenerationResponse(BaseModel):
@@ -220,6 +235,20 @@ class AgentWorkflowTraceResponse(BaseModel):
     version: str
     steps: list[AgentWorkflowStepResponse]
     terminal_node: AgentWorkflowNode
+    interrupted: bool
+
+
+class AgentSessionResponse(BaseModel):
+    """调用方继续后续轮次所需的会话元数据。"""
+
+    session_id: str
+    turn_number: int
+    phase: AgentSessionPhase
+    active_draft_id: str | None
+    draft_revision: int | None
+    pending_confirmation: bool
+    checkpoint_backend: str
+    survives_process_restart: bool
 
 
 class AgentMessageResponse(BaseModel):
@@ -234,3 +263,4 @@ class AgentMessageResponse(BaseModel):
     approval_check: ApprovalCheckResponse | None = None
     application_draft: DraftGenerationResponse | None = None
     workflow: AgentWorkflowTraceResponse | None = None
+    session: AgentSessionResponse | None = None
