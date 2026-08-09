@@ -228,7 +228,7 @@ class MockApprovalSubmitter:
             sensitive_fields_recorded=False,
         )
 
-    async def submit(
+    def _validated_submission_request(
         self,
         draft: ApplicationDraft,
         *,
@@ -237,9 +237,7 @@ class MockApprovalSubmitter:
         session_id: str,
         request_id: str,
         submission_idempotency_key: str,
-    ) -> MockApprovalSubmissionResult:
-        """模拟创建审批申请；相同幂等键只创建一次。"""
-
+    ) -> tuple[str, str, str, str]:
         normalized_confirmation = _required_text(
             confirmation_text,
             name="confirmation_text",
@@ -274,6 +272,129 @@ class MockApprovalSubmitter:
             user_context,
             normalized_session_id,
         )
+        return (
+            normalized_confirmation,
+            normalized_session_id,
+            normalized_request_id,
+            normalized_key,
+        )
+
+    def _replayed_result(
+        self,
+        existing: MockApprovalSubmissionResult,
+        draft: ApplicationDraft,
+        *,
+        confirmation_text: str,
+        session_id: str,
+        request_id: str,
+    ) -> MockApprovalSubmissionResult:
+        replayed_at = _aware_utc(self._clock())
+        replay_audit = self._audit_record(
+            event=SubmissionAuditEvent.IDEMPOTENT_REPLAY,
+            draft=draft,
+            submission=existing.submission_result,
+            session_id=session_id,
+            request_id=request_id,
+            confirmation_text=confirmation_text,
+            recorded_at=replayed_at,
+            duplicate_submission=True,
+        )
+        return replace(
+            existing,
+            duplicate_submission=True,
+            audit_record=replay_audit,
+        )
+
+    def _first_submission_result(
+        self,
+        draft: ApplicationDraft,
+        *,
+        user_context: DraftUserContext,
+        session_id: str,
+        request_id: str,
+        confirmation_text: str,
+        idempotency_key: str,
+    ) -> MockApprovalSubmissionResult:
+        self._validate_first_submission(draft)
+        submitted_at = _aware_utc(self._clock())
+        submission_id = self._submission_id(
+            draft,
+            idempotency_key,
+            submitted_at,
+        )
+        submission = SubmittedApplication(
+            submission_id=submission_id,
+            draft_id=draft.draft_id,
+            application_type=draft.application_type,
+            status=SubmissionStatus.APPROVAL_IN_PROGRESS,
+            submitted_at=submitted_at,
+            submitted_by=user_context.employee_id,
+            idempotency_key=idempotency_key,
+        )
+        workflow = SubmittedApprovalWorkflow(
+            workflow_id=f"WF-{submission_id}",
+            current_step=1,
+            steps=tuple(
+                SubmittedApprovalStep(
+                    sequence=step.sequence,
+                    approver=step.approver,
+                    display_name=step.display_name,
+                    status=(
+                        ApprovalWorkflowStepStatus.PENDING
+                        if index == 0
+                        else ApprovalWorkflowStepStatus.WAITING
+                    ),
+                )
+                for index, step in enumerate(
+                    draft.approval_check.steps
+                )
+            ),
+        )
+        audit = self._audit_record(
+            event=SubmissionAuditEvent.SUBMITTED,
+            draft=draft,
+            submission=submission,
+            session_id=session_id,
+            request_id=request_id,
+            confirmation_text=confirmation_text,
+            recorded_at=submitted_at,
+            duplicate_submission=False,
+        )
+        return MockApprovalSubmissionResult(
+            success=True,
+            duplicate_submission=False,
+            submission_result=submission,
+            approval_workflow=workflow,
+            audit_record=audit,
+        )
+
+    async def submit(
+        self,
+        draft: ApplicationDraft,
+        *,
+        confirmation_text: str,
+        user_context: DraftUserContext,
+        session_id: str,
+        request_id: str,
+        submission_idempotency_key: str,
+    ) -> MockApprovalSubmissionResult:
+        """模拟创建审批申请；相同幂等键只创建一次。"""
+
+        (
+            normalized_confirmation,
+            normalized_session_id,
+            normalized_request_id,
+            normalized_key,
+        ) = self._validated_submission_request(
+            draft,
+            confirmation_text=confirmation_text,
+            user_context=user_context,
+            session_id=session_id,
+            request_id=request_id,
+            submission_idempotency_key=(
+                submission_idempotency_key
+            ),
+        )
 
         async with self._lock:
             existing = self._by_idempotency_key.get(normalized_key)
@@ -288,23 +409,15 @@ class MockApprovalSubmitter:
                     raise SubmissionConflictError(
                         "idempotency key is already bound to another submission"
                     )
-                replayed_at = _aware_utc(self._clock())
-                replay_audit = self._audit_record(
-                    event=SubmissionAuditEvent.IDEMPOTENT_REPLAY,
+                replay = self._replayed_result(
+                    existing.result,
                     draft=draft,
-                    submission=existing.result.submission_result,
                     session_id=normalized_session_id,
                     request_id=normalized_request_id,
                     confirmation_text=normalized_confirmation,
-                    recorded_at=replayed_at,
-                    duplicate_submission=True,
                 )
-                self._audit_records.append(replay_audit)
-                return replace(
-                    existing.result,
-                    duplicate_submission=True,
-                    audit_record=replay_audit,
-                )
+                self._audit_records.append(replay.audit_record)
+                return replay
 
             previous_key = self._idempotency_key_by_draft.get(
                 draft.draft_id
@@ -314,57 +427,13 @@ class MockApprovalSubmitter:
                     "draft is already bound to another submission"
                 )
 
-            self._validate_first_submission(draft)
-            submitted_at = _aware_utc(self._clock())
-            submission_id = self._submission_id(
+            result = self._first_submission_result(
                 draft,
-                normalized_key,
-                submitted_at,
-            )
-            submission = SubmittedApplication(
-                submission_id=submission_id,
-                draft_id=draft.draft_id,
-                application_type=draft.application_type,
-                status=SubmissionStatus.APPROVAL_IN_PROGRESS,
-                submitted_at=submitted_at,
-                submitted_by=user_context.employee_id,
-                idempotency_key=normalized_key,
-            )
-            workflow = SubmittedApprovalWorkflow(
-                workflow_id=f"WF-{submission_id}",
-                current_step=1,
-                steps=tuple(
-                    SubmittedApprovalStep(
-                        sequence=step.sequence,
-                        approver=step.approver,
-                        display_name=step.display_name,
-                        status=(
-                            ApprovalWorkflowStepStatus.PENDING
-                            if index == 0
-                            else ApprovalWorkflowStepStatus.WAITING
-                        ),
-                    )
-                    for index, step in enumerate(
-                        draft.approval_check.steps
-                    )
-                ),
-            )
-            audit = self._audit_record(
-                event=SubmissionAuditEvent.SUBMITTED,
-                draft=draft,
-                submission=submission,
+                user_context=user_context,
                 session_id=normalized_session_id,
                 request_id=normalized_request_id,
                 confirmation_text=normalized_confirmation,
-                recorded_at=submitted_at,
-                duplicate_submission=False,
-            )
-            result = MockApprovalSubmissionResult(
-                success=True,
-                duplicate_submission=False,
-                submission_result=submission,
-                approval_workflow=workflow,
-                audit_record=audit,
+                idempotency_key=normalized_key,
             )
             self._by_idempotency_key[normalized_key] = (
                 _StoredSubmission(
@@ -376,7 +445,7 @@ class MockApprovalSubmitter:
             self._idempotency_key_by_draft[draft.draft_id] = (
                 normalized_key
             )
-            self._audit_records.append(audit)
+            self._audit_records.append(result.audit_record)
             return result
 
     async def list_audit_records(

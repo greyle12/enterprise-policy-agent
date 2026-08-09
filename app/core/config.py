@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, SecretStr
 from pydantic_settings import (
@@ -28,6 +29,9 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(
         default=2,
         ge=0,
+    )
+    sqlite_database_path: Path = Path(
+        "data/runtime/enterprise_policy_agent.db"
     )
 
 

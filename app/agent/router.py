@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
+
 from app.agent.workflow import (
+    AgentStatePersister,
     AgentWorkflow,
     ApplicationDraftCreator,
     ApplicationSubmitter,
@@ -44,6 +47,8 @@ class AgentRouter:
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
         submission_service: ApplicationSubmitter | None = None,
+        checkpointer: BaseCheckpointSaver | None = None,
+        state_persister: AgentStatePersister | None = None,
     ) -> None:
         self._workflow = AgentWorkflow(
             intent_classifier=intent_classifier,
@@ -54,6 +59,8 @@ class AgentRouter:
             submission_service=(
                 submission_service or MockApprovalSubmitter()
             ),
+            checkpointer=checkpointer,
+            state_persister=state_persister,
         )
 
     async def route(
@@ -70,7 +77,7 @@ class AgentRouter:
         )
 
     async def clear_session(self, session_id: str) -> None:
-        """清除一个演示会话的内存 checkpoint。"""
+        """清除一个演示会话的 checkpoint 和可变草稿投影。"""
 
         await self._workflow.clear_session(session_id)
 

@@ -11,6 +11,7 @@ _ENVIRONMENT_NAMES = (
     "LLM_MODEL",
     "LLM_TIMEOUT_SECONDS",
     "LLM_MAX_RETRIES",
+    "SQLITE_DATABASE_PATH",
 )
 
 
@@ -36,6 +37,9 @@ def test_uses_default_llm_settings() -> None:
     )
     assert settings.llm_timeout_seconds == 60.0
     assert settings.llm_max_retries == 2
+    assert settings.sqlite_database_path == Path(
+        "data/runtime/enterprise_policy_agent.db"
+    )
     assert (
         settings.llm_api_key.get_secret_value()
         == "test-key"
@@ -52,7 +56,8 @@ def test_loads_llm_settings_from_env_file(
         "LLM_BASE_URL=https://example.com/v1\n"
         "LLM_MODEL=test-model\n"
         "LLM_TIMEOUT_SECONDS=15\n"
-        "LLM_MAX_RETRIES=1"
+        "LLM_MAX_RETRIES=1\n"
+        "SQLITE_DATABASE_PATH=data/test-agent.db"
     ),
     encoding="utf-8",
 )
@@ -69,6 +74,9 @@ def test_loads_llm_settings_from_env_file(
     assert settings.llm_model == "test-model"
     assert settings.llm_timeout_seconds == 15.0
     assert settings.llm_max_retries == 1
+    assert settings.sqlite_database_path == Path(
+        "data/test-agent.db"
+    )
 
 
 @pytest.mark.parametrize(

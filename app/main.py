@@ -18,6 +18,11 @@ from app.core.config import get_settings
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
 )
+from app.persistence import (
+    SQLiteAgentStateStore,
+    SQLiteCheckpointSaver,
+    SQLiteMockApprovalSubmitter,
+)
 from app.rag.embeddings import BGEEmbeddingProvider
 from app.rag.policy_answer_service import (
     PolicyAnswerService,
@@ -89,6 +94,10 @@ async def _lifespan(
             _POLICY_DIRECTORY
         )
     )
+    settings = get_settings()
+    state_store = SQLiteAgentStateStore(
+        settings.sqlite_database_path
+    )
     agent_router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=llm_client,
@@ -104,14 +113,23 @@ async def _lifespan(
                 user_context=_DEMO_DRAFT_USER_CONTEXT,
             )
         ),
+        submission_service=SQLiteMockApprovalSubmitter(
+            settings.sqlite_database_path
+        ),
+        checkpointer=SQLiteCheckpointSaver(
+            settings.sqlite_database_path
+        ),
+        state_persister=state_store,
     )
     application.state.policy_answer_service = service
     application.state.agent_router = agent_router
+    application.state.agent_state_store = state_store
 
     try:
         yield
     finally:
         await llm_client.close()
+        del application.state.agent_state_store
         del application.state.agent_router
         del application.state.policy_answer_service
 

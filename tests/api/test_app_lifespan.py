@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from pathlib import Path
+from types import SimpleNamespace
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -16,6 +19,7 @@ class FakeLLMClient:
 
 def test_lifespan_configures_and_closes_service(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     service = object()
     llm_client = FakeLLMClient()
@@ -31,6 +35,13 @@ def test_lifespan_configures_and_closes_service(
         "_build_policy_answer_service",
         build_fake_service,
     )
+    monkeypatch.setattr(
+        main_module,
+        "get_settings",
+        lambda: SimpleNamespace(
+            sqlite_database_path=tmp_path / "agent.db"
+        ),
+    )
 
     application = main_module.create_app()
 
@@ -40,9 +51,14 @@ def test_lifespan_configures_and_closes_service(
             is service
         )
         assert llm_client.closed is False
+        assert application.state.agent_state_store.backend_name == "sqlite"
 
     assert llm_client.closed is True
     assert not hasattr(
         application.state,
         "policy_answer_service",
+    )
+    assert not hasattr(
+        application.state,
+        "agent_state_store",
     )
