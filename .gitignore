@@ -44,3 +44,7 @@ dist/
 *.egg-info/
 
 .pytest_tmp/
+# Local SQLite runtime state
+data/runtime/
+*.db-wal
+*.db-shm
