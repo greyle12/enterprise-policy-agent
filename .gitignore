@@ -38,6 +38,9 @@ logs/
 chroma_data/
 vector_store/
 
+# Generated evaluation reports
+artifacts/evaluation/
+
 # Build artifacts
 build/
 dist/

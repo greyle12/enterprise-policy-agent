@@ -188,7 +188,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 1：需求建模与工程骨架
+Phase 7：自动化评测与质量门禁（Day 16 已完成）
 ```
 
 ### 已完成
@@ -205,23 +205,26 @@ Phase 1：需求建模与工程骨架
 - [x] 幂等提交规则设计；
 - [x] Git 忽略规则；
 - [x] 环境变量模板。
+- [x] Markdown 制度解析、条款切分与结构化引用；
+- [x] BGE Embedding 和内存向量检索；
+- [x] OpenAI-compatible LLM 客户端与引用约束；
+- [x] 意图识别、材料检查和确定性审批路线；
+- [x] LangGraph 多轮草稿、人工确认和模拟提交；
+- [x] 提交幂等、审批路线冻结和审计记录；
+- [x] SQLite checkpoint 与业务数据持久化；
+- [x] 服务重启后恢复会话、草稿和审批记录；
+- [x] 30 条可执行黄金用例与五项质量门禁；
+- [x] JSON 和 Markdown 结构化评测报告。
 
 ### 尚未实现
 
-- [ ] FastAPI 业务接口；
-- [ ] Markdown 和 PDF 文档解析；
-- [ ] 文档章节与条款切分；
-- [ ] Embedding 模型接入；
-- [ ] 向量数据库；
+- [ ] PDF 文档解析；
+- [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
 - [ ] Rerank；
-- [ ] LLM 客户端；
-- [ ] Agent 状态机；
-- [ ] 4 个工具的 Python 实现；
-- [ ] SQLite 或 PostgreSQL 持久化；
 - [ ] Redis 会话状态；
-- [ ] 自动化评测程序；
+- [ ] 权限过滤与提示注入专项评测；
 - [ ] Docker 部署；
 - [ ] 日志和可观测性。
 
@@ -230,8 +233,9 @@ Phase 1：需求建模与工程骨架
 更准确的状态是：
 
 ```text
-已完成需求建模、模拟业务数据、工具契约和评测基线，
-正在进入文档解析与检索实现阶段。
+已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
+幂等模拟提交、SQLite 重启恢复和自动化黄金集评测；
+当前定位是可运行的单机个人作品集版本，不宣称为多实例生产系统。
 ```
 
 ---
@@ -676,41 +680,39 @@ tests/evaluation/golden_test_cases.jsonl
 
 | 测试类别 | 数量 |
 |---|---:|
-| 制度问答 | 8 |
-| 规则计算 | 5 |
-| 流程办理 | 8 |
-| 权限与安全 | 5 |
-| 边界场景 | 4 |
+| 意图识别与工具路由 | 10 |
+| 材料完整性检查 | 10 |
+| 审批路线判断 | 10 |
 | 合计 | 30 |
 
-测试范围包括：
+每条用例都使用严格字段契约，自动统计：
 
-- 制度问答事实正确性；
-- 条款引用；
-- 采购金额计算；
-- 住宿标准计算；
-- 年假余额计算；
-- 审批路线判断；
-- 缺失字段识别；
-- 缺失材料识别；
-- 相对日期处理；
-- 用户明确确认；
-- 模糊确认拒绝；
-- 提示注入；
-- 身份伪造；
-- 医疗隐私；
-- 无答案处理；
-- 历史制度版本；
-- 正常重复提交；
-- 幂等键冲突。
+- 意图识别准确率；
+- 工具选择准确率；
+- 材料检查准确率；
+- 审批路线准确率；
+- 制度引用准确率。
 
-只有测试用例 `TC020` 允许创建新的正式申请：
+默认离线评测不会调用真实 LLM、不会连接正式运行数据库，也不会提交审批：
 
-```text
-TC020 明确确认后提交
+```powershell
+python -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
-其他用例不得产生新的正式提交。
+报告输出到：
+
+```text
+artifacts/evaluation/golden-evaluation-report.json
+artifacts/evaluation/golden-evaluation-report.md
+```
+
+如需测量真实意图分类模型，配置 `.env` 后运行：
+
+```powershell
+python -X utf8 -m scripts.run_golden_evaluation --mode live
+```
+
+报告会明确记录 `offline` 或 `live`，避免把关键词基线结果误写成真实 LLM 准确率。
 
 ---
 
@@ -851,7 +853,7 @@ python -c "import json; from pathlib import Path; files=sorted(Path('docs/tool_c
 ### 验证 30 条黄金测试
 
 ```powershell
-python -c "import json; from pathlib import Path; lines=Path('tests/evaluation/golden_test_cases.jsonl').read_text(encoding='utf-8-sig').splitlines(); cases=[json.loads(line) for line in lines if line.strip()]; print('测试数量:',len(cases))"
+python -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
 ---
@@ -868,68 +870,70 @@ python -c "import json; from pathlib import Path; lines=Path('tests/evaluation/g
 
 ### Phase 2：文档解析与基础检索
 
-- [ ] Markdown 文档解析；
-- [ ] YAML 元数据提取；
-- [ ] 章节和条款切分；
-- [ ] Chunk 数据模型；
+- [x] Markdown 文档解析；
+- [x] YAML 元数据提取；
+- [x] 章节和条款切分；
+- [x] Chunk 数据模型；
 - [ ] 基础关键词检索；
-- [ ] 制度引用结构；
-- [ ] 单元测试。
+- [x] 制度引用结构；
+- [x] 单元测试。
 
 ### Phase 3：向量检索与混合 RAG
 
-- [ ] Embedding 接入；
-- [ ] 向量数据库；
+- [x] Embedding 接入；
+- [x] 内存向量索引；
 - [ ] BM25；
 - [ ] Hybrid Search；
 - [ ] Rerank；
 - [ ] Query Rewrite；
-- [ ] 引用生成；
+- [x] 引用生成；
 - [ ] RAG 评测。
 
 ### Phase 4：Agent 工具实现
 
-- [ ] 实现 `search_policy`；
-- [ ] 实现 `check_required_materials`；
-- [ ] 实现 `create_application_draft`；
-- [ ] 实现 `submit_mock_approval`；
-- [ ] Pydantic 输入输出模型；
-- [ ] 工具单元测试；
-- [ ] 工具错误处理。
+- [x] 实现 `search_policy`；
+- [x] 实现 `check_required_materials`；
+- [x] 实现 `create_application_draft`；
+- [x] 实现 `submit_mock_approval`；
+- [x] Pydantic 输入输出模型；
+- [x] 工具单元测试；
+- [x] 工具错误处理。
 
 ### Phase 5：Agent 状态机
 
-- [ ] 意图路由；
-- [ ] 会话状态；
-- [ ] 多轮字段收集；
+- [x] 意图路由；
+- [x] 会话状态；
+- [x] 多轮字段收集；
 - [ ] 相对日期确认；
-- [ ] 人在回路确认节点；
-- [ ] 工具调用编排；
+- [x] 人在回路确认节点；
+- [x] 工具调用编排；
 - [ ] 错误恢复；
 - [ ] 重试和超时。
 
 ### Phase 6：FastAPI 与数据持久化
 
-- [ ] REST API；
-- [ ] SQLite 或 PostgreSQL；
+- [x] REST API；
+- [x] SQLite；
 - [ ] Redis 会话状态；
-- [ ] 申请数据库；
-- [ ] 审批工作流数据库；
-- [ ] 审计日志；
-- [ ] 幂等提交；
-- [ ] API 集成测试。
+- [x] 申请数据库；
+- [x] 审批工作流数据库；
+- [x] 审计日志；
+- [x] 幂等提交；
+- [x] API 集成测试。
 
 ### Phase 7：评测与安全
 
-- [ ] 自动运行黄金测试；
+- [x] 自动运行黄金测试；
 - [ ] 制度问答正确率；
-- [ ] 引用正确率；
-- [ ] 工具选择准确率；
-- [ ] 缺失材料识别率；
+- [x] 引用正确率；
+- [x] 工具选择准确率；
+- [x] 缺失材料识别率；
+- [x] 意图识别准确率；
+- [x] 审批路线准确率；
 - [ ] 权限拒绝成功率；
 - [ ] 提示注入测试；
-- [ ] 重复提交阻止率；
-- [ ] 错误案例分析。
+- [x] 重复提交阻止率；
+- [x] 错误案例明细报告。
 
 ### Phase 8：部署与作品集整理
 
@@ -964,22 +968,17 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ## 17. 预期评测指标
 
-后续计划统计：
+Day 16 当前质量门禁：
 
-- 制度问答准确率；
-- 条款引用覆盖率；
-- 引用制度版本正确率；
-- 工具选择准确率；
-- 缺失字段识别准确率；
-- 缺失材料识别准确率；
-- 金额计算正确率；
-- 审批路线正确率；
-- 权限越界拒绝率；
-- 提示注入防护通过率；
-- 明确确认识别准确率；
-- 模糊确认阻止率；
-- 重复提交阻止率；
-- 幂等键冲突识别率。
+| 指标 | 门槛 |
+|---|---:|
+| 意图识别准确率 | ≥ 90% |
+| 工具选择准确率 | 100% |
+| 材料检查准确率 | 100% |
+| 审批路线准确率 | 100% |
+| 制度引用准确率 | 100% |
+
+后续仍需补充制度问答语义正确率、权限越界拒绝率、提示注入防护通过率和真实 LLM 回归基线。
 
 ---
 
