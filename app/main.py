@@ -11,6 +11,7 @@ from app.agent.router import AgentRouter
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
+from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
@@ -148,6 +149,9 @@ def create_app(
             if enable_lifespan
             else None
         ),
+    )
+    application.include_router(
+        health_router,
     )
     application.include_router(
         policy_answers_router,

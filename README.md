@@ -188,7 +188,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 7：自动化评测与质量门禁（Day 16 已完成）
+Phase 8：容器化部署（Day 17 已完成）
 ```
 
 ### 已完成
@@ -215,6 +215,11 @@ Phase 7：自动化评测与质量门禁（Day 16 已完成）
 - [x] 服务重启后恢复会话、草稿和审批记录；
 - [x] 30 条可执行黄金用例与五项质量门禁；
 - [x] JSON 和 Markdown 结构化评测报告。
+- [x] 多阶段、非 root Docker 镜像；
+- [x] Docker Compose 一键启动；
+- [x] liveness 与 readiness 健康检查；
+- [x] SQLite 与 BGE 模型缓存具名卷；
+- [x] 容器重建后的 SQLite 持久化自动验收。
 
 ### 尚未实现
 
@@ -225,7 +230,6 @@ Phase 7：自动化评测与质量门禁（Day 16 已完成）
 - [ ] Rerank；
 - [ ] Redis 会话状态；
 - [ ] 权限过滤与提示注入专项评测；
-- [ ] Docker 部署；
 - [ ] 日志和可观测性。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
@@ -234,8 +238,8 @@ Phase 7：自动化评测与质量门禁（Day 16 已完成）
 
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
-幂等模拟提交、SQLite 重启恢复和自动化黄金集评测；
-当前定位是可运行的单机个人作品集版本，不宣称为多实例生产系统。
+幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
+当前定位是可容器化运行的单机个人作品集版本，不宣称为多实例生产系统。
 ```
 
 ---
@@ -716,7 +720,56 @@ python -X utf8 -m scripts.run_golden_evaluation --mode live
 
 ---
 
-## 11. 计划系统架构
+## 11. Docker Compose 部署
+
+Day 17 提供多阶段 Docker 镜像和 Compose 编排。先复制并填写运行配置：
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+一键构建并启动：
+
+```powershell
+docker compose config --quiet
+docker compose up --build --detach --wait
+```
+
+健康检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health/live
+Invoke-RestMethod http://127.0.0.1:8000/health/ready
+```
+
+完整自动验收会真实重建一次容器，并检查 SQLite 数据是否仍然存在：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_docker_deployment
+```
+
+Compose 使用：
+
+- `agent_runtime` 保存 SQLite 数据；
+- `model_cache` 保存 BGE 模型缓存；
+- 非 root 用户运行应用；
+- 只读根文件系统；
+- `no-new-privileges` 和全部 Linux capability 移除；
+- readiness 作为容器健康判断依据。
+
+`docker compose down` 会保留两个具名卷；`docker compose down --volumes` 会删除本地运行数据和模型缓存。
+
+详细步骤、首次模型下载说明和排障方式见：
+
+```text
+docs/docker_deployment.md
+```
+
+---
+
+## 12. 计划系统架构
 
 ```text
 Client
@@ -760,7 +813,7 @@ Agent Orchestrator
 
 ---
 
-## 12. 项目目录
+## 13. 项目目录
 
 ```text
 demo1/
@@ -771,6 +824,8 @@ demo1/
 │   ├── rag/
 │   ├── agent/
 │   ├── tools/
+│   ├── persistence/
+│   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
 ├── data/
@@ -778,14 +833,20 @@ demo1/
 │   └── samples/
 │       └── applications/
 ├── docs/
-│   └── tool_contracts/
+│   ├── tool_contracts/
+│   └── docker_deployment.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
 │   ├── evaluation/
+│   ├── deployment/
 │   └── fixtures/
 ├── scripts/
+├── Dockerfile
+├── compose.yaml
+├── .dockerignore
 ├── .env.example
+├── .gitattributes
 ├── .gitignore
 ├── pyproject.toml
 └── README.md
@@ -793,7 +854,7 @@ demo1/
 
 ---
 
-## 13. 当前开发环境
+## 14. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -801,6 +862,7 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+Docker Desktop：使用 Docker Compose v2
 ```
 
 虚拟环境 Python 路径：
@@ -821,6 +883,12 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
+安装运行和开发依赖：
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
 验证环境：
 
 ```powershell
@@ -830,7 +898,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 14. 数据验证命令
+## 15. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -858,7 +926,7 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
 ---
 
-## 15. 开发路线
+## 16. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -937,7 +1005,10 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
 ### Phase 8：部署与作品集整理
 
-- [ ] Docker；
+- [x] Docker 多阶段镜像；
+- [x] Docker Compose；
+- [x] 健康检查；
+- [x] SQLite 持久卷自动验收；
 - [ ] CI；
 - [ ] 演示数据初始化；
 - [ ] 演示脚本；
@@ -948,7 +1019,7 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
 ---
 
-## 16. 设计原则
+## 17. 设计原则
 
 本项目遵循以下原则：
 
@@ -966,7 +1037,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 17. 预期评测指标
+## 18. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -982,7 +1053,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 18. 作品集价值
+## 19. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1016,7 +1087,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 19. 免责声明
+## 20. 免责声明
 
 本仓库仅用于：
 

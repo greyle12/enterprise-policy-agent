@@ -10,6 +10,7 @@ from pydantic import TypeAdapter
 
 from app.agent.workflow_models import AgentSessionInfo, AgentSessionPhase
 from app.persistence.sqlite_schema import (
+    SQLITE_SCHEMA_VERSION,
     connect_database,
     initialize_database,
 )
@@ -68,6 +69,29 @@ class SQLiteAgentStateStore:
     ) -> None:
         self.database_path = initialize_database(database_path)
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    async def ping(self) -> None:
+        """Verify that SQLite is reachable and uses the expected schema."""
+
+        await asyncio.to_thread(self._ping)
+
+    def _ping(self) -> None:
+        connection = connect_database(self.database_path)
+        try:
+            result = connection.execute("SELECT 1").fetchone()
+            if result is None or int(result[0]) != 1:
+                raise RuntimeError("SQLite readiness query returned no result")
+
+            schema_version = int(
+                connection.execute("PRAGMA user_version").fetchone()[0]
+            )
+            if schema_version != SQLITE_SCHEMA_VERSION:
+                raise RuntimeError(
+                    "SQLite schema version does not match the application: "
+                    f"{schema_version} != {SQLITE_SCHEMA_VERSION}"
+                )
+        finally:
+            connection.close()
 
     async def save_route_state(
         self,

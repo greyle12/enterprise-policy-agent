@@ -11,6 +11,16 @@ dependencies = [
     "openai>=2.0,<3.0",
     "pydantic-settings>=2.0,<3.0",
     "langgraph>=1.2,<2.0",
+    "fastapi>=0.140,<1.0",
+    "httpx>=0.28,<1.0",
+    "uvicorn[standard]>=0.35,<1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0,<10.0",
+    "pytest-asyncio>=1.0,<2.0",
+    "ruff>=0.14,<1.0",
 ]
 
 [tool.pytest.ini_options]
