@@ -1,5 +1,7 @@
 ﻿# 企业制度问答与流程办理 Agent
 
+[![Continuous Integration](https://github.com/greyle12/enterprise-policy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/greyle12/enterprise-policy-agent/actions/workflows/ci.yml)
+
 一个面向企业内部制度查询与流程办理场景的 AI Agent 个人项目。
 
 项目不止实现普通的文档问答，还计划完成从制度检索、条款引用、意图识别、材料检查、申请草稿生成、用户确认到模拟审批提交的完整流程。
@@ -188,7 +190,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 8：容器化部署（Day 17 已完成）
+Phase 9：持续集成与质量门禁（Day 18 已完成）
 ```
 
 ### 已完成
@@ -220,6 +222,12 @@ Phase 8：容器化部署（Day 17 已完成）
 - [x] liveness 与 readiness 健康检查；
 - [x] SQLite 与 BGE 模型缓存具名卷；
 - [x] 容器重建后的 SQLite 持久化自动验收。
+- [x] GitHub Actions 自动持续集成；
+- [x] Ruff、pytest、黄金评测和 Wheel 自动质量门禁；
+- [x] 合并后 Docker 镜像自动构建验证；
+- [x] Pull Request 新增依赖风险审查；
+- [x] Python 与 GitHub Actions 每周依赖更新；
+- [x] CI 证据 Artifact 和安全配置契约。
 
 ### 尚未实现
 
@@ -239,7 +247,8 @@ Phase 8：容器化部署（Day 17 已完成）
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
 幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
-当前定位是可容器化运行的单机个人作品集版本，不宣称为多实例生产系统。
+当前还具备自动 CI 质量门禁，定位仍是可容器化运行的单机个人作品集版本，
+不宣称为多实例生产系统。
 ```
 
 ---
@@ -769,7 +778,48 @@ docs/docker_deployment.md
 
 ---
 
-## 12. 计划系统架构
+## 12. GitHub Actions 持续集成
+
+Day 18 将本地质量命令接入无密钥、只读权限的 GitHub Actions：
+
+```text
+Push / Pull Request / 手动运行
+→ 固定 Python 3.12.10
+→ 安装依赖并执行 pip check
+→ 验证 CI 安全契约
+→ Ruff check
+→ 全量 pytest
+→ 30 条离线黄金评测
+→ 构建 Python Wheel
+```
+
+向 `main` 或 `master` 推送时，在 Python 质量门禁通过后继续验证：
+
+```text
+Docker Compose 配置
+→ 完整 Docker 镜像构建
+→ 非 root 用户和 Python 包检查
+```
+
+Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、
+黄金评测 JSON/Markdown 和可安装 Wheel，方便查看失败原因和保存可复现证据。
+
+本地检查 CI 配置：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_ci_configuration
+```
+
+详细触发规则、安全边界、GitHub 首次验收和排障见：
+
+```text
+docs/continuous_integration.md
+```
+
+---
+
+## 13. 计划系统架构
 
 ```text
 Client
@@ -813,10 +863,14 @@ Agent Orchestrator
 
 ---
 
-## 13. 项目目录
+## 14. 项目目录
 
 ```text
 demo1/
+├── .github/
+│   ├── workflows/
+│   │   └── ci.yml
+│   └── dependabot.yml
 ├── app/
 │   ├── api/
 │   ├── core/
@@ -834,7 +888,8 @@ demo1/
 │       └── applications/
 ├── docs/
 │   ├── tool_contracts/
-│   └── docker_deployment.md
+│   ├── docker_deployment.md
+│   └── continuous_integration.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -854,7 +909,7 @@ demo1/
 
 ---
 
-## 14. 当前开发环境
+## 15. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -898,7 +953,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 15. 数据验证命令
+## 16. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -924,9 +979,15 @@ python -c "import json; from pathlib import Path; files=sorted(Path('docs/tool_c
 python -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
+### 验证 CI 配置契约
+
+```powershell
+python -X utf8 -m scripts.verify_ci_configuration
+```
+
 ---
 
-## 16. 开发路线
+## 17. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1009,7 +1070,7 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 - [x] Docker Compose；
 - [x] 健康检查；
 - [x] SQLite 持久卷自动验收；
-- [ ] CI；
+- [x] CI；
 - [ ] 演示数据初始化；
 - [ ] 演示脚本；
 - [ ] 架构图；
@@ -1019,7 +1080,7 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
 ---
 
-## 17. 设计原则
+## 18. 设计原则
 
 本项目遵循以下原则：
 
@@ -1037,7 +1098,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 18. 预期评测指标
+## 19. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1053,7 +1114,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 19. 作品集价值
+## 20. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1069,6 +1130,7 @@ Day 16 当前质量门禁：
 - 自动化测试；
 - RAG 与 Agent 评测；
 - Docker 和工程化部署。
+- GitHub Actions 持续集成与供应链门禁。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1087,7 +1149,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 20. 免责声明
+## 21. 免责声明
 
 本仓库仅用于：
 
