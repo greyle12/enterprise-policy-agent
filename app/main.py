@@ -11,6 +11,9 @@ from app.agent.router import AgentRouter
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
+from app.api.routes.agent_sessions import (
+    router as agent_sessions_router,
+)
 from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
@@ -22,6 +25,7 @@ from app.llm.openai_compatible_client import (
 from app.persistence import (
     SQLiteAgentStateStore,
     SQLiteCheckpointSaver,
+    SQLiteConversationMemoryStore,
     SQLiteMockApprovalSubmitter,
 )
 from app.rag.embeddings import BGEEmbeddingProvider
@@ -121,6 +125,9 @@ async def _lifespan(
             settings.sqlite_database_path
         ),
         state_persister=state_store,
+        memory_store=SQLiteConversationMemoryStore(
+            settings.sqlite_database_path
+        ),
     )
     application.state.policy_answer_service = service
     application.state.agent_router = agent_router
@@ -159,6 +166,10 @@ def create_app(
     )
     application.include_router(
         agent_messages_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        agent_sessions_router,
         prefix="/api/v1",
     )
 

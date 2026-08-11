@@ -50,6 +50,7 @@ def test_initializes_schema_idempotently(tmp_path: Path) -> None:
         "langgraph_blobs",
         "langgraph_writes",
         "agent_sessions",
+        "conversation_messages",
         "application_draft_snapshots",
         "approval_submissions",
         "submission_audit_records",

@@ -13,6 +13,7 @@ from app.api.dependencies import get_agent_router
 from app.api.schemas.agent_messages import (
     AgentMessageRequest,
     AgentMessageResponse,
+    AgentMemoryResponse,
     AgentSessionResponse,
     AgentWorkflowStepResponse,
     AgentWorkflowTraceResponse,
@@ -368,6 +369,26 @@ async def handle_agent_message(
         session=(
             _session_response(result.session)
             if result.session is not None
+            else None
+        ),
+        memory=(
+            AgentMemoryResponse(
+                backend=result.memory.backend,
+                stored_message_count=(
+                    result.memory.stored_message_count
+                ),
+                context_applied=result.memory.context_applied,
+                context_messages_used=(
+                    result.memory.context_messages_used
+                ),
+                context_window_limit=(
+                    result.memory.context_window_limit
+                ),
+                survives_process_restart=(
+                    result.memory.survives_process_restart
+                ),
+            )
+            if result.memory is not None
             else None
         ),
     )

@@ -190,7 +190,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 9：持续集成与质量门禁（Day 18 已完成）
+Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 ```
 
 ### 已完成
@@ -228,6 +228,11 @@ Phase 9：持续集成与质量门禁（Day 18 已完成）
 - [x] Pull Request 新增依赖风险审查；
 - [x] Python 与 GitHub Actions 每周依赖更新；
 - [x] CI 证据 Artifact 和安全配置契约。
+- [x] 会话隔离的用户/助手对话记忆；
+- [x] SQLite 对话历史与 v1 → v2 自动迁移；
+- [x] 受限上下文窗口和省略追问消解；
+- [x] 常见凭据脱敏、消息截断和 50 轮保留上限；
+- [x] 对话历史查询和完整会话清除 API。
 
 ### 尚未实现
 
@@ -247,7 +252,8 @@ Phase 9：持续集成与质量门禁（Day 18 已完成）
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
 幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
-当前还具备自动 CI 质量门禁，定位仍是可容器化运行的单机个人作品集版本，
+当前还具备自动 CI 质量门禁和可重启恢复的受限对话记忆，
+定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
 
@@ -616,6 +622,9 @@ submission
 
 病假材料等敏感附件应限制访问范围。
 
+对话记忆写入前会脱敏常见 API Key、Token 和密码形态，并限制单条消息、
+上下文窗口和每个会话的保留轮次。该机制不能替代生产环境的身份认证、授权和数据分类。
+
 ---
 
 ### 9.4 人在回路
@@ -819,7 +828,40 @@ docs/continuous_integration.md
 
 ---
 
-## 13. 计划系统架构
+## 13. Agent 对话记忆
+
+Day 19 将流程 checkpoint 与自然语言对话记忆明确分离：
+
+```text
+用户消息
+→ 读取当前 session 最近 4 条已脱敏消息
+→ 仅在省略追问时构造上下文
+→ 执行意图识别和业务工具
+→ 返回本轮原始 request
+→ 将用户消息和助手回复写入 SQLite
+```
+
+查询最近历史：
+
+```http
+GET /api/v1/agent/sessions/{session_id}/messages?limit=20
+```
+
+清除 checkpoint、可变草稿投影和对话记忆：
+
+```http
+DELETE /api/v1/agent/sessions/{session_id}
+```
+
+完整设计、保留上限、安全边界和 PowerShell 示例见：
+
+```text
+docs/conversation_memory.md
+```
+
+---
+
+## 14. 计划系统架构
 
 ```text
 Client
@@ -837,6 +879,7 @@ Agent Orchestrator
   │
   ├── Intent Router
   ├── Conversation State
+  ├── Bounded Conversation Memory
   ├── Human Confirmation Node
   ├── Error Recovery
   │
@@ -863,7 +906,7 @@ Agent Orchestrator
 
 ---
 
-## 14. 项目目录
+## 15. 项目目录
 
 ```text
 demo1/
@@ -877,6 +920,7 @@ demo1/
 │   ├── llm/
 │   ├── rag/
 │   ├── agent/
+│   ├── memory/
 │   ├── tools/
 │   ├── persistence/
 │   ├── evaluation/
@@ -889,7 +933,8 @@ demo1/
 ├── docs/
 │   ├── tool_contracts/
 │   ├── docker_deployment.md
-│   └── continuous_integration.md
+│   ├── continuous_integration.md
+│   └── conversation_memory.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -909,7 +954,7 @@ demo1/
 
 ---
 
-## 15. 当前开发环境
+## 16. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -953,7 +998,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 16. 数据验证命令
+## 17. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -985,9 +1030,15 @@ python -X utf8 -m scripts.run_golden_evaluation --mode offline
 python -X utf8 -m scripts.verify_ci_configuration
 ```
 
+### 验证持久化对话记忆
+
+```powershell
+python -X utf8 -m scripts.verify_conversation_memory
+```
+
 ---
 
-## 17. 开发路线
+## 18. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1033,6 +1084,8 @@ python -X utf8 -m scripts.verify_ci_configuration
 - [x] 意图路由；
 - [x] 会话状态；
 - [x] 多轮字段收集；
+- [x] 受限对话记忆；
+- [x] 多轮省略指代消解；
 - [ ] 相对日期确认；
 - [x] 人在回路确认节点；
 - [x] 工具调用编排；
@@ -1043,6 +1096,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 
 - [x] REST API；
 - [x] SQLite；
+- [x] SQLite 对话历史；
 - [ ] Redis 会话状态；
 - [x] 申请数据库；
 - [x] 审批工作流数据库；
@@ -1080,7 +1134,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 
 ---
 
-## 18. 设计原则
+## 19. 设计原则
 
 本项目遵循以下原则：
 
@@ -1098,7 +1152,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 19. 预期评测指标
+## 20. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1114,7 +1168,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 20. 作品集价值
+## 21. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1131,6 +1185,7 @@ Day 16 当前质量门禁：
 - RAG 与 Agent 评测；
 - Docker 和工程化部署。
 - GitHub Actions 持续集成与供应链门禁。
+- 会话隔离、持久化和受限上下文记忆。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1149,7 +1204,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 21. 免责声明
+## 22. 免责声明
 
 本仓库仅用于：
 

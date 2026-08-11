@@ -28,6 +28,14 @@ from app.agent.workflow_models import (
     AgentWorkflowStep,
     AgentWorkflowTrace,
 )
+from app.memory.conversation import (
+    ContextualizedRequest,
+    ConversationContextBuilder,
+    ConversationMemoryInfo,
+    ConversationMemorySnapshot,
+    ConversationMemoryStore,
+    InMemoryConversationMemoryStore,
+)
 from app.rag.policy_answer_service import PolicyAnswer
 from app.tools.approval_models import ApprovalCheckAnswer
 from app.tools.draft_models import (
@@ -45,7 +53,7 @@ from app.tools.mock_approval_submission import (
 from app.tools.submission_models import MockApprovalSubmissionResult
 
 _WORKFLOW_NAME = "enterprise_policy_workflow"
-_WORKFLOW_VERSION = "1.3"
+_WORKFLOW_VERSION = "1.4"
 _SESSION_ID_PATTERN = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}"
 )
@@ -271,6 +279,13 @@ def _request_from(state: AgentWorkflowState) -> str:
     return request
 
 
+def _contextual_request_from(state: AgentWorkflowState) -> str:
+    request = state.get("contextual_request")
+    if isinstance(request, str) and request:
+        return request
+    return _request_from(state)
+
+
 def _session_id_from(state: AgentWorkflowState) -> str:
     session_id = state.get("session_id")
     if not isinstance(session_id, str) or not session_id:
@@ -474,6 +489,8 @@ class AgentWorkflow:
         submission_service: ApplicationSubmitter,
         checkpointer: BaseCheckpointSaver | None = None,
         state_persister: AgentStatePersister | None = None,
+        memory_store: ConversationMemoryStore | None = None,
+        context_builder: ConversationContextBuilder | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._intent_classifier = intent_classifier
@@ -495,6 +512,12 @@ class AgentWorkflow:
                 _CHECKPOINT_ALLOWED_TYPES
             )
         self._state_persister = state_persister
+        self._memory_store = (
+            memory_store or InMemoryConversationMemoryStore()
+        )
+        self._context_builder = (
+            context_builder or ConversationContextBuilder()
+        )
         self._checkpoint_backend = str(
             getattr(
                 self._checkpointer,
@@ -749,7 +772,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         classification = await self._intent_classifier.classify(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         return {
             "classification": classification,
@@ -793,7 +816,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._policy_answer_service.answer(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = AgentResponseStatus.COMPLETED
         return {
@@ -812,7 +835,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._material_checker.check(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
@@ -836,7 +859,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._approval_checker.check(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
@@ -861,7 +884,7 @@ class AgentWorkflow:
     ) -> AgentWorkflowState:
         request = _request_from(state)
         answer = await self._draft_generator.generate(
-            request,
+            _contextual_request_from(state),
             session_id=_session_id_from(state),
         )
         result = self._prepared_draft_result(answer.result)
@@ -1564,6 +1587,41 @@ class AgentWorkflow:
             ),
         )
 
+    async def _record_memory(
+        self,
+        result: AgentRouteResult,
+        contextualized: ContextualizedRequest,
+    ) -> AgentRouteResult:
+        session = result.session
+        if session is None:
+            raise RuntimeError("Agent result is missing session metadata")
+        await self._memory_store.append_turn(
+            session.session_id,
+            user_message=result.request,
+            assistant_message=result.reply,
+        )
+        snapshot = await self._memory_store.get_snapshot(
+            session.session_id,
+            limit=self._context_builder.message_limit,
+        )
+        return replace(
+            result,
+            memory=ConversationMemoryInfo(
+                backend=snapshot.backend,
+                stored_message_count=snapshot.total_message_count,
+                context_applied=contextualized.context_applied,
+                context_messages_used=(
+                    contextualized.context_messages_used
+                ),
+                context_window_limit=(
+                    self._context_builder.message_limit
+                ),
+                survives_process_restart=(
+                    snapshot.survives_process_restart
+                ),
+            ),
+        )
+
     async def run(
         self,
         user_input: str,
@@ -1590,12 +1648,27 @@ class AgentWorkflow:
                 AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value
                 in snapshot.next
             )
+            memory_snapshot = await self._memory_store.get_snapshot(
+                resolved_session_id,
+                limit=self._context_builder.message_limit,
+            )
             if pending_confirmation:
+                contextualized = ContextualizedRequest(
+                    original=normalized_input,
+                    resolved=normalized_input,
+                    context_applied=False,
+                    context_messages_used=0,
+                    reason="confirmation_gate",
+                )
                 action = _explicit_draft_action(normalized_input)
                 if action is None:
-                    return self._pending_input_result(
+                    result = self._pending_input_result(
                         snapshot_state,
                         normalized_input,
+                    )
+                    return await self._record_memory(
+                        result,
+                        contextualized,
                     )
                 turn_number = snapshot_state.get(
                     "turn_number",
@@ -1603,6 +1676,7 @@ class AgentWorkflow:
                 ) + 1
                 resume_state: AgentWorkflowState = {
                     "request": normalized_input,
+                    "contextual_request": normalized_input,
                     "turn_number": turn_number,
                     "turn_action": action,
                     "classification": (
@@ -1634,9 +1708,14 @@ class AgentWorkflow:
                     config,
                 )
             else:
+                contextualized = self._context_builder.build(
+                    normalized_input,
+                    memory_snapshot.messages,
+                )
                 raw_state = await self._graph.ainvoke(
                     {
                         "request": normalized_input,
+                        "contextual_request": contextualized.resolved,
                         "session_id": resolved_session_id,
                     },
                     config,
@@ -1652,11 +1731,26 @@ class AgentWorkflow:
                 state,
                 interrupted=interrupted,
             )
-            return self._result_from_state(
+            result = self._result_from_state(
                 state,
                 interrupted=interrupted,
                 session=session,
             )
+            return await self._record_memory(result, contextualized)
+
+    async def get_memory_snapshot(
+        self,
+        session_id: str,
+        *,
+        limit: int = 20,
+    ) -> ConversationMemorySnapshot:
+        """Return recent sanitized messages for one validated session."""
+
+        resolved = self._validate_or_create_session_id(session_id)
+        return await self._memory_store.get_snapshot(
+            resolved,
+            limit=limit,
+        )
 
     async def clear_session(self, session_id: str) -> None:
         """删除一个内存 checkpoint；主要供测试和演示重置使用。"""
@@ -1666,6 +1760,7 @@ class AgentWorkflow:
             await self._checkpointer.adelete_thread(resolved)
             if self._state_persister is not None:
                 await self._state_persister.delete_session(resolved)
+            await self._memory_store.clear_session(resolved)
         self._session_locks.pop(resolved, None)
 
     def draw_mermaid(self) -> str:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-SQLITE_SCHEMA_VERSION = 1
+SQLITE_SCHEMA_VERSION = 2
 
 
 def normalize_database_path(database_path: str | Path) -> Path:
@@ -35,7 +35,7 @@ def connect_database(database_path: str | Path) -> sqlite3.Connection:
 
 
 def initialize_database(database_path: str | Path) -> Path:
-    """Create or migrate the Day 15 SQLite schema idempotently."""
+    """Create or migrate the runtime SQLite schema idempotently."""
 
     path = normalize_database_path(database_path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -117,6 +117,24 @@ def initialize_database(database_path: str | Path) -> Path:
                 checkpoint_backend TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS conversation_messages (
+                message_id TEXT PRIMARY KEY,
+                session_id TEXT NOT NULL,
+                turn_number INTEGER NOT NULL,
+                role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+                content TEXT NOT NULL,
+                redacted INTEGER NOT NULL DEFAULT 0,
+                truncated INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL,
+                UNIQUE (session_id, turn_number, role)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_conversation_messages_session
+                ON conversation_messages (
+                    session_id,
+                    turn_number DESC
+                );
 
             CREATE TABLE IF NOT EXISTS application_draft_snapshots (
                 draft_id TEXT NOT NULL,

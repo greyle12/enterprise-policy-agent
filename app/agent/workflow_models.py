@@ -5,6 +5,7 @@ from enum import StrEnum
 from typing import TypedDict
 
 from app.agent.intent import IntentClassification
+from app.memory.conversation import ConversationMemoryInfo
 from app.rag.policy_context import PolicyCitation
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
@@ -112,6 +113,7 @@ class AgentRouteResult:
     submission: MockApprovalSubmissionResult | None = None
     workflow: AgentWorkflowTrace | None = None
     session: AgentSessionInfo | None = None
+    memory: ConversationMemoryInfo | None = None
 
 
 class AgentWorkflowState(TypedDict, total=False):
@@ -122,6 +124,7 @@ class AgentWorkflowState(TypedDict, total=False):
     session_phase: AgentSessionPhase
     turn_action: AgentTurnAction
     request: str
+    contextual_request: str
     classification: IntentClassification | None
     status: AgentResponseStatus | None
     reply: str | None
