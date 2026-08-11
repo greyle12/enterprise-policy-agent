@@ -33,6 +33,7 @@ from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.resilience import ResilientToolExecutor
 from app.tools.approval_check import ApprovalRuleChecker
 from app.tools.draft_generation import ApplicationDraftGenerator
 from app.tools.draft_models import DraftUserContext
@@ -66,11 +67,7 @@ def _build_policy_answer_service() -> tuple[
     )
 
     settings = get_settings()
-    llm_client = (
-        OpenAICompatibleLLMClient.from_settings(
-            settings
-        )
-    )
+    llm_client = OpenAICompatibleLLMClient.from_settings(settings)
 
     service = PolicyAnswerService(
         retriever=retriever,
@@ -86,23 +83,11 @@ async def _lifespan(
 ) -> AsyncIterator[None]:
     """初始化并释放应用级共享资源。"""
 
-    service, llm_client = (
-        _build_policy_answer_service()
-    )
-    material_checker = (
-        RequiredMaterialsChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
-    approval_checker = (
-        ApprovalRuleChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
+    service, llm_client = _build_policy_answer_service()
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     settings = get_settings()
-    state_store = SQLiteAgentStateStore(
-        settings.sqlite_database_path
-    )
+    state_store = SQLiteAgentStateStore(settings.sqlite_database_path)
     agent_router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=llm_client,
@@ -118,15 +103,16 @@ async def _lifespan(
                 user_context=_DEMO_DRAFT_USER_CONTEXT,
             )
         ),
-        submission_service=SQLiteMockApprovalSubmitter(
-            settings.sqlite_database_path
-        ),
-        checkpointer=SQLiteCheckpointSaver(
-            settings.sqlite_database_path
-        ),
+        submission_service=SQLiteMockApprovalSubmitter(settings.sqlite_database_path),
+        checkpointer=SQLiteCheckpointSaver(settings.sqlite_database_path),
         state_persister=state_store,
-        memory_store=SQLiteConversationMemoryStore(
-            settings.sqlite_database_path
+        memory_store=SQLiteConversationMemoryStore(settings.sqlite_database_path),
+        tool_executor=ResilientToolExecutor(
+            safe_tool_timeout_seconds=(settings.agent_safe_tool_timeout_seconds),
+            mutation_tool_timeout_seconds=(settings.agent_mutation_tool_timeout_seconds),
+            max_attempts=settings.agent_tool_max_attempts,
+            retry_min_wait_seconds=(settings.agent_retry_min_wait_seconds),
+            retry_max_wait_seconds=(settings.agent_retry_max_wait_seconds),
         ),
     )
     application.state.policy_answer_service = service
@@ -151,11 +137,7 @@ def create_app(
     application = FastAPI(
         title="Enterprise Policy Agent",
         version="0.1.0",
-        lifespan=(
-            _lifespan
-            if enable_lifespan
-            else None
-        ),
+        lifespan=(_lifespan if enable_lifespan else None),
     )
     application.include_router(
         health_router,

@@ -153,9 +153,7 @@ def _material_answer(
         score=1.0,
     )
     result = MaterialCheckResult(
-        application_type=(
-            ApplicationType.TRAVEL_REIMBURSEMENT
-        ),
+        application_type=(ApplicationType.TRAVEL_REIMBURSEMENT),
         mode=MaterialCheckMode.REQUIREMENTS,
         required_materials=(
             MaterialRequirement(
@@ -174,10 +172,7 @@ def _material_answer(
     return MaterialCheckAnswer(
         request="出差报销需要哪些材料？",
         result=result,
-        reply=(
-            clarification_question
-            or "需要准备差旅行程单。[S1]"
-        ),
+        reply=(clarification_question or "需要准备差旅行程单。[S1]"),
     )
 
 
@@ -197,15 +192,9 @@ def _approval_answer(
     result = ApprovalCheckResult(
         application_type=ApprovalApplicationType.PURCHASE,
         approval_level=(
-            None
-            if clarification_question is not None
-            else ApprovalLevel.GENERAL_PURCHASE
+            None if clarification_question is not None else ApprovalLevel.GENERAL_PURCHASE
         ),
-        amount=(
-            None
-            if clarification_question is not None
-            else Decimal(6000)
-        ),
+        amount=(None if clarification_question is not None else Decimal(6000)),
         leave_days=None,
         steps=(
             ()
@@ -228,10 +217,7 @@ def _approval_answer(
     return ApprovalCheckAnswer(
         request="预计总金额6000元的采购需要谁审批？",
         result=result,
-        reply=(
-            clarification_question
-            or "审批路线为直属经理。[S1]"
-        ),
+        reply=(clarification_question or "审批路线为直属经理。[S1]"),
     )
 
 
@@ -257,10 +243,7 @@ def _draft_answer(
     return DraftGenerationAnswer(
         request="帮我生成采购申请草稿。",
         result=result,
-        reply=(
-            clarification_question
-            or "已生成采购申请草稿。[S1]"
-        ),
+        reply=(clarification_question or "已生成采购申请草稿。[S1]"),
     )
 
 
@@ -270,7 +253,7 @@ def _assert_workflow_path(
 ) -> None:
     assert result.workflow is not None
     assert result.workflow.name == "enterprise_policy_workflow"
-    assert result.workflow.version == "1.4"
+    assert result.workflow.version == "1.5"
     assert [step.sequence for step in result.workflow.steps] == [
         1,
         2,
@@ -289,9 +272,7 @@ def _assert_workflow_path(
 
 
 def test_routes_policy_query_to_answer_service() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.POLICY_QUERY)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.POLICY_QUERY))
     citation = _citation()
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
@@ -310,9 +291,7 @@ def test_routes_policy_query_to_answer_service() -> None:
         draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
-    result = asyncio.run(
-        router.route("  出差住宿标准是多少？  ")
-    )
+    result = asyncio.run(router.route("  出差住宿标准是多少？  "))
 
     assert result.request == "出差住宿标准是多少？"
     assert result.status is AgentResponseStatus.COMPLETED
@@ -329,9 +308,7 @@ def test_routes_policy_query_to_answer_service() -> None:
 
 
 def test_routes_material_check_to_material_tool() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.MATERIAL_CHECK)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.MATERIAL_CHECK))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -350,9 +327,7 @@ def test_routes_material_check_to_material_tool() -> None:
         draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
-    result = asyncio.run(
-        router.route("  出差报销需要哪些材料？  ")
-    )
+    result = asyncio.run(router.route("  出差报销需要哪些材料？  "))
 
     assert result.status is AgentResponseStatus.COMPLETED
     assert result.reply == material_answer.reply
@@ -368,9 +343,7 @@ def test_routes_material_check_to_material_tool() -> None:
 
 
 def test_material_check_can_request_clarification() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.MATERIAL_CHECK)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.MATERIAL_CHECK))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -379,9 +352,7 @@ def test_material_check_can_request_clarification() -> None:
         )
     )
     question = "请说明是差旅报销还是普通费用报销。"
-    material_checker = FakeMaterialChecker(
-        _material_answer(clarification_question=question)
-    )
+    material_checker = FakeMaterialChecker(_material_answer(clarification_question=question))
     approval_checker = FakeApprovalChecker(_approval_answer())
     router = AgentRouter(
         intent_classifier=classifier,
@@ -393,10 +364,7 @@ def test_material_check_can_request_clarification() -> None:
 
     result = asyncio.run(router.route("报销需要哪些材料？"))
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert result.reply == question
     assert result.material_check is not None
     assert answer_service.calls == []
@@ -408,9 +376,7 @@ def test_material_check_can_request_clarification() -> None:
 
 
 def test_routes_approval_query_to_approval_tool() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.APPROVAL_QUERY)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.APPROVAL_QUERY))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -446,9 +412,7 @@ def test_routes_approval_query_to_approval_tool() -> None:
 
 
 def test_approval_check_can_request_clarification() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.APPROVAL_QUERY)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.APPROVAL_QUERY))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -458,9 +422,7 @@ def test_approval_check_can_request_clarification() -> None:
     )
     material_checker = FakeMaterialChecker(_material_answer())
     question = "请补充预计采购总金额。"
-    approval_checker = FakeApprovalChecker(
-        _approval_answer(clarification_question=question)
-    )
+    approval_checker = FakeApprovalChecker(_approval_answer(clarification_question=question))
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
@@ -471,10 +433,7 @@ def test_approval_check_can_request_clarification() -> None:
 
     result = asyncio.run(router.route("采购电脑需要谁审批？"))
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert result.reply == question
     assert result.approval_check is not None
     assert answer_service.calls == []
@@ -486,9 +445,7 @@ def test_approval_check_can_request_clarification() -> None:
 
 
 def test_routes_draft_generation_to_draft_tool() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.DRAFT_GENERATION)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.DRAFT_GENERATION))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -526,9 +483,7 @@ def test_routes_draft_generation_to_draft_tool() -> None:
 
 
 def test_draft_generation_can_request_clarification() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.DRAFT_GENERATION)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.DRAFT_GENERATION))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -539,9 +494,7 @@ def test_draft_generation_can_request_clarification() -> None:
     material_checker = FakeMaterialChecker(_material_answer())
     approval_checker = FakeApprovalChecker(_approval_answer())
     question = "请补充采购事项、数量和预计单价。"
-    draft_generator = FakeDraftGenerator(
-        _draft_answer(clarification_question=question)
-    )
+    draft_generator = FakeDraftGenerator(_draft_answer(clarification_question=question))
     router = AgentRouter(
         intent_classifier=classifier,
         policy_answer_service=answer_service,
@@ -552,10 +505,7 @@ def test_draft_generation_can_request_clarification() -> None:
 
     result = asyncio.run(router.route("帮我生成采购申请草稿。"))
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert result.reply == question
     assert result.application_draft is not None
     assert draft_generator.calls == ["帮我生成采购申请草稿。"]
@@ -569,9 +519,7 @@ def test_draft_generation_can_request_clarification() -> None:
 
 
 def test_unknown_intent_requests_clarification() -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.UNKNOWN)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.UNKNOWN))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",
@@ -589,14 +537,9 @@ def test_unknown_intent_requests_clarification() -> None:
         draft_generator=FakeDraftGenerator(_draft_answer()),
     )
 
-    result = asyncio.run(
-        router.route("帮我看看这个")
-    )
+    result = asyncio.run(router.route("帮我看看这个"))
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert "请补充" in result.reply
     assert result.citations == ()
     assert answer_service.calls == []
@@ -610,9 +553,7 @@ def test_unknown_intent_requests_clarification() -> None:
 
 def test_compiles_expected_langgraph_topology() -> None:
     router = AgentRouter(
-        intent_classifier=FakeIntentClassifier(
-            _classification(IntentType.UNKNOWN)
-        ),
+        intent_classifier=FakeIntentClassifier(_classification(IntentType.UNKNOWN)),
         policy_answer_service=FakePolicyAnswerService(
             PolicyAnswer(
                 question="不应调用",
@@ -637,9 +578,7 @@ def test_compiles_expected_langgraph_topology() -> None:
 def test_rejects_blank_input_before_classification(
     user_input: str,
 ) -> None:
-    classifier = FakeIntentClassifier(
-        _classification(IntentType.POLICY_QUERY)
-    )
+    classifier = FakeIntentClassifier(_classification(IntentType.POLICY_QUERY))
     answer_service = FakePolicyAnswerService(
         PolicyAnswer(
             question="不应调用",

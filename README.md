@@ -190,7 +190,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
+Phase 11：Agent 工具重试、超时与安全降级（Day 20 已完成）
 ```
 
 ### 已完成
@@ -233,6 +233,11 @@ Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 - [x] 受限上下文窗口和省略追问消解；
 - [x] 常见凭据脱敏、消息截断和 50 轮保留上限；
 - [x] 对话历史查询和完整会话清除 API。
+- [x] 只读和纯计算工具的 Tenacity 有界重试；
+- [x] 每次工具调用的独立超时和稳定错误分类；
+- [x] 不可信工具结果立即失败，不进入下游流程；
+- [x] 审批提交固定单次执行，失败后保留已确认草稿；
+- [x] 脱敏错误编号、恢复动作和容错元数据 API。
 
 ### 尚未实现
 
@@ -252,7 +257,8 @@ Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
 幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
-当前还具备自动 CI 质量门禁和可重启恢复的受限对话记忆，
+当前还具备自动 CI 质量门禁、可重启恢复的受限对话记忆，
+以及有界工具重试和副作用安全降级，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -861,7 +867,41 @@ docs/conversation_memory.md
 
 ---
 
-## 14. 计划系统架构
+## 14. Agent 工具容错
+
+Day 20 在 LangGraph 与各业务工具之间增加统一执行边界：
+
+```text
+只读 / 纯计算工具
+→ 单次超时
+→ 仅对超时、限流和上游不可用进行最多 3 次尝试
+→ 成功则标记 recovered
+→ 仍失败则返回 unavailable 和安全错误
+
+审批提交
+→ 单次超时
+→ 固定只执行 1 次
+→ 结果不确定时保留已确认草稿
+→ 用户使用相同 session_id 再次提交，由幂等键防重
+```
+
+响应中的 `resilience` 会说明：
+
+- 是否发生安全降级；
+- 是否通过重试恢复；
+- 每个工具的尝试次数；
+- 操作是否允许自动重试；
+- 稳定错误编号和恢复动作。
+
+原始异常文本、请求正文和凭据不会进入容错元数据。完整策略、错误分类、配置和 PowerShell 示例见：
+
+```text
+docs/agent_error_handling.md
+```
+
+---
+
+## 15. 计划系统架构
 
 ```text
 Client
@@ -906,7 +946,7 @@ Agent Orchestrator
 
 ---
 
-## 15. 项目目录
+## 16. 项目目录
 
 ```text
 demo1/
@@ -923,6 +963,7 @@ demo1/
 │   ├── memory/
 │   ├── tools/
 │   ├── persistence/
+│   ├── resilience/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -934,7 +975,8 @@ demo1/
 │   ├── tool_contracts/
 │   ├── docker_deployment.md
 │   ├── continuous_integration.md
-│   └── conversation_memory.md
+│   ├── conversation_memory.md
+│   └── agent_error_handling.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -954,7 +996,7 @@ demo1/
 
 ---
 
-## 16. 当前开发环境
+## 17. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -962,6 +1004,7 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+Tenacity：9.1.x
 Docker Desktop：使用 Docker Compose v2
 ```
 
@@ -998,7 +1041,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 17. 数据验证命令
+## 18. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1036,9 +1079,15 @@ python -X utf8 -m scripts.verify_ci_configuration
 python -X utf8 -m scripts.verify_conversation_memory
 ```
 
+### 验证 Agent 工具容错
+
+```powershell
+python -X utf8 -m scripts.verify_agent_resilience
+```
+
 ---
 
-## 18. 开发路线
+## 19. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1089,8 +1138,8 @@ python -X utf8 -m scripts.verify_conversation_memory
 - [ ] 相对日期确认；
 - [x] 人在回路确认节点；
 - [x] 工具调用编排；
-- [ ] 错误恢复；
-- [ ] 重试和超时。
+- [x] 错误恢复；
+- [x] 重试和超时。
 
 ### Phase 6：FastAPI 与数据持久化
 
@@ -1134,7 +1183,7 @@ python -X utf8 -m scripts.verify_conversation_memory
 
 ---
 
-## 19. 设计原则
+## 20. 设计原则
 
 本项目遵循以下原则：
 
@@ -1152,7 +1201,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 20. 预期评测指标
+## 21. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1168,7 +1217,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 21. 作品集价值
+## 22. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1204,7 +1253,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 22. 免责声明
+## 23. 免责声明
 
 本仓库仅用于：
 

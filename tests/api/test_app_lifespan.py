@@ -39,17 +39,19 @@ def test_lifespan_configures_and_closes_service(
         main_module,
         "get_settings",
         lambda: SimpleNamespace(
-            sqlite_database_path=tmp_path / "agent.db"
+            sqlite_database_path=tmp_path / "agent.db",
+            agent_safe_tool_timeout_seconds=65.0,
+            agent_mutation_tool_timeout_seconds=10.0,
+            agent_tool_max_attempts=3,
+            agent_retry_min_wait_seconds=0.1,
+            agent_retry_max_wait_seconds=1.0,
         ),
     )
 
     application = main_module.create_app()
 
     with TestClient(application):
-        assert (
-            application.state.policy_answer_service
-            is service
-        )
+        assert application.state.policy_answer_service is service
         assert llm_client.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
 
