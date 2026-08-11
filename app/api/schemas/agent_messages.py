@@ -12,6 +12,7 @@ from app.agent.router import (
     AgentSessionPhase,
     AgentWorkflowNode,
 )
+from app.api.schemas.conversation_memory import AgentMemoryResponse
 from app.tools.approval_models import (
     ApprovalAction,
     ApprovalApplicationType,
@@ -332,3 +333,4 @@ class AgentMessageResponse(BaseModel):
     submission: MockApprovalSubmissionResponse | None = None
     workflow: AgentWorkflowTraceResponse | None = None
     session: AgentSessionResponse | None = None
+    memory: AgentMemoryResponse | None = None

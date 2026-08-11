@@ -11,12 +11,22 @@ from app.agent.router import AgentRouter
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
+from app.api.routes.agent_sessions import (
+    router as agent_sessions_router,
+)
+from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
 from app.core.config import get_settings
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
+)
+from app.persistence import (
+    SQLiteAgentStateStore,
+    SQLiteCheckpointSaver,
+    SQLiteConversationMemoryStore,
+    SQLiteMockApprovalSubmitter,
 )
 from app.rag.embeddings import BGEEmbeddingProvider
 from app.rag.policy_answer_service import (
@@ -89,6 +99,10 @@ async def _lifespan(
             _POLICY_DIRECTORY
         )
     )
+    settings = get_settings()
+    state_store = SQLiteAgentStateStore(
+        settings.sqlite_database_path
+    )
     agent_router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=llm_client,
@@ -104,14 +118,26 @@ async def _lifespan(
                 user_context=_DEMO_DRAFT_USER_CONTEXT,
             )
         ),
+        submission_service=SQLiteMockApprovalSubmitter(
+            settings.sqlite_database_path
+        ),
+        checkpointer=SQLiteCheckpointSaver(
+            settings.sqlite_database_path
+        ),
+        state_persister=state_store,
+        memory_store=SQLiteConversationMemoryStore(
+            settings.sqlite_database_path
+        ),
     )
     application.state.policy_answer_service = service
     application.state.agent_router = agent_router
+    application.state.agent_state_store = state_store
 
     try:
         yield
     finally:
         await llm_client.close()
+        del application.state.agent_state_store
         del application.state.agent_router
         del application.state.policy_answer_service
 
@@ -132,11 +158,18 @@ def create_app(
         ),
     )
     application.include_router(
+        health_router,
+    )
+    application.include_router(
         policy_answers_router,
         prefix="/api/v1",
     )
     application.include_router(
         agent_messages_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        agent_sessions_router,
         prefix="/api/v1",
     )
 

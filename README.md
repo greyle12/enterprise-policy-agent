@@ -1,5 +1,7 @@
 ﻿# 企业制度问答与流程办理 Agent
 
+[![Continuous Integration](https://github.com/greyle12/enterprise-policy-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/greyle12/enterprise-policy-agent/actions/workflows/ci.yml)
+
 一个面向企业内部制度查询与流程办理场景的 AI Agent 个人项目。
 
 项目不止实现普通的文档问答，还计划完成从制度检索、条款引用、意图识别、材料检查、申请草稿生成、用户确认到模拟审批提交的完整流程。
@@ -188,7 +190,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 1：需求建模与工程骨架
+Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 ```
 
 ### 已完成
@@ -205,24 +207,42 @@ Phase 1：需求建模与工程骨架
 - [x] 幂等提交规则设计；
 - [x] Git 忽略规则；
 - [x] 环境变量模板。
+- [x] Markdown 制度解析、条款切分与结构化引用；
+- [x] BGE Embedding 和内存向量检索；
+- [x] OpenAI-compatible LLM 客户端与引用约束；
+- [x] 意图识别、材料检查和确定性审批路线；
+- [x] LangGraph 多轮草稿、人工确认和模拟提交；
+- [x] 提交幂等、审批路线冻结和审计记录；
+- [x] SQLite checkpoint 与业务数据持久化；
+- [x] 服务重启后恢复会话、草稿和审批记录；
+- [x] 30 条可执行黄金用例与五项质量门禁；
+- [x] JSON 和 Markdown 结构化评测报告。
+- [x] 多阶段、非 root Docker 镜像；
+- [x] Docker Compose 一键启动；
+- [x] liveness 与 readiness 健康检查；
+- [x] SQLite 与 BGE 模型缓存具名卷；
+- [x] 容器重建后的 SQLite 持久化自动验收。
+- [x] GitHub Actions 自动持续集成；
+- [x] Ruff、pytest、黄金评测和 Wheel 自动质量门禁；
+- [x] 合并后 Docker 镜像自动构建验证；
+- [x] Pull Request 新增依赖风险审查；
+- [x] Python 与 GitHub Actions 每周依赖更新；
+- [x] CI 证据 Artifact 和安全配置契约。
+- [x] 会话隔离的用户/助手对话记忆；
+- [x] SQLite 对话历史与 v1 → v2 自动迁移；
+- [x] 受限上下文窗口和省略追问消解；
+- [x] 常见凭据脱敏、消息截断和 50 轮保留上限；
+- [x] 对话历史查询和完整会话清除 API。
 
 ### 尚未实现
 
-- [ ] FastAPI 业务接口；
-- [ ] Markdown 和 PDF 文档解析；
-- [ ] 文档章节与条款切分；
-- [ ] Embedding 模型接入；
-- [ ] 向量数据库；
+- [ ] PDF 文档解析；
+- [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
 - [ ] Rerank；
-- [ ] LLM 客户端；
-- [ ] Agent 状态机；
-- [ ] 4 个工具的 Python 实现；
-- [ ] SQLite 或 PostgreSQL 持久化；
 - [ ] Redis 会话状态；
-- [ ] 自动化评测程序；
-- [ ] Docker 部署；
+- [ ] 权限过滤与提示注入专项评测；
 - [ ] 日志和可观测性。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
@@ -230,8 +250,11 @@ Phase 1：需求建模与工程骨架
 更准确的状态是：
 
 ```text
-已完成需求建模、模拟业务数据、工具契约和评测基线，
-正在进入文档解析与检索实现阶段。
+已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
+幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
+当前还具备自动 CI 质量门禁和可重启恢复的受限对话记忆，
+定位仍是可容器化运行的单机个人作品集版本，
+不宣称为多实例生产系统。
 ```
 
 ---
@@ -599,6 +622,9 @@ submission
 
 病假材料等敏感附件应限制访问范围。
 
+对话记忆写入前会脱敏常见 API Key、Token 和密码形态，并限制单条消息、
+上下文窗口和每个会话的保留轮次。该机制不能替代生产环境的身份认证、授权和数据分类。
+
 ---
 
 ### 9.4 人在回路
@@ -676,45 +702,166 @@ tests/evaluation/golden_test_cases.jsonl
 
 | 测试类别 | 数量 |
 |---|---:|
-| 制度问答 | 8 |
-| 规则计算 | 5 |
-| 流程办理 | 8 |
-| 权限与安全 | 5 |
-| 边界场景 | 4 |
+| 意图识别与工具路由 | 10 |
+| 材料完整性检查 | 10 |
+| 审批路线判断 | 10 |
 | 合计 | 30 |
 
-测试范围包括：
+每条用例都使用严格字段契约，自动统计：
 
-- 制度问答事实正确性；
-- 条款引用；
-- 采购金额计算；
-- 住宿标准计算；
-- 年假余额计算；
-- 审批路线判断；
-- 缺失字段识别；
-- 缺失材料识别；
-- 相对日期处理；
-- 用户明确确认；
-- 模糊确认拒绝；
-- 提示注入；
-- 身份伪造；
-- 医疗隐私；
-- 无答案处理；
-- 历史制度版本；
-- 正常重复提交；
-- 幂等键冲突。
+- 意图识别准确率；
+- 工具选择准确率；
+- 材料检查准确率；
+- 审批路线准确率；
+- 制度引用准确率。
 
-只有测试用例 `TC020` 允许创建新的正式申请：
+默认离线评测不会调用真实 LLM、不会连接正式运行数据库，也不会提交审批：
 
-```text
-TC020 明确确认后提交
+```powershell
+python -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
-其他用例不得产生新的正式提交。
+报告输出到：
+
+```text
+artifacts/evaluation/golden-evaluation-report.json
+artifacts/evaluation/golden-evaluation-report.md
+```
+
+如需测量真实意图分类模型，配置 `.env` 后运行：
+
+```powershell
+python -X utf8 -m scripts.run_golden_evaluation --mode live
+```
+
+报告会明确记录 `offline` 或 `live`，避免把关键词基线结果误写成真实 LLM 准确率。
 
 ---
 
-## 11. 计划系统架构
+## 11. Docker Compose 部署
+
+Day 17 提供多阶段 Docker 镜像和 Compose 编排。先复制并填写运行配置：
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+一键构建并启动：
+
+```powershell
+docker compose config --quiet
+docker compose up --build --detach --wait
+```
+
+健康检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health/live
+Invoke-RestMethod http://127.0.0.1:8000/health/ready
+```
+
+完整自动验收会真实重建一次容器，并检查 SQLite 数据是否仍然存在：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_docker_deployment
+```
+
+Compose 使用：
+
+- `agent_runtime` 保存 SQLite 数据；
+- `model_cache` 保存 BGE 模型缓存；
+- 非 root 用户运行应用；
+- 只读根文件系统；
+- `no-new-privileges` 和全部 Linux capability 移除；
+- readiness 作为容器健康判断依据。
+
+`docker compose down` 会保留两个具名卷；`docker compose down --volumes` 会删除本地运行数据和模型缓存。
+
+详细步骤、首次模型下载说明和排障方式见：
+
+```text
+docs/docker_deployment.md
+```
+
+---
+
+## 12. GitHub Actions 持续集成
+
+Day 18 将本地质量命令接入无密钥、只读权限的 GitHub Actions：
+
+```text
+Push / Pull Request / 手动运行
+→ 固定 Python 3.12.10
+→ 安装依赖并执行 pip check
+→ 验证 CI 安全契约
+→ Ruff check
+→ 全量 pytest
+→ 30 条离线黄金评测
+→ 构建 Python Wheel
+```
+
+向 `main` 或 `master` 推送时，在 Python 质量门禁通过后继续验证：
+
+```text
+Docker Compose 配置
+→ 完整 Docker 镜像构建
+→ 非 root 用户和 Python 包检查
+```
+
+Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、
+黄金评测 JSON/Markdown 和可安装 Wheel，方便查看失败原因和保存可复现证据。
+
+本地检查 CI 配置：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_ci_configuration
+```
+
+详细触发规则、安全边界、GitHub 首次验收和排障见：
+
+```text
+docs/continuous_integration.md
+```
+
+---
+
+## 13. Agent 对话记忆
+
+Day 19 将流程 checkpoint 与自然语言对话记忆明确分离：
+
+```text
+用户消息
+→ 读取当前 session 最近 4 条已脱敏消息
+→ 仅在省略追问时构造上下文
+→ 执行意图识别和业务工具
+→ 返回本轮原始 request
+→ 将用户消息和助手回复写入 SQLite
+```
+
+查询最近历史：
+
+```http
+GET /api/v1/agent/sessions/{session_id}/messages?limit=20
+```
+
+清除 checkpoint、可变草稿投影和对话记忆：
+
+```http
+DELETE /api/v1/agent/sessions/{session_id}
+```
+
+完整设计、保留上限、安全边界和 PowerShell 示例见：
+
+```text
+docs/conversation_memory.md
+```
+
+---
+
+## 14. 计划系统架构
 
 ```text
 Client
@@ -732,6 +879,7 @@ Agent Orchestrator
   │
   ├── Intent Router
   ├── Conversation State
+  ├── Bounded Conversation Memory
   ├── Human Confirmation Node
   ├── Error Recovery
   │
@@ -758,17 +906,24 @@ Agent Orchestrator
 
 ---
 
-## 12. 项目目录
+## 15. 项目目录
 
 ```text
 demo1/
+├── .github/
+│   ├── workflows/
+│   │   └── ci.yml
+│   └── dependabot.yml
 ├── app/
 │   ├── api/
 │   ├── core/
 │   ├── llm/
 │   ├── rag/
 │   ├── agent/
+│   ├── memory/
 │   ├── tools/
+│   ├── persistence/
+│   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
 ├── data/
@@ -776,14 +931,22 @@ demo1/
 │   └── samples/
 │       └── applications/
 ├── docs/
-│   └── tool_contracts/
+│   ├── tool_contracts/
+│   ├── docker_deployment.md
+│   ├── continuous_integration.md
+│   └── conversation_memory.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
 │   ├── evaluation/
+│   ├── deployment/
 │   └── fixtures/
 ├── scripts/
+├── Dockerfile
+├── compose.yaml
+├── .dockerignore
 ├── .env.example
+├── .gitattributes
 ├── .gitignore
 ├── pyproject.toml
 └── README.md
@@ -791,7 +954,7 @@ demo1/
 
 ---
 
-## 13. 当前开发环境
+## 16. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -799,6 +962,7 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+Docker Desktop：使用 Docker Compose v2
 ```
 
 虚拟环境 Python 路径：
@@ -819,6 +983,12 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
+安装运行和开发依赖：
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
 验证环境：
 
 ```powershell
@@ -828,7 +998,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 14. 数据验证命令
+## 17. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -851,12 +1021,24 @@ python -c "import json; from pathlib import Path; files=sorted(Path('docs/tool_c
 ### 验证 30 条黄金测试
 
 ```powershell
-python -c "import json; from pathlib import Path; lines=Path('tests/evaluation/golden_test_cases.jsonl').read_text(encoding='utf-8-sig').splitlines(); cases=[json.loads(line) for line in lines if line.strip()]; print('测试数量:',len(cases))"
+python -X utf8 -m scripts.run_golden_evaluation --mode offline
+```
+
+### 验证 CI 配置契约
+
+```powershell
+python -X utf8 -m scripts.verify_ci_configuration
+```
+
+### 验证持久化对话记忆
+
+```powershell
+python -X utf8 -m scripts.verify_conversation_memory
 ```
 
 ---
 
-## 15. 开发路线
+## 18. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -868,73 +1050,81 @@ python -c "import json; from pathlib import Path; lines=Path('tests/evaluation/g
 
 ### Phase 2：文档解析与基础检索
 
-- [ ] Markdown 文档解析；
-- [ ] YAML 元数据提取；
-- [ ] 章节和条款切分；
-- [ ] Chunk 数据模型；
+- [x] Markdown 文档解析；
+- [x] YAML 元数据提取；
+- [x] 章节和条款切分；
+- [x] Chunk 数据模型；
 - [ ] 基础关键词检索；
-- [ ] 制度引用结构；
-- [ ] 单元测试。
+- [x] 制度引用结构；
+- [x] 单元测试。
 
 ### Phase 3：向量检索与混合 RAG
 
-- [ ] Embedding 接入；
-- [ ] 向量数据库；
+- [x] Embedding 接入；
+- [x] 内存向量索引；
 - [ ] BM25；
 - [ ] Hybrid Search；
 - [ ] Rerank；
 - [ ] Query Rewrite；
-- [ ] 引用生成；
+- [x] 引用生成；
 - [ ] RAG 评测。
 
 ### Phase 4：Agent 工具实现
 
-- [ ] 实现 `search_policy`；
-- [ ] 实现 `check_required_materials`；
-- [ ] 实现 `create_application_draft`；
-- [ ] 实现 `submit_mock_approval`；
-- [ ] Pydantic 输入输出模型；
-- [ ] 工具单元测试；
-- [ ] 工具错误处理。
+- [x] 实现 `search_policy`；
+- [x] 实现 `check_required_materials`；
+- [x] 实现 `create_application_draft`；
+- [x] 实现 `submit_mock_approval`；
+- [x] Pydantic 输入输出模型；
+- [x] 工具单元测试；
+- [x] 工具错误处理。
 
 ### Phase 5：Agent 状态机
 
-- [ ] 意图路由；
-- [ ] 会话状态；
-- [ ] 多轮字段收集；
+- [x] 意图路由；
+- [x] 会话状态；
+- [x] 多轮字段收集；
+- [x] 受限对话记忆；
+- [x] 多轮省略指代消解；
 - [ ] 相对日期确认；
-- [ ] 人在回路确认节点；
-- [ ] 工具调用编排；
+- [x] 人在回路确认节点；
+- [x] 工具调用编排；
 - [ ] 错误恢复；
 - [ ] 重试和超时。
 
 ### Phase 6：FastAPI 与数据持久化
 
-- [ ] REST API；
-- [ ] SQLite 或 PostgreSQL；
+- [x] REST API；
+- [x] SQLite；
+- [x] SQLite 对话历史；
 - [ ] Redis 会话状态；
-- [ ] 申请数据库；
-- [ ] 审批工作流数据库；
-- [ ] 审计日志；
-- [ ] 幂等提交；
-- [ ] API 集成测试。
+- [x] 申请数据库；
+- [x] 审批工作流数据库；
+- [x] 审计日志；
+- [x] 幂等提交；
+- [x] API 集成测试。
 
 ### Phase 7：评测与安全
 
-- [ ] 自动运行黄金测试；
+- [x] 自动运行黄金测试；
 - [ ] 制度问答正确率；
-- [ ] 引用正确率；
-- [ ] 工具选择准确率；
-- [ ] 缺失材料识别率；
+- [x] 引用正确率；
+- [x] 工具选择准确率；
+- [x] 缺失材料识别率；
+- [x] 意图识别准确率；
+- [x] 审批路线准确率；
 - [ ] 权限拒绝成功率；
 - [ ] 提示注入测试；
-- [ ] 重复提交阻止率；
-- [ ] 错误案例分析。
+- [x] 重复提交阻止率；
+- [x] 错误案例明细报告。
 
 ### Phase 8：部署与作品集整理
 
-- [ ] Docker；
-- [ ] CI；
+- [x] Docker 多阶段镜像；
+- [x] Docker Compose；
+- [x] 健康检查；
+- [x] SQLite 持久卷自动验收；
+- [x] CI；
 - [ ] 演示数据初始化；
 - [ ] 演示脚本；
 - [ ] 架构图；
@@ -944,7 +1134,7 @@ python -c "import json; from pathlib import Path; lines=Path('tests/evaluation/g
 
 ---
 
-## 16. 设计原则
+## 19. 设计原则
 
 本项目遵循以下原则：
 
@@ -962,28 +1152,23 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 17. 预期评测指标
+## 20. 预期评测指标
 
-后续计划统计：
+Day 16 当前质量门禁：
 
-- 制度问答准确率；
-- 条款引用覆盖率；
-- 引用制度版本正确率；
-- 工具选择准确率；
-- 缺失字段识别准确率；
-- 缺失材料识别准确率；
-- 金额计算正确率；
-- 审批路线正确率；
-- 权限越界拒绝率；
-- 提示注入防护通过率；
-- 明确确认识别准确率；
-- 模糊确认阻止率；
-- 重复提交阻止率；
-- 幂等键冲突识别率。
+| 指标 | 门槛 |
+|---|---:|
+| 意图识别准确率 | ≥ 90% |
+| 工具选择准确率 | 100% |
+| 材料检查准确率 | 100% |
+| 审批路线准确率 | 100% |
+| 制度引用准确率 | 100% |
+
+后续仍需补充制度问答语义正确率、权限越界拒绝率、提示注入防护通过率和真实 LLM 回归基线。
 
 ---
 
-## 18. 作品集价值
+## 21. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -999,6 +1184,8 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 - 自动化测试；
 - RAG 与 Agent 评测；
 - Docker 和工程化部署。
+- GitHub Actions 持续集成与供应链门禁。
+- 会话隔离、持久化和受限上下文记忆。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1017,7 +1204,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 19. 免责声明
+## 22. 免责声明
 
 本仓库仅用于：
 

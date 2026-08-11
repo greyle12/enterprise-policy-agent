@@ -270,7 +270,7 @@ def _assert_workflow_path(
 ) -> None:
     assert result.workflow is not None
     assert result.workflow.name == "enterprise_policy_workflow"
-    assert result.workflow.version == "1.2"
+    assert result.workflow.version == "1.4"
     assert [step.sequence for step in result.workflow.steps] == [
         1,
         2,

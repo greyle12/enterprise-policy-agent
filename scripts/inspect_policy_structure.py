@@ -11,7 +11,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 
-from app.rag.policy_parser import parse_policy_directory
+from app.rag.policy_parser import parse_policy_directory  # noqa: E402
 
 POLICY_DIRECTORY = PROJECT_ROOT / "data" / "policies"
 

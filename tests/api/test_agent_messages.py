@@ -19,6 +19,7 @@ from app.agent.router import (
 )
 from app.api.dependencies import get_agent_router
 from app.main import create_app
+from app.memory import ConversationMemoryInfo
 from app.rag.policy_context import PolicyCitation
 from app.tools.approval_models import (
     ApprovalAction,
@@ -137,6 +138,14 @@ def test_routes_agent_message_and_returns_citations() -> None:
                 draft_revision=None,
                 pending_confirmation=False,
             ),
+            memory=ConversationMemoryInfo(
+                backend="sqlite",
+                stored_message_count=2,
+                context_applied=False,
+                context_messages_used=0,
+                context_window_limit=4,
+                survives_process_restart=True,
+            ),
         )
     )
     _use_fake_router(router)
@@ -186,6 +195,14 @@ def test_routes_agent_message_and_returns_citations() -> None:
             "pending_confirmation": False,
             "checkpoint_backend": "in_memory",
             "survives_process_restart": False,
+        },
+        "memory": {
+            "backend": "sqlite",
+            "stored_message_count": 2,
+            "context_applied": False,
+            "context_messages_used": 0,
+            "context_window_limit": 4,
+            "survives_process_restart": True,
         },
     }
     assert router.calls == ["出差住宿标准是多少？"]

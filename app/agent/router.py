@@ -1,6 +1,15 @@
 from __future__ import annotations
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
+
+from app.memory.conversation import (
+    ConversationContextBuilder,
+    ConversationMemorySnapshot,
+    ConversationMemoryStore,
+)
+
 from app.agent.workflow import (
+    AgentStatePersister,
     AgentWorkflow,
     ApplicationDraftCreator,
     ApplicationSubmitter,
@@ -44,6 +53,10 @@ class AgentRouter:
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
         submission_service: ApplicationSubmitter | None = None,
+        checkpointer: BaseCheckpointSaver | None = None,
+        state_persister: AgentStatePersister | None = None,
+        memory_store: ConversationMemoryStore | None = None,
+        context_builder: ConversationContextBuilder | None = None,
     ) -> None:
         self._workflow = AgentWorkflow(
             intent_classifier=intent_classifier,
@@ -54,6 +67,10 @@ class AgentRouter:
             submission_service=(
                 submission_service or MockApprovalSubmitter()
             ),
+            checkpointer=checkpointer,
+            state_persister=state_persister,
+            memory_store=memory_store,
+            context_builder=context_builder,
         )
 
     async def route(
@@ -70,9 +87,22 @@ class AgentRouter:
         )
 
     async def clear_session(self, session_id: str) -> None:
-        """清除一个演示会话的内存 checkpoint。"""
+        """清除 checkpoint、可变草稿投影和对话记忆。"""
 
         await self._workflow.clear_session(session_id)
+
+    async def get_conversation_history(
+        self,
+        session_id: str,
+        *,
+        limit: int = 20,
+    ) -> ConversationMemorySnapshot:
+        """读取一个会话最近的已脱敏对话记忆。"""
+
+        return await self._workflow.get_memory_snapshot(
+            session_id,
+            limit=limit,
+        )
 
     def draw_workflow_mermaid(self) -> str:
         """返回编译后的 LangGraph 拓扑，便于本地验收。"""

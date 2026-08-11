@@ -1,0 +1,56 @@
+name: enterprise-policy-agent
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: enterprise-policy-agent:day17
+    env_file:
+      - .env
+    environment:
+      APP_ENV: container
+      APP_HOST: 0.0.0.0
+      APP_PORT: "8000"
+      SQLITE_DATABASE_PATH: /app/data/runtime/enterprise_policy_agent.db
+      HF_HOME: /app/data/model-cache/huggingface
+      SENTENCE_TRANSFORMERS_HOME: /app/data/model-cache/sentence-transformers
+      TORCH_HOME: /app/data/model-cache/torch
+      XDG_CACHE_HOME: /app/data/model-cache
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - type: volume
+        source: agent_runtime
+        target: /app/data/runtime
+      - type: volume
+        source: model_cache
+        target: /app/data/model-cache
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -m
+        - scripts.check_container_health
+        - --url
+        - http://127.0.0.1:8000/health/ready
+        - --timeout-seconds
+        - "4"
+      interval: 15s
+      timeout: 5s
+      start_period: 10m
+      retries: 10
+    init: true
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 30s
+
+volumes:
+  agent_runtime:
+  model_cache:

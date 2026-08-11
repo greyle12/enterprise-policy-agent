@@ -9,10 +9,12 @@ from hashlib import sha256
 from typing import Protocol, cast
 from uuid import uuid4
 
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.checkpoint.serde.jsonplus import JsonPlusSerializer
 from langgraph.graph import END, START, StateGraph
 from langgraph.types import Command, interrupt
+from pydantic import TypeAdapter
 
 from app.agent.intent import IntentClassification, IntentType
 from app.agent.workflow_models import (
@@ -25,6 +27,14 @@ from app.agent.workflow_models import (
     AgentWorkflowState,
     AgentWorkflowStep,
     AgentWorkflowTrace,
+)
+from app.memory.conversation import (
+    ContextualizedRequest,
+    ConversationContextBuilder,
+    ConversationMemoryInfo,
+    ConversationMemorySnapshot,
+    ConversationMemoryStore,
+    InMemoryConversationMemoryStore,
 )
 from app.rag.policy_answer_service import PolicyAnswer
 from app.tools.approval_models import ApprovalCheckAnswer
@@ -43,7 +53,7 @@ from app.tools.mock_approval_submission import (
 from app.tools.submission_models import MockApprovalSubmissionResult
 
 _WORKFLOW_NAME = "enterprise_policy_workflow"
-_WORKFLOW_VERSION = "1.2"
+_WORKFLOW_VERSION = "1.4"
 _SESSION_ID_PATTERN = re.compile(
     r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}"
 )
@@ -89,6 +99,7 @@ _CHECKPOINT_ALLOWED_TYPES = (
     ("app.tools.submission_models", "SubmittedApprovalStep"),
     ("app.tools.submission_models", "SubmittedApprovalWorkflow"),
 )
+_DRAFT_RESULT_ADAPTER = TypeAdapter(DraftGenerationResult)
 
 _UNKNOWN_REPLY = (
     "我还不能确定你希望查询制度、检查材料、判断审批流程，"
@@ -243,11 +254,36 @@ class ApplicationSubmitter(Protocol):
         ...
 
 
+class AgentStatePersister(Protocol):
+    """Optional durable projection for session and draft query records."""
+
+    async def save_route_state(
+        self,
+        session: AgentSessionInfo,
+        active_draft: DraftGenerationResult | None,
+    ) -> None:
+        """Persist the latest session head and active draft revision."""
+
+        ...
+
+    async def delete_session(self, session_id: str) -> None:
+        """Delete mutable session and draft projections for a reset."""
+
+        ...
+
+
 def _request_from(state: AgentWorkflowState) -> str:
     request = state.get("request")
     if not isinstance(request, str) or not request:
         raise RuntimeError("workflow state is missing request")
     return request
+
+
+def _contextual_request_from(state: AgentWorkflowState) -> str:
+    request = state.get("contextual_request")
+    if isinstance(request, str) and request:
+        return request
+    return _request_from(state)
 
 
 def _session_id_from(state: AgentWorkflowState) -> str:
@@ -317,10 +353,13 @@ def _active_draft_from(
     state: AgentWorkflowState,
 ) -> DraftGenerationResult | None:
     active = state.get("active_draft")
-    return (
-        active
-        if isinstance(active, DraftGenerationResult)
-        else None
+    if not isinstance(active, DraftGenerationResult):
+        return None
+    return _DRAFT_RESULT_ADAPTER.validate_json(
+        _DRAFT_RESULT_ADAPTER.dump_json(
+            active,
+            warnings=False,
+        )
     )
 
 
@@ -448,7 +487,10 @@ class AgentWorkflow:
         approval_checker: ApprovalChecker,
         draft_generator: ApplicationDraftCreator,
         submission_service: ApplicationSubmitter,
-        checkpointer: InMemorySaver | None = None,
+        checkpointer: BaseCheckpointSaver | None = None,
+        state_persister: AgentStatePersister | None = None,
+        memory_store: ConversationMemoryStore | None = None,
+        context_builder: ConversationContextBuilder | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._intent_classifier = intent_classifier
@@ -457,11 +499,37 @@ class AgentWorkflow:
         self._approval_checker = approval_checker
         self._draft_generator = draft_generator
         self._submission_service = submission_service
-        self._checkpointer = checkpointer or InMemorySaver(
-            serde=JsonPlusSerializer(
-                allowed_msgpack_modules=(
-                    _CHECKPOINT_ALLOWED_TYPES
+        if checkpointer is None:
+            self._checkpointer = InMemorySaver(
+                serde=JsonPlusSerializer(
+                    allowed_msgpack_modules=(
+                        _CHECKPOINT_ALLOWED_TYPES
+                    )
                 )
+            )
+        else:
+            self._checkpointer = checkpointer.with_allowlist(
+                _CHECKPOINT_ALLOWED_TYPES
+            )
+        self._state_persister = state_persister
+        self._memory_store = (
+            memory_store or InMemoryConversationMemoryStore()
+        )
+        self._context_builder = (
+            context_builder or ConversationContextBuilder()
+        )
+        self._checkpoint_backend = str(
+            getattr(
+                self._checkpointer,
+                "backend_name",
+                "in_memory",
+            )
+        )
+        self._survives_process_restart = bool(
+            getattr(
+                self._checkpointer,
+                "survives_process_restart",
+                False,
             )
         )
         self._clock = clock or (lambda: datetime.now(UTC))
@@ -618,6 +686,47 @@ class AgentWorkflow:
 
         return builder.compile(checkpointer=self._checkpointer)
 
+    def _prepared_draft_result(
+        self,
+        result: DraftGenerationResult,
+    ) -> DraftGenerationResult:
+        """Mark drafts durable before they are written into a checkpoint."""
+
+        draft = result.draft
+        if (
+            draft is None
+            or not self._survives_process_restart
+            or draft.audit_metadata.persisted
+        ):
+            return result
+        return replace(
+            result,
+            draft=replace(
+                draft,
+                audit_metadata=replace(
+                    draft.audit_metadata,
+                    persisted=True,
+                ),
+            ),
+        )
+
+    async def _persist_route_state(
+        self,
+        state: AgentWorkflowState,
+        *,
+        interrupted: bool,
+    ) -> AgentSessionInfo:
+        session = self._session_info(
+            state,
+            interrupted=interrupted,
+        )
+        if self._state_persister is not None:
+            await self._state_persister.save_route_state(
+                session,
+                _active_draft_from(state),
+            )
+        return session
+
     async def _resolve_turn(
         self,
         state: AgentWorkflowState,
@@ -663,7 +772,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         classification = await self._intent_classifier.classify(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         return {
             "classification": classification,
@@ -707,7 +816,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._policy_answer_service.answer(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = AgentResponseStatus.COMPLETED
         return {
@@ -726,7 +835,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._material_checker.check(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
@@ -750,7 +859,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         answer = await self._approval_checker.check(
-            _request_from(state)
+            _contextual_request_from(state)
         )
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
@@ -775,28 +884,29 @@ class AgentWorkflow:
     ) -> AgentWorkflowState:
         request = _request_from(state)
         answer = await self._draft_generator.generate(
-            request,
+            _contextual_request_from(state),
             session_id=_session_id_from(state),
         )
-        status = _status_for_draft(answer.result)
+        result = self._prepared_draft_result(answer.result)
+        status = _status_for_draft(result)
         update: AgentWorkflowState = {
             "status": status,
             "reply": answer.reply,
-            "citations": answer.result.citations,
-            "application_draft": answer.result,
+            "citations": result.citations,
+            "application_draft": result,
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.GENERATE_DRAFT,
                 outcome=status.value,
             ),
         }
-        if answer.result.draft is not None:
+        if result.draft is not None:
             update.update(
                 {
-                    "active_draft": answer.result,
+                    "active_draft": result,
                     "draft_messages": (request,),
                     "session_phase": _phase_for_draft(
-                        answer.result
+                        result
                     ),
                 }
             )
@@ -855,7 +965,8 @@ class AgentWorkflow:
             session_id=_session_id_from(state),
             context_messages=messages,
         )
-        status = _status_for_draft(answer.result)
+        result = self._prepared_draft_result(answer.result)
+        status = _status_for_draft(result)
         return {
             "classification": _synthetic_classification(
                 IntentType.DRAFT_UPDATE,
@@ -863,11 +974,11 @@ class AgentWorkflow:
             ),
             "status": status,
             "reply": answer.reply,
-            "citations": answer.result.citations,
-            "application_draft": answer.result,
-            "active_draft": answer.result,
+            "citations": result.citations,
+            "application_draft": result,
+            "active_draft": result,
             "draft_messages": (*messages, request),
-            "session_phase": _phase_for_draft(answer.result),
+            "session_phase": _phase_for_draft(result),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.UPDATE_DRAFT,
@@ -1047,6 +1158,7 @@ class AgentWorkflow:
             ),
         }
         if updated is not None:
+            updated = self._prepared_draft_result(updated)
             update.update(
                 {
                     "application_draft": updated,
@@ -1193,7 +1305,14 @@ class AgentWorkflow:
                                 "草稿已由用户确认，但尚未提交审批。",
                             }
                         ),
-                        "草稿已模拟提交审批；提交和审计记录仅保存在当前进程内。",
+                        (
+                            "草稿已模拟提交审批；提交和审计记录已写入SQLite。"
+                            if self._survives_process_restart
+                            else (
+                                "草稿已模拟提交审批；提交和审计记录"
+                                "仅保存在当前进程内。"
+                            )
+                        ),
                     )
                 )
             ),
@@ -1203,6 +1322,7 @@ class AgentWorkflow:
             draft=submitted_draft,
             clarification_question=None,
         )
+        updated = self._prepared_draft_result(updated)
         status = AgentResponseStatus.SUBMITTED
         reply = (
             (
@@ -1301,6 +1421,7 @@ class AgentWorkflow:
             ),
         }
         if updated is not None:
+            updated = self._prepared_draft_result(updated)
             update.update(
                 {
                     "application_draft": updated,
@@ -1377,6 +1498,10 @@ class AgentWorkflow:
                 draft.revision if draft is not None else None
             ),
             pending_confirmation=interrupted,
+            checkpoint_backend=self._checkpoint_backend,
+            survives_process_restart=(
+                self._survives_process_restart
+            ),
         )
 
     def _result_from_state(
@@ -1384,6 +1509,7 @@ class AgentWorkflow:
         state: AgentWorkflowState,
         *,
         interrupted: bool,
+        session: AgentSessionInfo | None = None,
     ) -> AgentRouteResult:
         classification = _classification_from(state)
         status = state.get("status")
@@ -1415,9 +1541,13 @@ class AgentWorkflow:
                 terminal_node=trace_steps[-1].node,
                 interrupted=interrupted,
             ),
-            session=self._session_info(
-                state,
-                interrupted=interrupted,
+            session=(
+                session
+                if session is not None
+                else self._session_info(
+                    state,
+                    interrupted=interrupted,
+                )
             ),
         )
 
@@ -1457,6 +1587,41 @@ class AgentWorkflow:
             ),
         )
 
+    async def _record_memory(
+        self,
+        result: AgentRouteResult,
+        contextualized: ContextualizedRequest,
+    ) -> AgentRouteResult:
+        session = result.session
+        if session is None:
+            raise RuntimeError("Agent result is missing session metadata")
+        await self._memory_store.append_turn(
+            session.session_id,
+            user_message=result.request,
+            assistant_message=result.reply,
+        )
+        snapshot = await self._memory_store.get_snapshot(
+            session.session_id,
+            limit=self._context_builder.message_limit,
+        )
+        return replace(
+            result,
+            memory=ConversationMemoryInfo(
+                backend=snapshot.backend,
+                stored_message_count=snapshot.total_message_count,
+                context_applied=contextualized.context_applied,
+                context_messages_used=(
+                    contextualized.context_messages_used
+                ),
+                context_window_limit=(
+                    self._context_builder.message_limit
+                ),
+                survives_process_restart=(
+                    snapshot.survives_process_restart
+                ),
+            ),
+        )
+
     async def run(
         self,
         user_input: str,
@@ -1483,12 +1648,27 @@ class AgentWorkflow:
                 AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value
                 in snapshot.next
             )
+            memory_snapshot = await self._memory_store.get_snapshot(
+                resolved_session_id,
+                limit=self._context_builder.message_limit,
+            )
             if pending_confirmation:
+                contextualized = ContextualizedRequest(
+                    original=normalized_input,
+                    resolved=normalized_input,
+                    context_applied=False,
+                    context_messages_used=0,
+                    reason="confirmation_gate",
+                )
                 action = _explicit_draft_action(normalized_input)
                 if action is None:
-                    return self._pending_input_result(
+                    result = self._pending_input_result(
                         snapshot_state,
                         normalized_input,
+                    )
+                    return await self._record_memory(
+                        result,
+                        contextualized,
                     )
                 turn_number = snapshot_state.get(
                     "turn_number",
@@ -1496,6 +1676,7 @@ class AgentWorkflow:
                 ) + 1
                 resume_state: AgentWorkflowState = {
                     "request": normalized_input,
+                    "contextual_request": normalized_input,
                     "turn_number": turn_number,
                     "turn_action": action,
                     "classification": (
@@ -1527,9 +1708,14 @@ class AgentWorkflow:
                     config,
                 )
             else:
+                contextualized = self._context_builder.build(
+                    normalized_input,
+                    memory_snapshot.messages,
+                )
                 raw_state = await self._graph.ainvoke(
                     {
                         "request": normalized_input,
+                        "contextual_request": contextualized.resolved,
                         "session_id": resolved_session_id,
                     },
                     config,
@@ -1541,10 +1727,30 @@ class AgentWorkflow:
                 )
             state = cast(AgentWorkflowState, raw_state)
             interrupted = "__interrupt__" in raw_state
-            return self._result_from_state(
+            session = await self._persist_route_state(
                 state,
                 interrupted=interrupted,
             )
+            result = self._result_from_state(
+                state,
+                interrupted=interrupted,
+                session=session,
+            )
+            return await self._record_memory(result, contextualized)
+
+    async def get_memory_snapshot(
+        self,
+        session_id: str,
+        *,
+        limit: int = 20,
+    ) -> ConversationMemorySnapshot:
+        """Return recent sanitized messages for one validated session."""
+
+        resolved = self._validate_or_create_session_id(session_id)
+        return await self._memory_store.get_snapshot(
+            resolved,
+            limit=limit,
+        )
 
     async def clear_session(self, session_id: str) -> None:
         """删除一个内存 checkpoint；主要供测试和演示重置使用。"""
@@ -1552,6 +1758,9 @@ class AgentWorkflow:
         resolved = self._validate_or_create_session_id(session_id)
         async with self._lock_for(resolved):
             await self._checkpointer.adelete_thread(resolved)
+            if self._state_persister is not None:
+                await self._state_persister.delete_session(resolved)
+            await self._memory_store.clear_session(resolved)
         self._session_locks.pop(resolved, None)
 
     def draw_mermaid(self) -> str:

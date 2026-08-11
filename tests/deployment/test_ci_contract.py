@@ -1,0 +1,53 @@
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+from scripts.verify_ci_configuration import validate_ci_configuration
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[2]
+_FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
+
+
+def test_checked_in_ci_configuration_passes_its_contract() -> None:
+    report = validate_ci_configuration(_PROJECT_ROOT)
+
+    assert report.jobs == (
+        "container-build",
+        "dependency-review",
+        "quality",
+    )
+    assert report.dependency_ecosystems == ("github-actions", "pip")
+    assert len(report.workflow_sha256) == 64
+    assert len(report.dependabot_sha256) == 64
+
+
+def test_every_external_action_is_pinned_to_a_full_commit_sha() -> None:
+    report = validate_ci_configuration(_PROJECT_ROOT)
+
+    assert set(report.action_pins) == {
+        "actions/checkout",
+        "actions/dependency-review-action",
+        "actions/setup-python",
+        "actions/upload-artifact",
+    }
+    assert all(_FULL_SHA.fullmatch(sha) for sha in report.action_pins.values())
+
+
+def test_ci_is_secretless_and_uses_unprivileged_pull_request_event() -> None:
+    workflow = (_PROJECT_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "${{ secrets." not in workflow
+    assert "pull_request_target" not in workflow
+    assert "contents: read" in workflow
+    assert "persist-credentials: false" in workflow
+
+
+def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
+    workflow = (_PROJECT_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+
+    assert "artifacts/test-results/pytest.xml" in workflow
+    assert "golden-evaluation-report.json" in workflow
+    assert "dist/*.whl" in workflow
+    assert "docker compose config --quiet" in workflow
+    assert "docker build --pull --tag enterprise-policy-agent:ci ." in workflow

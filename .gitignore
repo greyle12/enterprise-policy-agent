@@ -38,9 +38,17 @@ logs/
 chroma_data/
 vector_store/
 
+# Generated evaluation reports
+artifacts/evaluation/
+artifacts/test-results/
+
 # Build artifacts
 build/
 dist/
 *.egg-info/
 
 .pytest_tmp/
+# Local SQLite runtime state
+data/runtime/
+*.db-wal
+*.db-shm

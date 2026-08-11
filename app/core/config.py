@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field, SecretStr
 from pydantic_settings import (
@@ -18,6 +19,15 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    app_host: str = Field(
+        default="127.0.0.1",
+        min_length=1,
+    )
+    app_port: int = Field(
+        default=8000,
+        ge=1,
+        le=65535,
+    )
     llm_api_key: SecretStr
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-v4-flash"
@@ -28,6 +38,9 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(
         default=2,
         ge=0,
+    )
+    sqlite_database_path: Path = Path(
+        "data/runtime/enterprise_policy_agent.db"
     )
 
 
