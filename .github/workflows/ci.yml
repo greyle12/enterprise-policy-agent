@@ -59,6 +59,9 @@ jobs:
       - name: Run the offline golden evaluation
         run: python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
+      - name: Run the offline performance budget
+        run: python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
+
       - name: Build the Python wheel
         run: python -m pip wheel . --no-deps --wheel-dir dist
 
@@ -71,6 +74,8 @@ jobs:
             artifacts/test-results/pytest.xml
             artifacts/evaluation/golden-evaluation-report.json
             artifacts/evaluation/golden-evaluation-report.md
+            artifacts/performance/agent-performance-report.json
+            artifacts/performance/agent-performance-report.md
           if-no-files-found: warn
           retention-days: 14
 

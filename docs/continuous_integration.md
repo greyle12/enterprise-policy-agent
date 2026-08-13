@@ -1,7 +1,8 @@
 # Day 18 持续集成与质量门禁
 
 Day 18 使用 GitHub Actions 将项目已有的测试、代码规范、黄金评测、Python
-构建和 Docker 构建检查连接成自动化持续集成流程。
+构建和 Docker 构建检查连接成自动化持续集成流程。Day 22 在同一只读质量 Job 中
+增加完全离线的性能预算检查和结构化性能证据。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -73,13 +74,14 @@ timeout 30 分钟
 → Ruff 静态检查
 → 全量 pytest
 → 30 条离线黄金评测
+→ 五场景离线性能预算
 → 构建 Python Wheel
 ```
 
 任意一步返回非零退出码，Job 即失败。
 
-离线黄金评测不使用 `.env` 中的模型配置，也不会发送外部模型请求。因此来自 Fork
-的 Pull Request 可以在没有密钥的情况下执行相同质量门禁。
+离线黄金评测和性能基准都不使用 `.env` 中的模型配置，也不会发送外部模型请求。
+因此来自 Fork 的 Pull Request 可以在没有密钥的情况下执行相同质量门禁。
 
 ### 3.1 构建证据
 
@@ -87,11 +89,14 @@ CI 保存两组 14 天构建证据：
 
 | Artifact | 内容 | 失败时行为 |
 |---|---|---|
-| `quality-evidence-<run_id>` | pytest JUnit XML、黄金评测 JSON 和 Markdown | 尽可能保存已生成文件 |
+| `quality-evidence-<run_id>` | pytest JUnit XML、黄金评测与性能基准 JSON / Markdown | 尽可能保存已生成文件 |
 | `python-wheel-<run_id>` | 可安装 `.whl` | 仅全部质量门禁通过后保存 |
 
-JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；Wheel 证明
-Python 包能够从干净环境构建。
+JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；性能报告
+记录 p50、p95、错误率和预算结果；Wheel 证明 Python 包能够从干净环境构建。
+
+CI 不上传 `.cprofile`、py-spy SVG 或 Scalene 原始结果，避免把 Runner 绝对路径和大量
+采样细节当作长期构建证据。
 
 ## 4. Dependency risk review
 
@@ -179,6 +184,10 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_golden_evaluation `
   --mode offline
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_performance_benchmark `
+  --warmups 1 `
+  --iterations 5
 & .\.venv\Scripts\python.exe -m pip wheel . --no-deps --wheel-dir dist
 ```
 
@@ -196,6 +205,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | `quality` 安装耗时长 | 首次需要下载 PyTorch 等依赖；后续会复用 pip 缓存 |
 | Ruff 失败 | 本地运行 `ruff format` 和 `ruff check --fix`，再人工检查差异 |
 | 黄金评测失败 | 下载 `quality-evidence`，查看 Markdown 错例和 JSON 原子断言 |
+| 性能预算失败 | 在同环境重复基准，再用 cProfile 定位最慢场景；不要直接抬高预算 |
 | Dependency Review 不可用 | 检查仓库是否公开，或私有仓库是否具备所需安全功能 |
 | Container build 超时 | 检查 Docker Hub 可达性和 Python 依赖下载日志 |
 | 修改 Action 后契约失败 | 使用该 Action 官方仓库发布版本对应的完整 40 位提交 SHA |
@@ -207,6 +217,8 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不部署到云服务器；
 - 不推送容器镜像；
 - 不运行真实 LLM 评测；
+- 不把离线性能预算解释为真实模型或公网 SLA；
+- 不运行并发负载、py-spy 或 Scalene；
 - 不验证 BGE 首次模型下载；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。

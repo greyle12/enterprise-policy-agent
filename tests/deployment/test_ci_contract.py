@@ -48,6 +48,8 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
 
     assert "artifacts/test-results/pytest.xml" in workflow
     assert "golden-evaluation-report.json" in workflow
+    assert "agent-performance-report.json" in workflow
+    assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow
     assert "dist/*.whl" in workflow
     assert "docker compose config --quiet" in workflow
     assert "docker build --pull --tag enterprise-policy-agent:ci ." in workflow

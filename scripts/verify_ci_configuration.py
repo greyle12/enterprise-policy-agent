@@ -31,6 +31,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -m ruff check .",
     "python -m pytest --junitxml=artifacts/test-results/pytest.xml",
     "python -X utf8 -m scripts.run_golden_evaluation --mode offline",
+    "python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5",
     "python -m pip wheel . --no-deps --wheel-dir dist",
 )
 _REQUIRED_CONTAINER_COMMANDS = (

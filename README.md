@@ -68,6 +68,8 @@
 10. 幂等提交和模拟审批工作流；
 11. RAG 与 Agent 自动化评测；
 12. FastAPI、测试、日志、数据库和容器化部署。
+13. 内部制度 RAG 与显式授权 Web Search 的受控研究整合。
+14. 可重复的性能基准、预算门禁和 Python 热点分析。
 
 ---
 
@@ -190,7 +192,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 11：Agent 工具重试、超时与安全降级（Day 20 已完成）
+Phase 13：性能瓶颈分析（Day 22 已完成）
 ```
 
 ### 已完成
@@ -238,6 +240,17 @@ Phase 11：Agent 工具重试、超时与安全降级（Day 20 已完成）
 - [x] 不可信工具结果立即失败，不进入下游流程；
 - [x] 审批提交固定单次执行，失败后保留已确认草稿；
 - [x] 脱敏错误编号、恢复动作和容错元数据 API。
+- [x] 内部制度优先的 Policy Research Assistant；
+- [x] 显式 `include_web` 授权与服务端 Provider 双重开关；
+- [x] 内部制度 `S` 引用与外部网页 `W` 引用分区；
+- [x] Tavily HTTP Search Provider、查询脱敏和结果长度限制；
+- [x] 外部资料只读、仅供参考且不进入办理工作流。
+- [x] 第 3 周工程能力与验收证据总结。
+- [x] 五个代表场景的完全离线性能基准；
+- [x] warm-up、p50、p95、错误率和固定预算门禁；
+- [x] cProfile 项目热点提取和相对路径报告；
+- [x] py-spy 与 Scalene 可选 profiling 环境；
+- [x] CI 自动性能回归检查和报告证据。
 
 ### 尚未实现
 
@@ -249,6 +262,8 @@ Phase 11：Agent 工具重试、超时与安全降级（Day 20 已完成）
 - [ ] Redis 会话状态；
 - [ ] 权限过滤与提示注入专项评测；
 - [ ] 日志和可观测性。
+- [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
+- [ ] 并发负载、吞吐量、缓存和批处理优化。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -257,8 +272,9 @@ Phase 11：Agent 工具重试、超时与安全降级（Day 20 已完成）
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
 幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
-当前还具备自动 CI 质量门禁、可重启恢复的受限对话记忆，
-以及有界工具重试和副作用安全降级，
+当前还具备自动 CI 质量门禁、可重启恢复的受限对话记忆、
+有界工具重试和副作用安全降级，以及显式授权的制度研究助手，
+并具备离线性能预算和 cProfile 热点分析，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -382,7 +398,8 @@ leave_application_incomplete.json
 docs/tool_contracts/
 ```
 
-当前定义了 4 个工具。
+当前定义了 4 个核心办理工具；Day 21 另增加内部制度研究和外部 Web Search
+两个只读研究工具，它们不能执行草稿、审批或提交操作。
 
 ---
 
@@ -805,6 +822,7 @@ Push / Pull Request / 手动运行
 → Ruff check
 → 全量 pytest
 → 30 条离线黄金评测
+→ 五场景离线性能预算
 → 构建 Python Wheel
 ```
 
@@ -817,7 +835,7 @@ Docker Compose 配置
 ```
 
 Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、
-黄金评测 JSON/Markdown 和可安装 Wheel，方便查看失败原因和保存可复现证据。
+黄金评测与性能基准 JSON/Markdown，以及可安装 Wheel，方便查看失败原因和保存可复现证据。
 
 本地检查 CI 配置：
 
@@ -901,7 +919,85 @@ docs/agent_error_handling.md
 
 ---
 
-## 15. 计划系统架构
+## 15. 受控制度研究助手
+
+Day 21 新增独立于事务办理状态机的研究入口：
+
+```http
+POST /api/v1/research/answers
+```
+
+默认请求只使用内部制度 RAG：
+
+```json
+{
+  "question": "差旅住宿费如何报销？"
+}
+```
+
+只有同时满足以下两个条件才会调用外部 Web Search：
+
+1. 客户端明确传入 `"include_web": true`；
+2. 服务端配置 `WEB_SEARCH_PROVIDER=tavily` 和有效密钥。
+
+研究回答始终区分：
+
+- `S1`、`S2`：内部制度依据，可作为本项目中的权威业务依据；
+- `W1`、`W2`：外部公开资料，只供研究参考；
+- `source_policy.external_web_used_for_workflow=false`：外部资料不会驱动材料检查、
+  审批判断、草稿生成或提交。
+
+发送给外部 Provider 的内容只包含当前问题的脱敏、最多 500 字版本，不包含对话历史、
+内部制度原文、用户身份或申请草稿。网页摘要不会再次送入 LLM，避免外部提示注入改变
+内部制度结论。
+
+完整配置、API 字段、状态语义和 PowerShell 验收见：
+
+```text
+docs/policy_research_assistant.md
+docs/week3_milestone.md
+```
+
+---
+
+## 16. 性能瓶颈分析
+
+Day 22 新增完全离线、可重复的性能基准：
+
+```powershell
+python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
+```
+
+它覆盖：
+
+```text
+运行时启动
+制度 RAG 回答
+Agent 材料路由
+Agent 审批路由
+内部 RAG + 固定 Web 结果的混合研究
+```
+
+每个场景先 warm-up，再串行收集样本，输出 p50、p95、最大值、错误率和预算占用率。
+任何错误或 p95 超预算都会使质量门禁失败。基准使用确定性 Hash Embedding、固定 LLM
+回答和固定 Web 结果，因此不会下载模型、调用真实 LLM 或产生外部网络请求。
+
+内置 cProfile 命令：
+
+```powershell
+python -X utf8 -m scripts.profile_agent_performance --warmups 1 --iterations 5 --top 20
+```
+
+结构化热点报告只保存 `app/` 下的项目相对路径。`py-spy` 与 Scalene 位于可选 `profiling` extra，
+不会增加正式运行镜像的依赖。完整测量方法、预算、Windows 命令和解释边界见：
+
+```text
+docs/performance_analysis.md
+```
+
+---
+
+## 17. 计划系统架构
 
 ```text
 Client
@@ -915,13 +1011,18 @@ FastAPI API
   └── Input Validation
   │
   ▼
-Agent Orchestrator
+Application Services
   │
-  ├── Intent Router
-  ├── Conversation State
-  ├── Bounded Conversation Memory
-  ├── Human Confirmation Node
-  ├── Error Recovery
+  ├── Transaction Agent Orchestrator
+  │   ├── Intent Router
+  │   ├── Conversation State
+  │   ├── Bounded Conversation Memory
+  │   ├── Human Confirmation Node
+  │   └── Error Recovery
+  │
+  ├── Policy Research Assistant
+  │   ├── Internal Policy RAG（authoritative）
+  │   └── Optional Web Search（advisory）
   │
   ├── search_policy
   ├── check_required_materials
@@ -942,11 +1043,17 @@ Agent Orchestrator
        ├── Workflow Repository
        ├── User Repository
        └── Audit Log
+
+Offline Performance Analysis
+  ├── Repeatable Scenario Benchmark
+  ├── p50 / p95 / Error Budget
+  ├── cProfile Hotspots
+  └── Optional py-spy / Scalene
 ```
 
 ---
 
-## 16. 项目目录
+## 18. 项目目录
 
 ```text
 demo1/
@@ -964,6 +1071,8 @@ demo1/
 │   ├── tools/
 │   ├── persistence/
 │   ├── resilience/
+│   ├── research/
+│   ├── performance/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -976,7 +1085,10 @@ demo1/
 │   ├── docker_deployment.md
 │   ├── continuous_integration.md
 │   ├── conversation_memory.md
-│   └── agent_error_handling.md
+│   ├── agent_error_handling.md
+│   ├── policy_research_assistant.md
+│   ├── performance_analysis.md
+│   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -996,7 +1108,7 @@ demo1/
 
 ---
 
-## 17. 当前开发环境
+## 19. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1005,6 +1117,9 @@ Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
 Tenacity：9.1.x
+Web Search：默认关闭；可选 Tavily HTTP API
+性能基线：Python 内置 perf_counter_ns 与 cProfile
+采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
 ```
 
@@ -1032,6 +1147,12 @@ python -m venv .venv
 python -m pip install -e ".[dev]"
 ```
 
+可选安装 Day 22 采样 profiler：
+
+```powershell
+python -m pip install -e ".[dev,profiling]"
+```
+
 验证环境：
 
 ```powershell
@@ -1041,7 +1162,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 18. 数据验证命令
+## 20. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1085,9 +1206,22 @@ python -X utf8 -m scripts.verify_conversation_memory
 python -X utf8 -m scripts.verify_agent_resilience
 ```
 
+### 验证受控制度研究助手
+
+```powershell
+python -X utf8 -m scripts.verify_policy_research
+```
+
+### 验证性能基准与 cProfile
+
+```powershell
+python -X utf8 -m scripts.verify_agent_performance
+python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
+```
+
 ---
 
-## 19. 开发路线
+## 21. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1167,7 +1301,27 @@ python -X utf8 -m scripts.verify_agent_resilience
 - [x] 重复提交阻止率；
 - [x] 错误案例明细报告。
 
-### Phase 8：部署与作品集整理
+### Phase 8：受控制度研究
+
+- [x] 内部制度 RAG 优先；
+- [x] 显式授权的外部 Web Search；
+- [x] 内外来源分区和权威边界；
+- [x] 查询脱敏与外部结果限制；
+- [x] 外部搜索重试、局部降级和离线验收。
+
+### Phase 9：性能分析
+
+- [x] 五个离线代表场景；
+- [x] warm-up 与串行重复测量；
+- [x] p50 / p95 / 错误率报告；
+- [x] 固定性能预算门禁；
+- [x] cProfile 项目热点；
+- [x] py-spy / Scalene 可选环境；
+- [ ] 真实模型与 Provider 基线；
+- [ ] 并发负载和吞吐量测试；
+- [ ] 基于证据的性能优化。
+
+### Phase 10：部署与作品集整理
 
 - [x] Docker 多阶段镜像；
 - [x] Docker Compose；
@@ -1183,7 +1337,7 @@ python -X utf8 -m scripts.verify_agent_resilience
 
 ---
 
-## 20. 设计原则
+## 22. 设计原则
 
 本项目遵循以下原则：
 
@@ -1195,13 +1349,15 @@ LLM 负责理解用户意图和生成自然语言
 用户负责高影响操作的最终确认
 幂等机制负责防止重复提交
 审计系统负责记录关键行为
+外部公开资料只供研究参考，不覆盖企业内部有效制度
+性能优化必须先有可重复基线、预算和 profiler 证据
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 21. 预期评测指标
+## 23. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1215,9 +1371,21 @@ Day 16 当前质量门禁：
 
 后续仍需补充制度问答语义正确率、权限越界拒绝率、提示注入防护通过率和真实 LLM 回归基线。
 
+Day 22 离线性能预算：
+
+| 场景 | p95 上限 | 错误率上限 |
+|---|---:|---:|
+| 运行时启动 | 750 ms | 0% |
+| 制度 RAG 回答 | 150 ms | 0% |
+| 材料路由 | 250 ms | 0% |
+| 审批路由 | 250 ms | 0% |
+| 混合研究 | 250 ms | 0% |
+
+这些数值是离线回归护栏，不是生产 SLA，也不包含真实模型或网络延迟。
+
 ---
 
-## 22. 作品集价值
+## 24. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1235,6 +1403,8 @@ Day 16 当前质量门禁：
 - Docker 和工程化部署。
 - GitHub Actions 持续集成与供应链门禁。
 - 会话隔离、持久化和受限上下文记忆。
+- 内部 RAG 与显式授权 Web Search 的安全整合。
+- 离线性能基准、p95 预算和 cProfile 热点分析。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1253,7 +1423,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 23. 免责声明
+## 25. 免责声明
 
 本仓库仅用于：
 

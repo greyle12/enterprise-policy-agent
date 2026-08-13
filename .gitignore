@@ -41,6 +41,7 @@ vector_store/
 # Generated evaluation reports
 artifacts/evaluation/
 artifacts/test-results/
+artifacts/performance/
 
 # Build artifacts
 build/
