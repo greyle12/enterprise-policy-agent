@@ -4,6 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.config import Settings
+from app.research import WebSearchProviderName
 
 _ENVIRONMENT_NAMES = (
     "LLM_API_KEY",
@@ -16,6 +17,10 @@ _ENVIRONMENT_NAMES = (
     "AGENT_TOOL_MAX_ATTEMPTS",
     "AGENT_RETRY_MIN_WAIT_SECONDS",
     "AGENT_RETRY_MAX_WAIT_SECONDS",
+    "WEB_SEARCH_PROVIDER",
+    "TAVILY_API_KEY",
+    "WEB_SEARCH_TIMEOUT_SECONDS",
+    "WEB_SEARCH_MAX_RESULTS",
     "SQLITE_DATABASE_PATH",
 )
 
@@ -43,6 +48,10 @@ def test_uses_default_llm_settings() -> None:
     assert settings.agent_tool_max_attempts == 3
     assert settings.agent_retry_min_wait_seconds == 0.1
     assert settings.agent_retry_max_wait_seconds == 1.0
+    assert settings.web_search_provider is WebSearchProviderName.DISABLED
+    assert settings.tavily_api_key is None
+    assert settings.web_search_timeout_seconds == 10.0
+    assert settings.web_search_max_results == 3
     assert settings.sqlite_database_path == Path("data/runtime/enterprise_policy_agent.db")
     assert settings.llm_api_key.get_secret_value() == "test-key"
 
@@ -63,6 +72,10 @@ def test_loads_llm_settings_from_env_file(
             "AGENT_TOOL_MAX_ATTEMPTS=4\n"
             "AGENT_RETRY_MIN_WAIT_SECONDS=0.2\n"
             "AGENT_RETRY_MAX_WAIT_SECONDS=2\n"
+            "WEB_SEARCH_PROVIDER=tavily\n"
+            "TAVILY_API_KEY=tvly-env-test-key\n"
+            "WEB_SEARCH_TIMEOUT_SECONDS=8\n"
+            "WEB_SEARCH_MAX_RESULTS=4\n"
             "SQLITE_DATABASE_PATH=data/test-agent.db"
         ),
         encoding="utf-8",
@@ -80,6 +93,11 @@ def test_loads_llm_settings_from_env_file(
     assert settings.agent_tool_max_attempts == 4
     assert settings.agent_retry_min_wait_seconds == 0.2
     assert settings.agent_retry_max_wait_seconds == 2.0
+    assert settings.web_search_provider is WebSearchProviderName.TAVILY
+    assert settings.tavily_api_key is not None
+    assert settings.tavily_api_key.get_secret_value() == "tvly-env-test-key"
+    assert settings.web_search_timeout_seconds == 8.0
+    assert settings.web_search_max_results == 4
     assert settings.sqlite_database_path == Path("data/test-agent.db")
 
 
@@ -93,6 +111,9 @@ def test_loads_llm_settings_from_env_file(
         ("agent_tool_max_attempts", 0),
         ("agent_retry_min_wait_seconds", -1),
         ("agent_retry_max_wait_seconds", -1),
+        ("web_search_timeout_seconds", 0),
+        ("web_search_max_results", 0),
+        ("web_search_max_results", 6),
     ],
 )
 def test_rejects_invalid_numeric_settings(
@@ -119,3 +140,27 @@ def test_rejects_inverted_agent_retry_wait_range() -> None:
             agent_retry_max_wait_seconds=1.0,
             _env_file=None,
         )
+
+
+@pytest.mark.parametrize("api_key", [None, "", "   "])
+def test_tavily_provider_requires_non_blank_api_key(
+    api_key: str | None,
+) -> None:
+    with pytest.raises(ValidationError, match="tavily_api_key"):
+        Settings(
+            llm_api_key="test-key",
+            web_search_provider="tavily",
+            tavily_api_key=api_key,
+            _env_file=None,
+        )
+
+
+def test_disabled_web_search_allows_blank_api_key() -> None:
+    settings = Settings(
+        llm_api_key="test-key",
+        web_search_provider="disabled",
+        tavily_api_key="",
+        _env_file=None,
+    )
+
+    assert settings.web_search_provider is WebSearchProviderName.DISABLED

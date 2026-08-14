@@ -17,12 +17,21 @@ class FakeLLMClient:
         self.closed = True
 
 
+class FakeWebSearchProvider:
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
 def test_lifespan_configures_and_closes_service(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     service = object()
     llm_client = FakeLLMClient()
+    web_search_provider = FakeWebSearchProvider()
 
     def build_fake_service() -> tuple[
         object,
@@ -34,6 +43,11 @@ def test_lifespan_configures_and_closes_service(
         main_module,
         "_build_policy_answer_service",
         build_fake_service,
+    )
+    monkeypatch.setattr(
+        main_module,
+        "_build_web_search_provider",
+        lambda settings: web_search_provider,
     )
     monkeypatch.setattr(
         main_module,
@@ -52,10 +66,13 @@ def test_lifespan_configures_and_closes_service(
 
     with TestClient(application):
         assert application.state.policy_answer_service is service
+        assert application.state.policy_research_assistant is not None
         assert llm_client.closed is False
+        assert web_search_provider.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
 
     assert llm_client.closed is True
+    assert web_search_provider.closed is True
     assert not hasattr(
         application.state,
         "policy_answer_service",
@@ -63,4 +80,8 @@ def test_lifespan_configures_and_closes_service(
     assert not hasattr(
         application.state,
         "agent_state_store",
+    )
+    assert not hasattr(
+        application.state,
+        "policy_research_assistant",
     )

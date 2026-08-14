@@ -39,9 +39,7 @@ from app.api.schemas.agent_messages import (
     SubmittedApprovalWorkflowResponse,
 )
 from app.api.schemas.resilience import (
-    AgentResilienceResponse,
-    ToolCallResponse,
-    ToolErrorResponse,
+    build_resilience_response,
 )
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
@@ -349,36 +347,5 @@ async def handle_agent_message(
             if result.memory is not None
             else None
         ),
-        resilience=(
-            AgentResilienceResponse(
-                degraded=result.resilience.degraded,
-                recovered=result.resilience.recovered,
-                tool_calls=[
-                    ToolCallResponse(
-                        tool=record.tool,
-                        operation=record.operation,
-                        outcome=record.outcome,
-                        attempts=record.attempts,
-                        max_attempts=record.max_attempts,
-                        timeout_seconds=record.timeout_seconds,
-                        retry_safe=record.retry_safe,
-                        error=(
-                            ToolErrorResponse(
-                                error_id=record.error.error_id,
-                                code=record.error.code,
-                                category=record.error.category,
-                                retryable=record.error.retryable,
-                                recovery_action=(record.error.recovery_action),
-                                message=record.error.user_message,
-                            )
-                            if record.error is not None
-                            else None
-                        ),
-                    )
-                    for record in result.resilience.tool_calls
-                ],
-            )
-            if result.resilience is not None
-            else None
-        ),
+        resilience=build_resilience_response(result.resilience),
     )

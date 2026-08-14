@@ -18,7 +18,10 @@ from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
-from app.core.config import get_settings
+from app.api.routes.research_answers import (
+    router as research_answers_router,
+)
+from app.core.config import Settings, get_settings
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
 )
@@ -34,6 +37,13 @@ from app.rag.policy_answer_service import (
 )
 from app.rag.policy_retriever import PolicyRetriever
 from app.resilience import ResilientToolExecutor
+from app.research import (
+    DisabledWebSearchProvider,
+    PolicyResearchAssistant,
+    TavilyWebSearchProvider,
+    WebSearchProvider,
+    WebSearchProviderName,
+)
 from app.tools.approval_check import ApprovalRuleChecker
 from app.tools.draft_generation import ApplicationDraftGenerator
 from app.tools.draft_models import DraftUserContext
@@ -77,6 +87,23 @@ def _build_policy_answer_service() -> tuple[
     return service, llm_client
 
 
+def _build_web_search_provider(
+    settings: Settings,
+) -> WebSearchProvider:
+    """根据显式配置创建外部搜索；默认保持关闭。"""
+
+    if settings.web_search_provider is WebSearchProviderName.DISABLED:
+        return DisabledWebSearchProvider()
+    api_key = settings.tavily_api_key
+    if api_key is None:
+        raise RuntimeError("validated Tavily configuration is missing api key")
+    return TavilyWebSearchProvider(
+        api_key=api_key.get_secret_value(),
+        timeout_seconds=settings.web_search_timeout_seconds,
+        max_results=settings.web_search_max_results,
+    )
+
+
 @asynccontextmanager
 async def _lifespan(
     application: FastAPI,
@@ -88,6 +115,14 @@ async def _lifespan(
     approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     settings = get_settings()
     state_store = SQLiteAgentStateStore(settings.sqlite_database_path)
+    tool_executor = ResilientToolExecutor(
+        safe_tool_timeout_seconds=(settings.agent_safe_tool_timeout_seconds),
+        mutation_tool_timeout_seconds=(settings.agent_mutation_tool_timeout_seconds),
+        max_attempts=settings.agent_tool_max_attempts,
+        retry_min_wait_seconds=(settings.agent_retry_min_wait_seconds),
+        retry_max_wait_seconds=(settings.agent_retry_max_wait_seconds),
+    )
+    web_search_provider = _build_web_search_provider(settings)
     agent_router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=llm_client,
@@ -107,22 +142,26 @@ async def _lifespan(
         checkpointer=SQLiteCheckpointSaver(settings.sqlite_database_path),
         state_persister=state_store,
         memory_store=SQLiteConversationMemoryStore(settings.sqlite_database_path),
-        tool_executor=ResilientToolExecutor(
-            safe_tool_timeout_seconds=(settings.agent_safe_tool_timeout_seconds),
-            mutation_tool_timeout_seconds=(settings.agent_mutation_tool_timeout_seconds),
-            max_attempts=settings.agent_tool_max_attempts,
-            retry_min_wait_seconds=(settings.agent_retry_min_wait_seconds),
-            retry_max_wait_seconds=(settings.agent_retry_max_wait_seconds),
-        ),
+        tool_executor=tool_executor,
+    )
+    policy_research_assistant = PolicyResearchAssistant(
+        policy_researcher=service,
+        web_search_provider=web_search_provider,
+        tool_executor=tool_executor,
     )
     application.state.policy_answer_service = service
+    application.state.policy_research_assistant = policy_research_assistant
     application.state.agent_router = agent_router
     application.state.agent_state_store = state_store
 
     try:
         yield
     finally:
-        await llm_client.close()
+        try:
+            await web_search_provider.aclose()
+        finally:
+            await llm_client.close()
+        del application.state.policy_research_assistant
         del application.state.agent_state_store
         del application.state.agent_router
         del application.state.policy_answer_service
@@ -152,6 +191,10 @@ def create_app(
     )
     application.include_router(
         agent_sessions_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        research_answers_router,
         prefix="/api/v1",
     )
 

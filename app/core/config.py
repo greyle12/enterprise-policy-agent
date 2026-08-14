@@ -10,6 +10,8 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
+from app.research.models import WebSearchProviderName
+
 
 class Settings(BaseSettings):
     """应用运行配置。"""
@@ -60,6 +62,17 @@ class Settings(BaseSettings):
         default=1.0,
         ge=0,
     )
+    web_search_provider: WebSearchProviderName = WebSearchProviderName.DISABLED
+    tavily_api_key: SecretStr | None = None
+    web_search_timeout_seconds: float = Field(
+        default=10.0,
+        gt=0,
+    )
+    web_search_max_results: int = Field(
+        default=3,
+        ge=1,
+        le=5,
+    )
     sqlite_database_path: Path = Path("data/runtime/enterprise_policy_agent.db")
 
     @model_validator(mode="after")
@@ -69,6 +82,18 @@ class Settings(BaseSettings):
                 "agent_retry_max_wait_seconds must be greater than or equal to "
                 "agent_retry_min_wait_seconds"
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_web_search_configuration(self) -> Self:
+        if self.web_search_provider is WebSearchProviderName.TAVILY:
+            api_key = (
+                self.tavily_api_key.get_secret_value().strip()
+                if self.tavily_api_key is not None
+                else ""
+            )
+            if not api_key:
+                raise ValueError("tavily_api_key is required when web_search_provider is tavily")
         return self
 
 

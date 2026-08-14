@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
+import httpx
 import pytest
 
 from app.resilience import (
@@ -158,6 +159,64 @@ async def test_rate_limit_is_classified_and_retried() -> None:
     assert record.error.category is ToolFailureCategory.RATE_LIMITED
     assert record.error.code == "tool_rate_limited"
     assert record.error.retryable is True
+
+
+@pytest.mark.asyncio
+async def test_httpx_server_error_is_classified_and_retried() -> None:
+    calls = 0
+    request = httpx.Request("POST", "https://example.test/search")
+    response = httpx.Response(503, request=request)
+
+    async def operation() -> str:
+        nonlocal calls
+        calls += 1
+        raise httpx.HTTPStatusError(
+            "provider details",
+            request=request,
+            response=response,
+        )
+
+    with pytest.raises(ToolExecutionError) as captured:
+        await _executor(max_attempts=2).execute(
+            tool=ToolName.WEB_SEARCH,
+            operation=ToolOperationKind.READ_ONLY,
+            call=operation,
+        )
+
+    record = captured.value.record
+    assert calls == 2
+    assert record.error is not None
+    assert record.error.category is ToolFailureCategory.UPSTREAM_UNAVAILABLE
+    assert record.error.retryable is True
+
+
+@pytest.mark.asyncio
+async def test_httpx_client_error_fails_fast_as_invalid_response() -> None:
+    calls = 0
+    request = httpx.Request("POST", "https://example.test/search")
+    response = httpx.Response(400, request=request)
+
+    async def operation() -> str:
+        nonlocal calls
+        calls += 1
+        raise httpx.HTTPStatusError(
+            "provider details",
+            request=request,
+            response=response,
+        )
+
+    with pytest.raises(ToolExecutionError) as captured:
+        await _executor().execute(
+            tool=ToolName.WEB_SEARCH,
+            operation=ToolOperationKind.READ_ONLY,
+            call=operation,
+        )
+
+    record = captured.value.record
+    assert calls == 1
+    assert record.error is not None
+    assert record.error.category is ToolFailureCategory.INVALID_RESPONSE
+    assert record.error.retryable is False
 
 
 @pytest.mark.asyncio

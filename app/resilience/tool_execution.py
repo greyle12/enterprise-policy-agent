@@ -10,7 +10,6 @@ from uuid import uuid4
 import httpx
 from openai import (
     APIConnectionError,
-    APIStatusError,
     APITimeoutError,
     RateLimitError,
 )
@@ -56,6 +55,8 @@ _TOOL_LABELS = {
     ToolName.DRAFT_GENERATION: "草稿生成",
     ToolName.DRAFT_REVISION: "草稿修改",
     ToolName.APPROVAL_SUBMISSION: "审批提交",
+    ToolName.POLICY_RESEARCH: "内部制度研究",
+    ToolName.WEB_SEARCH: "外部网页搜索",
 }
 
 
@@ -118,7 +119,7 @@ def classify_tool_failure(exc: Exception) -> ToolFailureCategory:
     ):
         return ToolFailureCategory.UPSTREAM_UNAVAILABLE
 
-    if isinstance(exc, APIStatusError) and status_code is not None:
+    if status_code is not None:
         if status_code >= 500:
             return ToolFailureCategory.UPSTREAM_UNAVAILABLE
         return ToolFailureCategory.INVALID_RESPONSE
@@ -153,10 +154,7 @@ def _user_message(
 
     label = _TOOL_LABELS[tool]
     if category is ToolFailureCategory.INVALID_RESPONSE:
-        return (
-            f"{label}返回了不可信的结果，本轮没有采用该结果。"
-            "请联系系统管理员检查工具输出。"
-        )
+        return f"{label}返回了不可信的结果，本轮没有采用该结果。请联系系统管理员检查工具输出。"
     if category is ToolFailureCategory.INTERNAL_ERROR:
         return f"{label}发生内部错误，本轮已安全停止。请联系系统管理员。"
     return f"{label}服务暂时不可用，本轮已安全停止。请稍后重试。"

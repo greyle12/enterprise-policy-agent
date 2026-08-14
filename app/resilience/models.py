@@ -14,6 +14,8 @@ class ToolName(StrEnum):
     DRAFT_GENERATION = "draft_generation"
     DRAFT_REVISION = "draft_revision"
     APPROVAL_SUBMISSION = "approval_submission"
+    POLICY_RESEARCH = "policy_research"
+    WEB_SEARCH = "web_search"
 
 
 class ToolOperationKind(StrEnum):

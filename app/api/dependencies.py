@@ -8,6 +8,7 @@ from app.agent.router import AgentRouter
 from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
+from app.research import PolicyResearchAssistant
 
 
 def get_agent_router(
@@ -39,8 +40,21 @@ def get_policy_answer_service(
     )
 
     if service is None:
-        raise RuntimeError(
-            "PolicyAnswerService is not configured"
-        )
+        raise RuntimeError("PolicyAnswerService is not configured")
 
     return cast(PolicyAnswerService, service)
+
+
+def get_policy_research_assistant(
+    request: Request,
+) -> PolicyResearchAssistant:
+    """从当前 FastAPI 应用取得受控制度研究助手。"""
+
+    assistant = getattr(
+        request.app.state,
+        "policy_research_assistant",
+        None,
+    )
+    if assistant is None:
+        raise RuntimeError("PolicyResearchAssistant is not configured")
+    return cast(PolicyResearchAssistant, assistant)
