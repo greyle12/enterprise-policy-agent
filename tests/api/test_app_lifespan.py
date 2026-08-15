@@ -67,6 +67,7 @@ def test_lifespan_configures_and_closes_service(
     with TestClient(application):
         assert application.state.policy_answer_service is service
         assert application.state.policy_research_assistant is not None
+        assert application.state.llm_cache is llm_client
         assert llm_client.closed is False
         assert web_search_provider.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
@@ -84,4 +85,8 @@ def test_lifespan_configures_and_closes_service(
     assert not hasattr(
         application.state,
         "policy_research_assistant",
+    )
+    assert not hasattr(
+        application.state,
+        "llm_cache",
     )

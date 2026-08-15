@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from app.cache import CacheProviderName
 from app.core.config import Settings
 from app.research import WebSearchProviderName
 
@@ -12,6 +13,15 @@ _ENVIRONMENT_NAMES = (
     "LLM_MODEL",
     "LLM_TIMEOUT_SECONDS",
     "LLM_MAX_RETRIES",
+    "LLM_CACHE_PROVIDER",
+    "REDIS_URL",
+    "REDIS_TIMEOUT_SECONDS",
+    "LLM_CACHE_TTL_SECONDS",
+    "LLM_CACHE_NAMESPACE",
+    "LLM_CACHE_MAX_REQUEST_BYTES",
+    "LLM_CACHE_MAX_VALUE_BYTES",
+    "LLM_SINGLEFLIGHT_ENABLED",
+    "LLM_SINGLEFLIGHT_MAX_KEYS",
     "AGENT_SAFE_TOOL_TIMEOUT_SECONDS",
     "AGENT_MUTATION_TOOL_TIMEOUT_SECONDS",
     "AGENT_TOOL_MAX_ATTEMPTS",
@@ -43,6 +53,15 @@ def test_uses_default_llm_settings() -> None:
     assert settings.llm_model == ("deepseek-v4-flash")
     assert settings.llm_timeout_seconds == 60.0
     assert settings.llm_max_retries == 2
+    assert settings.llm_cache_provider is CacheProviderName.DISABLED
+    assert settings.redis_url == "redis://127.0.0.1:6379/0"
+    assert settings.redis_timeout_seconds == 0.25
+    assert settings.llm_cache_ttl_seconds == 600
+    assert settings.llm_cache_namespace == "enterprise-policy-agent:llm:v1"
+    assert settings.llm_cache_max_request_bytes == 262_144
+    assert settings.llm_cache_max_value_bytes == 262_144
+    assert settings.llm_singleflight_enabled is True
+    assert settings.llm_singleflight_max_keys == 128
     assert settings.agent_safe_tool_timeout_seconds == 65.0
     assert settings.agent_mutation_tool_timeout_seconds == 10.0
     assert settings.agent_tool_max_attempts == 3
@@ -67,6 +86,15 @@ def test_loads_llm_settings_from_env_file(
             "LLM_MODEL=test-model\n"
             "LLM_TIMEOUT_SECONDS=15\n"
             "LLM_MAX_RETRIES=1\n"
+            "LLM_CACHE_PROVIDER=redis\n"
+            "REDIS_URL=rediss://cache.example.com:6380/2\n"
+            "REDIS_TIMEOUT_SECONDS=0.5\n"
+            "LLM_CACHE_TTL_SECONDS=1200\n"
+            "LLM_CACHE_NAMESPACE=company:agent:llm:v2\n"
+            "LLM_CACHE_MAX_REQUEST_BYTES=65536\n"
+            "LLM_CACHE_MAX_VALUE_BYTES=131072\n"
+            "LLM_SINGLEFLIGHT_ENABLED=false\n"
+            "LLM_SINGLEFLIGHT_MAX_KEYS=32\n"
             "AGENT_SAFE_TOOL_TIMEOUT_SECONDS=20\n"
             "AGENT_MUTATION_TOOL_TIMEOUT_SECONDS=5\n"
             "AGENT_TOOL_MAX_ATTEMPTS=4\n"
@@ -88,6 +116,15 @@ def test_loads_llm_settings_from_env_file(
     assert settings.llm_model == "test-model"
     assert settings.llm_timeout_seconds == 15.0
     assert settings.llm_max_retries == 1
+    assert settings.llm_cache_provider is CacheProviderName.REDIS
+    assert settings.redis_url == "rediss://cache.example.com:6380/2"
+    assert settings.redis_timeout_seconds == 0.5
+    assert settings.llm_cache_ttl_seconds == 1200
+    assert settings.llm_cache_namespace == "company:agent:llm:v2"
+    assert settings.llm_cache_max_request_bytes == 65_536
+    assert settings.llm_cache_max_value_bytes == 131_072
+    assert settings.llm_singleflight_enabled is False
+    assert settings.llm_singleflight_max_keys == 32
     assert settings.agent_safe_tool_timeout_seconds == 20.0
     assert settings.agent_mutation_tool_timeout_seconds == 5.0
     assert settings.agent_tool_max_attempts == 4
@@ -106,6 +143,14 @@ def test_loads_llm_settings_from_env_file(
     [
         ("llm_timeout_seconds", 0),
         ("llm_max_retries", -1),
+        ("redis_timeout_seconds", 0),
+        ("redis_timeout_seconds", 6),
+        ("llm_cache_ttl_seconds", 0),
+        ("llm_cache_ttl_seconds", 86_401),
+        ("llm_cache_max_request_bytes", 1023),
+        ("llm_cache_max_value_bytes", 1023),
+        ("llm_singleflight_max_keys", 0),
+        ("llm_singleflight_max_keys", 4097),
         ("agent_safe_tool_timeout_seconds", 0),
         ("agent_mutation_tool_timeout_seconds", 0),
         ("agent_tool_max_attempts", 0),
@@ -164,3 +209,26 @@ def test_disabled_web_search_allows_blank_api_key() -> None:
     )
 
     assert settings.web_search_provider is WebSearchProviderName.DISABLED
+
+
+@pytest.mark.parametrize(
+    "redis_url",
+    ["", "http://127.0.0.1:6379/0", "redis:///0", "not-a-url"],
+)
+def test_rejects_invalid_redis_url(redis_url: str) -> None:
+    with pytest.raises(ValidationError, match="redis_url"):
+        Settings(
+            llm_api_key="test-key",
+            redis_url=redis_url,
+            _env_file=None,
+        )
+
+
+@pytest.mark.parametrize("namespace", ["", "contains spaces", "contains/prompt"])
+def test_rejects_unsafe_cache_namespace(namespace: str) -> None:
+    with pytest.raises(ValidationError, match="llm_cache_namespace"):
+        Settings(
+            llm_api_key="test-key",
+            llm_cache_namespace=namespace,
+            _env_file=None,
+        )

@@ -3,13 +3,15 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 from typing import Self
+from urllib.parse import urlsplit
 
-from pydantic import Field, SecretStr, model_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import (
     BaseSettings,
     SettingsConfigDict,
 )
 
+from app.cache import CacheProviderName
 from app.research.models import WebSearchProviderName
 
 
@@ -41,6 +43,40 @@ class Settings(BaseSettings):
     llm_max_retries: int = Field(
         default=2,
         ge=0,
+    )
+    llm_cache_provider: CacheProviderName = CacheProviderName.DISABLED
+    redis_url: str = "redis://127.0.0.1:6379/0"
+    redis_timeout_seconds: float = Field(
+        default=0.25,
+        gt=0,
+        le=5,
+    )
+    llm_cache_ttl_seconds: int = Field(
+        default=600,
+        ge=1,
+        le=86_400,
+    )
+    llm_cache_namespace: str = Field(
+        default="enterprise-policy-agent:llm:v1",
+        min_length=1,
+        max_length=96,
+        pattern=r"^[A-Za-z0-9:_-]+$",
+    )
+    llm_cache_max_request_bytes: int = Field(
+        default=262_144,
+        ge=1024,
+        le=1_048_576,
+    )
+    llm_cache_max_value_bytes: int = Field(
+        default=262_144,
+        ge=1024,
+        le=1_048_576,
+    )
+    llm_singleflight_enabled: bool = True
+    llm_singleflight_max_keys: int = Field(
+        default=128,
+        ge=1,
+        le=4096,
     )
     agent_safe_tool_timeout_seconds: float = Field(
         default=65.0,
@@ -74,6 +110,15 @@ class Settings(BaseSettings):
         le=5,
     )
     sqlite_database_path: Path = Path("data/runtime/enterprise_policy_agent.db")
+
+    @field_validator("redis_url")
+    @classmethod
+    def validate_redis_url(cls, value: str) -> str:
+        normalized = value.strip()
+        parsed = urlsplit(normalized)
+        if parsed.scheme not in {"redis", "rediss"} or not parsed.hostname:
+            raise ValueError("redis_url must use redis:// or rediss:// with a host")
+        return normalized
 
     @model_validator(mode="after")
     def validate_agent_retry_wait_range(self) -> Self:

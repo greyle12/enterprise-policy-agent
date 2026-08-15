@@ -70,6 +70,7 @@
 12. FastAPI、测试、日志、数据库和容器化部署。
 13. 内部制度 RAG 与显式授权 Web Search 的受控研究整合。
 14. 可重复的性能基准、预算门禁和 Python 热点分析。
+15. 可失效、可观测且故障安全的 Redis LLM 响应缓存。
 
 ---
 
@@ -192,7 +193,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 13：性能瓶颈分析（Day 22 已完成）
+Phase 15：异步 LLM single-flight（Day 24 已完成）
 ```
 
 ### 已完成
@@ -251,6 +252,15 @@ Phase 13：性能瓶颈分析（Day 22 已完成）
 - [x] cProfile 项目热点提取和相对路径报告；
 - [x] py-spy 与 Scalene 可选 profiling 环境；
 - [x] CI 自动性能回归检查和报告证据。
+- [x] 统一 LLM 边界上的可选 Redis 精确请求缓存；
+- [x] 模型、消息、协议版本共同参与的 SHA-256 缓存键；
+- [x] TTL、请求/响应大小上限和敏感凭据形态绕过；
+- [x] Redis 故障直连 LLM、进程内命中指标和安全状态 API；
+- [x] Compose 临时 Redis 服务和完全离线缓存专项验收。
+- [x] 相同 cache miss 的进程内异步 single-flight 请求合并；
+- [x] follower 取消隔离、异常清理和应用关闭时 Task 回收；
+- [x] 有容量上限的在途键注册表和 overflow 指标；
+- [x] 12 请求只触发 1 次上游调用的完全离线并发验收。
 
 ### 尚未实现
 
@@ -261,9 +271,9 @@ Phase 13：性能瓶颈分析（Day 22 已完成）
 - [ ] Rerank；
 - [ ] Redis 会话状态；
 - [ ] 权限过滤与提示注入专项评测；
-- [ ] 日志和可观测性。
+- [ ] 集中日志、指标采集和链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
-- [ ] 并发负载、吞吐量、缓存和批处理优化。
+- [ ] 并发负载、吞吐量、分布式防击穿和批处理优化。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -275,6 +285,7 @@ Phase 13：性能瓶颈分析（Day 22 已完成）
 当前还具备自动 CI 质量门禁、可重启恢复的受限对话记忆、
 有界工具重试和副作用安全降级，以及显式授权的制度研究助手，
 并具备离线性能预算和 cProfile 热点分析，
+以及可选、短 TTL、故障时直连模型的 Redis LLM 响应缓存和单进程异步防击穿，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -795,12 +806,14 @@ Compose 使用：
 
 - `agent_runtime` 保存 SQLite 数据；
 - `model_cache` 保存 BGE 模型缓存；
+- 临时 Redis 服务保存短 TTL 的 LLM 响应缓存；
 - 非 root 用户运行应用；
 - 只读根文件系统；
 - `no-new-privileges` 和全部 Linux capability 移除；
 - readiness 作为容器健康判断依据。
 
-`docker compose down` 会保留两个具名卷；`docker compose down --volumes` 会删除本地运行数据和模型缓存。
+`docker compose down` 会保留两个具名卷，但 Redis 响应缓存本来就是可丢失的临时数据；
+`docker compose down --volumes` 会删除本地运行数据和模型缓存。
 
 详细步骤、首次模型下载说明和排障方式见：
 
@@ -823,6 +836,7 @@ Push / Pull Request / 手动运行
 → 全量 pytest
 → 30 条离线黄金评测
 → 五场景离线性能预算
+→ Redis LLM 缓存离线契约
 → 构建 Python Wheel
 ```
 
@@ -997,7 +1011,62 @@ docs/performance_analysis.md
 
 ---
 
-## 17. 计划系统架构
+## 17. Redis LLM 响应缓存
+
+Day 23 在统一 `LLMClient` 外增加 cache-aside 装饰器。完全相同且合规的消息序列先读取
+Redis；未命中才调用原 LLM，并只缓存成功、非空、大小合规的文本 600 秒。
+
+缓存键由协议版本、模型身份和完整消息规范化后计算 SHA-256，Redis 键不包含原始提问。
+含凭据形态的消息和超大请求直接绕过；Redis 读写错误只增加缓存错误计数，并安全回退到
+原 LLM，不改变 SQLite、申请草稿、审批提交或 Web Search。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_llm_cache
+```
+
+运行时状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/cache/status |
+  ConvertTo-Json -Depth 5
+```
+
+配置、键失效、隐私边界、Compose Redis 和完整 Windows 验收见：
+
+```text
+docs/redis_llm_cache.md
+```
+
+---
+
+## 18. 异步 LLM single-flight
+
+Day 24 在 Day 23 精确缓存之上增加进程内异步请求合并。同一缓存键同时发生多个 miss 时，
+第一个请求创建 leader Task，其余 follower 使用 `asyncio.shield()` 等待共享结果，因此不会
+重复调用 LLM，也不会因某个客户端取消而取消其他等待者的共享任务。
+
+不同缓存键仍可并发执行；敏感、超大、非法或明确绕过缓存的请求不进入 single-flight。
+注册表默认最多跟踪 128 个不同的在途键，容量溢出时保持可用并记录指标。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_async_singleflight
+```
+
+完整算法、取消语义、状态字段和 Day 25 边界见：
+
+```text
+docs/async_llm_singleflight.md
+```
+
+---
+
+## 19. 计划系统架构
 
 ```text
 Client
@@ -1023,6 +1092,13 @@ Application Services
   ├── Policy Research Assistant
   │   ├── Internal Policy RAG（authoritative）
   │   └── Optional Web Search（advisory）
+  │
+  ├── LLM Boundary
+  │   ├── Sensitive / Size Bypass
+  │   ├── SHA-256 Exact-request Key
+  │   ├── Optional Redis Cache
+  │   ├── Process-local Async Single-flight
+  │   └── OpenAI-compatible Upstream
   │
   ├── search_policy
   ├── check_required_materials
@@ -1053,7 +1129,7 @@ Offline Performance Analysis
 
 ---
 
-## 18. 项目目录
+## 20. 项目目录
 
 ```text
 demo1/
@@ -1064,6 +1140,7 @@ demo1/
 ├── app/
 │   ├── api/
 │   ├── core/
+│   ├── cache/
 │   ├── llm/
 │   ├── rag/
 │   ├── agent/
@@ -1088,6 +1165,8 @@ demo1/
 │   ├── agent_error_handling.md
 │   ├── policy_research_assistant.md
 │   ├── performance_analysis.md
+│   ├── redis_llm_cache.md
+│   ├── async_llm_singleflight.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1108,7 +1187,7 @@ demo1/
 
 ---
 
-## 19. 当前开发环境
+## 21. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1118,6 +1197,8 @@ FastAPI：0.140.8
 pytest：9.1.1
 Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
+LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
+异步合并：缓存启用时默认跟踪最多 128 个 single-flight 在途键
 性能基线：Python 内置 perf_counter_ns 与 cProfile
 采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
@@ -1162,7 +1243,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 20. 数据验证命令
+## 22. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1219,9 +1300,21 @@ python -X utf8 -m scripts.verify_agent_performance
 python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
 ```
 
+### 验证 Redis LLM 响应缓存
+
+```powershell
+python -X utf8 -m scripts.verify_llm_cache
+```
+
+### 验证异步 LLM single-flight
+
+```powershell
+python -X utf8 -m scripts.verify_async_singleflight
+```
+
 ---
 
-## 21. 开发路线
+## 23. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1321,7 +1414,20 @@ python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
 - [ ] 并发负载和吞吐量测试；
 - [ ] 基于证据的性能优化。
 
-### Phase 10：部署与作品集整理
+### Phase 10：缓存优化
+
+- [x] Redis 精确请求 LLM 响应缓存；
+- [x] 模型和消息变化自动失效；
+- [x] TTL 与内存边界；
+- [x] 敏感内容和超大请求绕过；
+- [x] Redis 故障安全降级；
+- [x] 命中、未命中、写入、绕过和错误指标；
+- [x] 单进程相同 cache miss 的异步 single-flight；
+- [x] 取消隔离、异常清理和 bounded 在途键注册表；
+- [ ] 多实例 single-flight；
+- [ ] 真实 LLM 延迟和成本节省基线。
+
+### Phase 11：部署与作品集整理
 
 - [x] Docker 多阶段镜像；
 - [x] Docker Compose；
@@ -1337,7 +1443,7 @@ python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
 
 ---
 
-## 22. 设计原则
+## 24. 设计原则
 
 本项目遵循以下原则：
 
@@ -1351,13 +1457,15 @@ LLM 负责理解用户意图和生成自然语言
 审计系统负责记录关键行为
 外部公开资料只供研究参考，不覆盖企业内部有效制度
 性能优化必须先有可重复基线、预算和 profiler 证据
+缓存只能优化可重建结果，不能成为审批状态或业务正确性的来源
+相同异步请求可以共享结果，但取消、异常和敏感内容边界必须显式设计
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 23. 预期评测指标
+## 25. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1383,9 +1491,12 @@ Day 22 离线性能预算：
 
 这些数值是离线回归护栏，不是生产 SLA，也不包含真实模型或网络延迟。
 
+Day 24 专项并发契约固定验证：12 个相同 cache miss 只产生 1 次上游调用和 1 次缓存写入，
+其余 11 个请求复用 leader 结果。该契约证明请求合并逻辑，不代表生产环境吞吐量或 SLA。
+
 ---
 
-## 24. 作品集价值
+## 26. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1405,6 +1516,8 @@ Day 22 离线性能预算：
 - 会话隔离、持久化和受限上下文记忆。
 - 内部 RAG 与显式授权 Web Search 的安全整合。
 - 离线性能基准、p95 预算和 cProfile 热点分析。
+- Redis cache-aside、精确失效、隐私绕过和故障安全降级。
+- asyncio Task 协调、single-flight 防击穿、取消隔离和并发竞态测试。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1423,7 +1536,7 @@ Day 22 离线性能预算：
 
 ---
 
-## 25. 免责声明
+## 27. 免责声明
 
 本仓库仅用于：
 

@@ -62,6 +62,12 @@ jobs:
       - name: Run the offline performance budget
         run: python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
 
+      - name: Verify the Redis LLM cache contract
+        run: python -X utf8 -m scripts.verify_llm_cache
+
+      - name: Verify async LLM single-flight coordination
+        run: python -X utf8 -m scripts.verify_async_singleflight
+
       - name: Build the Python wheel
         run: python -m pip wheel . --no-deps --wheel-dir dist
 
@@ -120,6 +126,18 @@ jobs:
 
       - name: Prepare non-secret Compose configuration
         run: cp .env.example .env
+
+      - name: Prepare verified CPU PyTorch wheel when Dockerfile requires it
+        run: |
+          wheel_path="vendor/wheels/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl"
+          if grep -Fq "$wheel_path" Dockerfile; then
+            mkdir -p "$(dirname "$wheel_path")"
+            curl --fail --location --retry 5 --retry-all-errors \
+              --output "$wheel_path" \
+              "https://download.pytorch.org/whl/cpu/torch-2.12.1%2Bcpu-cp312-cp312-manylinux_2_28_x86_64.whl"
+            echo "ae4bb28409f5370852bd71af221066236c38d647f780d9b0a7240c330a9c12df  $wheel_path" \
+              | sha256sum --check
+          fi
 
       - name: Validate Docker Compose
         run: docker compose config --quiet

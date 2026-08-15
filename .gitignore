@@ -48,6 +48,9 @@ build/
 dist/
 *.egg-info/
 
+# Local verified CPU PyTorch wheel used by Docker Desktop builds
+vendor/wheels/*.whl
+
 .pytest_tmp/
 # Local SQLite runtime state
 data/runtime/

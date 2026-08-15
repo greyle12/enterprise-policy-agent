@@ -32,10 +32,15 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -m pytest --junitxml=artifacts/test-results/pytest.xml",
     "python -X utf8 -m scripts.run_golden_evaluation --mode offline",
     "python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5",
+    "python -X utf8 -m scripts.verify_llm_cache",
+    "python -X utf8 -m scripts.verify_async_singleflight",
     "python -m pip wheel . --no-deps --wheel-dir dist",
 )
 _REQUIRED_CONTAINER_COMMANDS = (
     "cp .env.example .env",
+    "vendor/wheels/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl",
+    "ae4bb28409f5370852bd71af221066236c38d647f780d9b0a7240c330a9c12df",
+    "sha256sum --check",
     "docker compose config --quiet",
     "docker build --pull --tag enterprise-policy-agent:ci .",
     "docker run --rm --entrypoint python enterprise-policy-agent:ci",

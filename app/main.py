@@ -14,6 +14,7 @@ from app.api.routes.agent_messages import (
 from app.api.routes.agent_sessions import (
     router as agent_sessions_router,
 )
+from app.api.routes.cache_status import router as cache_status_router
 from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
@@ -22,6 +23,14 @@ from app.api.routes.research_answers import (
     router as research_answers_router,
 )
 from app.core.config import Settings, get_settings
+from app.cache import (
+    CacheProviderName,
+    CachedLLMClient,
+    DisabledLLMCache,
+    LLMCacheBackend,
+    RedisLLMCache,
+    build_llm_cache_identity,
+)
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
 )
@@ -64,7 +73,7 @@ _DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
 
 def _build_policy_answer_service() -> tuple[
     PolicyAnswerService,
-    OpenAICompatibleLLMClient,
+    CachedLLMClient,
 ]:
     """创建真实制度问答服务及其 LLM 客户端。"""
 
@@ -77,7 +86,20 @@ def _build_policy_answer_service() -> tuple[
     )
 
     settings = get_settings()
-    llm_client = OpenAICompatibleLLMClient.from_settings(settings)
+    raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
+    cache_backend = _build_llm_cache_backend(settings)
+    llm_client = CachedLLMClient(
+        upstream=raw_llm_client,
+        backend=cache_backend,
+        identity=build_llm_cache_identity(
+            base_url=settings.llm_base_url,
+            model=settings.llm_model,
+        ),
+        ttl_seconds=settings.llm_cache_ttl_seconds,
+        max_request_bytes=settings.llm_cache_max_request_bytes,
+        singleflight_enabled=settings.llm_singleflight_enabled,
+        singleflight_max_keys=settings.llm_singleflight_max_keys,
+    )
 
     service = PolicyAnswerService(
         retriever=retriever,
@@ -85,6 +107,19 @@ def _build_policy_answer_service() -> tuple[
     )
 
     return service, llm_client
+
+
+def _build_llm_cache_backend(settings: Settings) -> LLMCacheBackend:
+    """Create the explicitly configured optional LLM cache backend."""
+
+    if settings.llm_cache_provider is CacheProviderName.DISABLED:
+        return DisabledLLMCache()
+    return RedisLLMCache.from_url(
+        url=settings.redis_url,
+        namespace=settings.llm_cache_namespace,
+        timeout_seconds=settings.redis_timeout_seconds,
+        max_value_bytes=settings.llm_cache_max_value_bytes,
+    )
 
 
 def _build_web_search_provider(
@@ -153,6 +188,7 @@ async def _lifespan(
     application.state.policy_research_assistant = policy_research_assistant
     application.state.agent_router = agent_router
     application.state.agent_state_store = state_store
+    application.state.llm_cache = llm_client
 
     try:
         yield
@@ -165,6 +201,7 @@ async def _lifespan(
         del application.state.agent_state_store
         del application.state.agent_router
         del application.state.policy_answer_service
+        del application.state.llm_cache
 
 
 def create_app(
@@ -195,6 +232,10 @@ def create_app(
     )
     application.include_router(
         research_answers_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        cache_status_router,
         prefix="/api/v1",
     )
 
