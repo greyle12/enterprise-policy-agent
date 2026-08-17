@@ -249,11 +249,15 @@ Day 22 暂不实现：
 
 - 真实 BGE 模型性能基线；
 - 真实 LLM / Tavily 延迟与 Token 成本；
-- 多并发、吞吐量、背压和负载测试；
+- 真实 Provider 的多并发、背压和持续负载测试；
 - API 全链路网络延迟；
 - 跨机器性能比较；
 - 缓存、批处理、连接池或并发优化；
 - Prometheus、OpenTelemetry 或分布式 trace；
 - 自动接受新的更慢基线。
+
+Day 25 已在串行单请求基线之外增加三种完全离线的并发 load shape，记录端到端 p95、
+吞吐、错误率、上游调用放大率和 Provider 峰值。它验证并发测量与 single-flight 契约，
+但固定 I/O fixture 仍不代表真实模型容量；详见 `docs/async_concurrency_load.md`。
 
 Day 22 的结论是“先建立证据并定位”，不是“已经完成生产性能优化”。

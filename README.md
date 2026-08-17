@@ -193,7 +193,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 15：异步 LLM single-flight（Day 24 已完成）
+Phase 16：异步并发负载与吞吐证据（Day 25 已完成）
 ```
 
 ### 已完成
@@ -261,6 +261,10 @@ Phase 15：异步 LLM single-flight（Day 24 已完成）
 - [x] follower 取消隔离、异常清理和应用关闭时 Task 回收；
 - [x] 有容量上限的在途键注册表和 overflow 指标；
 - [x] 12 请求只触发 1 次上游调用的完全离线并发验收。
+- [x] 热点键、四键 hotset 与唯一键扇出的受控并发负载；
+- [x] 客户端端到端 p50 / p95、吞吐和错误率报告；
+- [x] 上游调用率、唯一键放大率和 Provider 峰值并发证据；
+- [x] JSON / Markdown 并发报告与 CI 自动质量门禁。
 
 ### 尚未实现
 
@@ -273,7 +277,7 @@ Phase 15：异步 LLM single-flight（Day 24 已完成）
 - [ ] 权限过滤与提示注入专项评测；
 - [ ] 集中日志、指标采集和链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
-- [ ] 并发负载、吞吐量、分布式防击穿和批处理优化。
+- [ ] 生产级持续压测、全局背压、分布式防击穿和批处理优化。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -286,6 +290,7 @@ Phase 15：异步 LLM single-flight（Day 24 已完成）
 有界工具重试和副作用安全降级，以及显式授权的制度研究助手，
 并具备离线性能预算和 cProfile 热点分析，
 以及可选、短 TTL、故障时直连模型的 Redis LLM 响应缓存和单进程异步防击穿，
+并能用三种请求分布测量并发 p95、吞吐、上游放大率和 Provider 峰值，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1058,7 +1063,7 @@ Day 24 在 Day 23 精确缓存之上增加进程内异步请求合并。同一�
   -m scripts.verify_async_singleflight
 ```
 
-完整算法、取消语义、状态字段和 Day 25 边界见：
+完整算法、取消语义和状态字段见：
 
 ```text
 docs/async_llm_singleflight.md
@@ -1066,7 +1071,38 @@ docs/async_llm_singleflight.md
 
 ---
 
-## 19. 计划系统架构
+## 19. 异步并发负载与吞吐证据
+
+Day 25 将 Day 24 的并发正确性契约扩展为三种受控请求分布：同一热点键、四键 hotset 和
+全部唯一键。报告同时记录端到端 p50 / p95、吞吐、错误率、上游调用率、唯一键放大率及
+Provider 峰值并发，并把排队时间纳入客户端延迟。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_concurrency_load
+```
+
+生成 JSON / Markdown 报告：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_concurrency_load_test `
+  --requests 24 `
+  --concurrency 12 `
+  --provider-latency-ms 15
+```
+
+完整场景、指标公式、验收和真实 Provider 边界见：
+
+```text
+docs/async_concurrency_load.md
+```
+
+---
+
+## 20. 计划系统架构
 
 ```text
 Client
@@ -1124,12 +1160,16 @@ Offline Performance Analysis
   ├── Repeatable Scenario Benchmark
   ├── p50 / p95 / Error Budget
   ├── cProfile Hotspots
-  └── Optional py-spy / Scalene
+  ├── Optional py-spy / Scalene
+  └── Concurrent Load Shapes
+      ├── Hot Key / Mixed Hotset / Unique Keys
+      ├── Throughput / End-to-end p95 / Error Rate
+      └── Upstream Amplification / Provider Peak
 ```
 
 ---
 
-## 20. 项目目录
+## 21. 项目目录
 
 ```text
 demo1/
@@ -1167,6 +1207,7 @@ demo1/
 │   ├── performance_analysis.md
 │   ├── redis_llm_cache.md
 │   ├── async_llm_singleflight.md
+│   ├── async_concurrency_load.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1187,7 +1228,7 @@ demo1/
 
 ---
 
-## 21. 当前开发环境
+## 22. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1199,6 +1240,7 @@ Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
 异步合并：缓存启用时默认跟踪最多 128 个 single-flight 在途键
+并发负载：默认每场景 24 请求、客户端并发 12、固定离线 I/O 15 ms
 性能基线：Python 内置 perf_counter_ns 与 cProfile
 采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
@@ -1243,7 +1285,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 22. 数据验证命令
+## 23. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1312,9 +1354,16 @@ python -X utf8 -m scripts.verify_llm_cache
 python -X utf8 -m scripts.verify_async_singleflight
 ```
 
+### 验证异步并发负载
+
+```powershell
+python -X utf8 -m scripts.verify_concurrency_load
+python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 12
+```
+
 ---
 
-## 23. 开发路线
+## 24. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1410,8 +1459,10 @@ python -X utf8 -m scripts.verify_async_singleflight
 - [x] 固定性能预算门禁；
 - [x] cProfile 项目热点；
 - [x] py-spy / Scalene 可选环境；
+- [x] 热点、hotset、唯一键三种完全离线并发负载；
+- [x] 端到端 p95、吞吐、错误率和上游放大证据；
 - [ ] 真实模型与 Provider 基线；
-- [ ] 并发负载和吞吐量测试；
+- [ ] 生产级持续压测与基于 Provider 配额的全局背压；
 - [ ] 基于证据的性能优化。
 
 ### Phase 10：缓存优化
@@ -1443,7 +1494,7 @@ python -X utf8 -m scripts.verify_async_singleflight
 
 ---
 
-## 24. 设计原则
+## 25. 设计原则
 
 本项目遵循以下原则：
 
@@ -1465,7 +1516,7 @@ Agent 的目标不是无限自主，而是在明确业务边界内安全地完�
 
 ---
 
-## 25. 预期评测指标
+## 26. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1494,9 +1545,13 @@ Day 22 离线性能预算：
 Day 24 专项并发契约固定验证：12 个相同 cache miss 只产生 1 次上游调用和 1 次缓存写入，
 其余 11 个请求复用 leader 结果。该契约证明请求合并逻辑，不代表生产环境吞吐量或 SLA。
 
+Day 25 专项负载固定使用三种请求分布、每场景 24 请求和客户端并发 12。预期上游调用分别
+为 1、4、24，唯一键调用放大率均为 1.00x；p95 和吞吐保留为同环境趋势证据，不设置跨机器
+绝对预算，也不代表真实 DeepSeek/OpenAI-compatible Provider SLA。
+
 ---
 
-## 26. 作品集价值
+## 27. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1518,6 +1573,7 @@ Day 24 专项并发契约固定验证：12 个相同 cache miss 只产生 1 次�
 - 离线性能基准、p95 预算和 cProfile 热点分析。
 - Redis cache-aside、精确失效、隐私绕过和故障安全降级。
 - asyncio Task 协调、single-flight 防击穿、取消隔离和并发竞态测试。
+- 并发 load shape、端到端 p95、吞吐、上游放大率和容量边界分析。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1536,7 +1592,7 @@ Day 24 专项并发契约固定验证：12 个相同 cache miss 只产生 1 次�
 
 ---
 
-## 27. 免责声明
+## 28. 免责声明
 
 本仓库仅用于：
 

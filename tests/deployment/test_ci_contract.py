@@ -51,6 +51,9 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "agent-performance-report.json" in workflow
     assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow
     assert "scripts.verify_async_singleflight" in workflow
+    assert "scripts.run_concurrency_load_test" in workflow
+    assert "agent-concurrency-load-report.json" in workflow
+    assert "agent-concurrency-load-report.md" in workflow
     assert "torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl" in workflow
     assert "ae4bb28409f5370852bd71af221066236c38d647f780d9b0a7240c330a9c12df" in workflow
     assert "sha256sum --check" in workflow

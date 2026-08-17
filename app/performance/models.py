@@ -21,6 +21,14 @@ class PerformanceScenarioName(StrEnum):
     POLICY_RESEARCH_HYBRID = "policy_research_hybrid"
 
 
+class ConcurrencyLoadScenarioName(StrEnum):
+    """Day 25 离线并发负载覆盖的三种请求分布。"""
+
+    HOT_KEY_BURST = "hot_key_burst"
+    MIXED_HOTSET = "mixed_hotset"
+    UNIQUE_KEY_FANOUT = "unique_key_fanout"
+
+
 class PerformanceBudget(_StrictModel):
     """一个场景允许的 p95 延迟和错误率上限。"""
 
@@ -95,6 +103,67 @@ class PerformanceReport(_StrictModel):
     quality_gate_passed: bool
     bottleneck_candidates: tuple[BottleneckCandidate, ...]
     scenario_results: tuple[PerformanceScenarioResult, ...]
+
+
+class ConcurrencyLoadSample(_StrictModel):
+    """一个并发客户端请求的端到端延迟和稳定错误类型。"""
+
+    request_id: int = Field(ge=1)
+    duration_ms: float = Field(ge=0.0)
+    succeeded: bool
+    error_type: str | None = Field(default=None, min_length=1, max_length=100)
+
+
+class ConcurrencyLoadScenarioResult(_StrictModel):
+    """一个并发请求分布的吞吐、延迟和上游放大结果。"""
+
+    scenario: ConcurrencyLoadScenarioName
+    description: str = Field(min_length=1, max_length=300)
+    request_count: int = Field(ge=1)
+    configured_concurrency: int = Field(ge=1)
+    unique_request_keys: int = Field(ge=1)
+    duration_ms: float = Field(gt=0.0)
+    throughput_rps: float = Field(gt=0.0)
+    error_count: int = Field(ge=0)
+    error_rate: float = Field(ge=0.0, le=1.0)
+    minimum_ms: float = Field(ge=0.0)
+    average_ms: float = Field(ge=0.0)
+    p50_ms: float = Field(ge=0.0)
+    p95_ms: float = Field(ge=0.0)
+    maximum_ms: float = Field(ge=0.0)
+    client_peak_in_flight: int = Field(ge=0)
+    provider_peak_in_flight: int = Field(ge=0)
+    expected_upstream_calls: int = Field(ge=1)
+    upstream_calls: int = Field(ge=0)
+    upstream_call_ratio: float = Field(ge=0.0)
+    upstream_call_amplification: float = Field(ge=0.0)
+    cache_hits: int = Field(ge=0)
+    coalesced_requests: int = Field(ge=0)
+    meets_contract: bool
+    samples: tuple[ConcurrencyLoadSample, ...]
+
+
+class ConcurrencyLoadReport(_StrictModel):
+    """可写入 JSON / Markdown 的 Day 25 离线并发负载报告。"""
+
+    schema_version: Literal["1.0"] = "1.0"
+    suite_name: Literal["enterprise_policy_agent_offline_concurrency"] = (
+        "enterprise_policy_agent_offline_concurrency"
+    )
+    generated_at: datetime
+    benchmark_mode: Literal["offline"] = "offline"
+    request_count: int = Field(ge=1)
+    configured_concurrency: int = Field(ge=1)
+    simulated_provider_latency_ms: float = Field(gt=0.0)
+    duration_ms: float = Field(gt=0.0)
+    network_calls: bool
+    live_llm_calls: bool
+    environment: PerformanceEnvironment
+    quality_gate_passed: bool
+    decision: Literal["collect_live_provider_baseline_before_setting_global_limit"] = (
+        "collect_live_provider_baseline_before_setting_global_limit"
+    )
+    scenario_results: tuple[ConcurrencyLoadScenarioResult, ...]
 
 
 class ProfileHotspot(_StrictModel):

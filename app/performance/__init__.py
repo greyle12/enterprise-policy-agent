@@ -4,9 +4,19 @@ from app.performance.benchmark import (
     PerformanceBenchmarkRunner,
     nearest_rank_percentile,
 )
+from app.performance.concurrency import (
+    ConcurrencyLoadRunner,
+    ConcurrencyLoadScenario,
+    ConcurrencyObservedMetrics,
+)
+from app.performance.concurrency_offline import run_offline_concurrency_load
 from app.performance.models import (
     BottleneckCandidate,
     CProfileReport,
+    ConcurrencyLoadReport,
+    ConcurrencyLoadSample,
+    ConcurrencyLoadScenarioName,
+    ConcurrencyLoadScenarioResult,
     PerformanceBudget,
     PerformanceEnvironment,
     PerformanceReport,
@@ -24,10 +34,13 @@ from app.performance.offline import (
 from app.performance.profiling import build_cprofile_report
 from app.performance.reporting import (
     CProfileReportPaths,
+    ConcurrencyLoadReportPaths,
     PerformanceReportPaths,
     render_cprofile_markdown,
+    render_concurrency_load_markdown,
     render_performance_markdown,
     write_cprofile_report,
+    write_concurrency_load_report,
     write_performance_report,
 )
 
@@ -37,6 +50,14 @@ __all__ = [
     "BottleneckCandidate",
     "CProfileReport",
     "CProfileReportPaths",
+    "ConcurrencyLoadReport",
+    "ConcurrencyLoadReportPaths",
+    "ConcurrencyLoadRunner",
+    "ConcurrencyLoadSample",
+    "ConcurrencyLoadScenario",
+    "ConcurrencyLoadScenarioName",
+    "ConcurrencyLoadScenarioResult",
+    "ConcurrencyObservedMetrics",
     "DEFAULT_PERFORMANCE_BUDGETS",
     "DeterministicHashEmbeddingProvider",
     "OfflinePerformanceRuntime",
@@ -52,8 +73,11 @@ __all__ = [
     "build_cprofile_report",
     "nearest_rank_percentile",
     "render_cprofile_markdown",
+    "render_concurrency_load_markdown",
     "render_performance_markdown",
+    "run_offline_concurrency_load",
     "run_offline_performance_benchmark",
     "write_cprofile_report",
+    "write_concurrency_load_report",
     "write_performance_report",
 ]

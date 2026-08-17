@@ -211,8 +211,9 @@ TLS、最小权限与数据分类策略；高度敏感场景应继续关闭缓�
 分类。
 
 Day 24 已在这套缓存边界之上增加单进程 async single-flight，但没有把它描述成分布式锁。
-Day 25 可以继续做并发负载测试和真实 Provider 基线；不能用提高预算或吞掉异常来伪造
-优化结果。完整边界见 `docs/async_llm_singleflight.md`。
+Day 25 已增加完全离线的并发负载测试，记录吞吐、p95、错误率、上游调用率和放大率；
+真实 Provider 基线仍需明确授权后小流量执行。不能用提高预算或吞掉异常来伪造优化结果。
+完整边界见 `docs/async_llm_singleflight.md` 与 `docs/async_concurrency_load.md`。
 
 ## 5. 参考资料
 
