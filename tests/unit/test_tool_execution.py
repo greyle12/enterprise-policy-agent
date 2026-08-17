@@ -5,6 +5,7 @@ import asyncio
 import httpx
 import pytest
 
+from app.llm import ProviderOverloadedError, ProviderQueueTimeoutError
 from app.resilience import (
     ResilientToolExecutor,
     ToolCallOutcome,
@@ -14,6 +15,39 @@ from app.resilience import (
     ToolOperationKind,
     ToolRecoveryAction,
 )
+
+
+@pytest.mark.parametrize(
+    ("error", "category"),
+    [
+        (ProviderQueueTimeoutError(), ToolFailureCategory.TIMEOUT),
+        (ProviderOverloadedError(), ToolFailureCategory.UPSTREAM_UNAVAILABLE),
+    ],
+)
+async def test_provider_capacity_errors_are_retryable_and_sanitized(
+    error: Exception,
+    category: ToolFailureCategory,
+) -> None:
+    calls = 0
+
+    async def operation() -> str:
+        nonlocal calls
+        calls += 1
+        raise error
+
+    with pytest.raises(ToolExecutionError) as captured:
+        await _executor(max_attempts=2).execute(
+            tool=ToolName.POLICY_ANSWER,
+            operation=ToolOperationKind.READ_ONLY,
+            call=operation,
+        )
+
+    record = captured.value.record
+    assert calls == 2
+    assert record.error is not None
+    assert record.error.category is category
+    assert record.error.retryable is True
+    assert "provider" not in record.error.user_message.lower()
 
 
 def _executor(**overrides) -> ResilientToolExecutor:

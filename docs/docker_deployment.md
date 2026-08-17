@@ -1,10 +1,10 @@
-# Docker 部署与验收（Day 17，Day 26 更新）
+# Docker 部署与验收（Day 17，Day 27 更新）
 
 本文档说明如何在 Windows Docker Desktop 上构建、启动、检查和停止企业制度 Agent。
 Day 23 的 Compose 同时启动临时 Redis，用于可丢失、短 TTL 的 LLM 响应缓存；Day 24
-在 Agent 进程内合并相同缓存键的并发未命中请求。Day 26 将 Compose 镜像标签更新为
-`enterprise-policy-agent:day26`；并发负载与 Embedding/Reranker 批处理验收仍在宿主机
-完全离线执行，不会从容器向真实 Provider 发送压测请求。
+在 Agent 进程内合并相同缓存键的并发未命中请求。Day 27 将 Compose 镜像标签更新为
+`enterprise-policy-agent:day27`，并增加默认关闭的单进程 LLM Provider 背压；专项验收仍在
+宿主机完全离线执行，不会从容器向真实 Provider 发送压测请求。
 
 ## 1. 前置条件
 
@@ -121,6 +121,17 @@ Redis 是可选性能组件：状态为 `degraded` 时，Agent 会直连 LLM，�
 Day 24 状态还会返回 `singleflight_enabled`、`singleflight_max_keys`、
 `singleflight_in_flight`、`metrics.coalesced` 和 `metrics.singleflight_overflows`。这些值只属于
 当前 Agent 进程，不是 Redis 中的共享状态。
+
+Provider 容量状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/provider/status |
+  ConvertTo-Json -Depth 5
+```
+
+Day 27 默认返回 `state=disabled`。只有在 `.env` 显式设置
+`LLM_PROVIDER_LIMIT_ENABLED=true` 后才执行进程内限流；`in_flight`、`queued` 和所有 metrics
+只属于当前 Agent 进程，不是多个容器或 worker 的聚合值。
 
 ## 5. 自动验收
 

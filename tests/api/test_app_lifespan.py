@@ -31,13 +31,15 @@ def test_lifespan_configures_and_closes_service(
 ) -> None:
     service = object()
     llm_client = FakeLLMClient()
+    provider_limiter = object()
     web_search_provider = FakeWebSearchProvider()
 
     def build_fake_service() -> tuple[
         object,
         FakeLLMClient,
+        object,
     ]:
-        return service, llm_client
+        return service, llm_client, provider_limiter
 
     monkeypatch.setattr(
         main_module,
@@ -68,6 +70,7 @@ def test_lifespan_configures_and_closes_service(
         assert application.state.policy_answer_service is service
         assert application.state.policy_research_assistant is not None
         assert application.state.llm_cache is llm_client
+        assert application.state.llm_provider_limiter is provider_limiter
         assert llm_client.closed is False
         assert web_search_provider.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
@@ -89,4 +92,8 @@ def test_lifespan_configures_and_closes_service(
     assert not hasattr(
         application.state,
         "llm_cache",
+    )
+    assert not hasattr(
+        application.state,
+        "llm_provider_limiter",
     )

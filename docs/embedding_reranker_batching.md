@@ -224,8 +224,9 @@ Day 26 已完成：
 - Reranker 接入正式检索链路及黄金相关性评测；
 - GPU mixed precision、动态 padding 和长度分桶；
 - 多请求动态 batching 服务；
-- 全局 Provider 并发门禁、有限队列和排队超时；
+- 多进程或多实例共享的 Provider 全局配额；
 - 真实模型 OOM 保护和自适应 batch size。
 
-Day 27 可基于 Day 25 的并发扇出证据增加全局 Provider 背压，并明确排队容量、超时、取消
-和过载拒绝语义。
+Day 27 已基于 Day 25 的并发扇出证据增加单进程 LLM Provider 背压，并明确 FIFO 排队容量、
+超时、取消和过载拒绝语义；它保护交互式 LLM 调用，不替代真实 BGE batch size 基线。详见
+`docs/provider_backpressure.md`。

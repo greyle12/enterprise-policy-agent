@@ -167,8 +167,8 @@ class ConcurrencyLoadReport(_StrictModel):
     live_llm_calls: bool
     environment: PerformanceEnvironment
     quality_gate_passed: bool
-    decision: Literal["collect_live_provider_baseline_before_setting_global_limit"] = (
-        "collect_live_provider_baseline_before_setting_global_limit"
+    decision: Literal["collect_live_provider_baseline_before_enabling_process_limit"] = (
+        "collect_live_provider_baseline_before_enabling_process_limit"
     )
     scenario_results: tuple[ConcurrencyLoadScenarioResult, ...]
 

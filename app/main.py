@@ -8,6 +8,7 @@ from fastapi import FastAPI
 
 from app.agent.intent_classifier import IntentClassifier
 from app.agent.router import AgentRouter
+from app.api.provider_errors import provider_capacity_error_response
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
@@ -19,6 +20,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
+from app.api.routes.provider_status import router as provider_status_router
 from app.api.routes.research_answers import (
     router as research_answers_router,
 )
@@ -34,6 +36,7 @@ from app.cache import (
 from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
 )
+from app.llm import ConcurrencyLimitedLLMClient, ProviderCapacityError
 from app.persistence import (
     SQLiteAgentStateStore,
     SQLiteCheckpointSaver,
@@ -74,6 +77,7 @@ _DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
 def _build_policy_answer_service() -> tuple[
     PolicyAnswerService,
     CachedLLMClient,
+    ConcurrencyLimitedLLMClient,
 ]:
     """创建真实制度问答服务及其 LLM 客户端。"""
 
@@ -87,9 +91,10 @@ def _build_policy_answer_service() -> tuple[
 
     settings = get_settings()
     raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
+    provider_limiter = _build_llm_provider_limiter(settings, raw_llm_client)
     cache_backend = _build_llm_cache_backend(settings)
     llm_client = CachedLLMClient(
-        upstream=raw_llm_client,
+        upstream=provider_limiter,
         backend=cache_backend,
         identity=build_llm_cache_identity(
             base_url=settings.llm_base_url,
@@ -106,7 +111,22 @@ def _build_policy_answer_service() -> tuple[
         llm_client=llm_client,
     )
 
-    return service, llm_client
+    return service, llm_client, provider_limiter
+
+
+def _build_llm_provider_limiter(
+    settings: Settings,
+    upstream: OpenAICompatibleLLMClient,
+) -> ConcurrencyLimitedLLMClient:
+    """Create the optional process-local provider capacity boundary."""
+
+    return ConcurrencyLimitedLLMClient(
+        upstream=upstream,
+        enabled=settings.llm_provider_limit_enabled,
+        max_concurrency=settings.llm_provider_max_concurrency,
+        max_queue=settings.llm_provider_max_queue,
+        queue_timeout_seconds=settings.llm_provider_queue_timeout_seconds,
+    )
 
 
 def _build_llm_cache_backend(settings: Settings) -> LLMCacheBackend:
@@ -145,7 +165,7 @@ async def _lifespan(
 ) -> AsyncIterator[None]:
     """初始化并释放应用级共享资源。"""
 
-    service, llm_client = _build_policy_answer_service()
+    service, llm_client, provider_limiter = _build_policy_answer_service()
     material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
     approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     settings = get_settings()
@@ -189,6 +209,7 @@ async def _lifespan(
     application.state.agent_router = agent_router
     application.state.agent_state_store = state_store
     application.state.llm_cache = llm_client
+    application.state.llm_provider_limiter = provider_limiter
 
     try:
         yield
@@ -202,6 +223,7 @@ async def _lifespan(
         del application.state.agent_router
         del application.state.policy_answer_service
         del application.state.llm_cache
+        del application.state.llm_provider_limiter
 
 
 def create_app(
@@ -214,6 +236,10 @@ def create_app(
         title="Enterprise Policy Agent",
         version="0.1.0",
         lifespan=(_lifespan if enable_lifespan else None),
+    )
+    application.add_exception_handler(
+        ProviderCapacityError,
+        provider_capacity_error_response,
     )
     application.include_router(
         health_router,
@@ -236,6 +262,10 @@ def create_app(
     )
     application.include_router(
         cache_status_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        provider_status_router,
         prefix="/api/v1",
     )
 

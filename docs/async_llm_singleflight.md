@@ -160,14 +160,13 @@ metrics.coalesced >= 0
 metrics.singleflight_overflows = 0
 ```
 
-## 5. Improve：Day 25 进展与剩余边界
+## 5. Improve：Day 25/27 进展与剩余边界
 
 Day 24 明确没有实现：
 
 - 跨 FastAPI 进程或跨容器的分布式 single-flight；
 - Redis 分布式锁；
-- 不同请求之间的全局 LLM 并发上限；
-- 排队长度、排队超时和拒绝策略；
+- 跨进程或跨容器的全局 LLM 配额；
 - 生产压测或真实 Provider 吞吐量基线；
 - 语义相似请求合并。
 
@@ -175,6 +174,10 @@ Day 25 已使用热点键、四键 hotset 和唯一键三种受控负载测量�
 放大率和错误率。离线结果证明唯一键会把 Provider 峰值推到客户端并发上限，但固定延迟
 fixture 无法代表真实 Provider 配额，因此仍不凭感觉写死全局并发数字。完整方法与报告见
 `docs/async_concurrency_load.md`。
+
+Day 27 已在 cache 和 single-flight 后增加单进程统一 LLM 并发门禁、FIFO 有界队列、排队
+超时和安全 503。cache hit 与 follower 不占用 permit；跨进程共享配额与真实 Provider 基线
+仍未实现。详见 `docs/provider_backpressure.md`。
 
 ## 6. 关联知识
 

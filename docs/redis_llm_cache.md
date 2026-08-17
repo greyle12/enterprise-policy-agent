@@ -212,8 +212,10 @@ TLS、最小权限与数据分类策略；高度敏感场景应继续关闭缓�
 
 Day 24 已在这套缓存边界之上增加单进程 async single-flight，但没有把它描述成分布式锁。
 Day 25 已增加完全离线的并发负载测试，记录吞吐、p95、错误率、上游调用率和放大率；
-真实 Provider 基线仍需明确授权后小流量执行。不能用提高预算或吞掉异常来伪造优化结果。
-完整边界见 `docs/async_llm_singleflight.md` 与 `docs/async_concurrency_load.md`。
+Day 27 已在 cache 和 single-flight 后增加默认关闭的单进程 Provider 背压，确保命中请求和
+follower 不消耗模型容量。真实 Provider 基线仍需明确授权后小流量执行。不能用提高预算或
+吞掉异常来伪造优化结果。完整边界见 `docs/async_llm_singleflight.md`、
+`docs/async_concurrency_load.md` 与 `docs/provider_backpressure.md`。
 
 ## 5. 参考资料
 

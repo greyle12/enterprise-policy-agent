@@ -71,6 +71,7 @@
 13. 内部制度 RAG 与显式授权 Web Search 的受控研究整合。
 14. 可重复的性能基准、预算门禁和 Python 热点分析。
 15. 可失效、可观测且故障安全的 Redis LLM 响应缓存。
+16. 单进程统一 LLM Provider 并发门禁、有限排队与安全过载降级。
 
 ---
 
@@ -193,7 +194,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 17：Embedding/Reranker 批处理优化（Day 26 已完成）
+Phase 18：LLM Provider 并发门禁与背压（Day 27 已完成）
 ```
 
 ### 已完成
@@ -269,6 +270,10 @@ Phase 17：Embedding/Reranker 批处理优化（Day 26 已完成）
 - [x] Embedding/Reranker 逐条与批量输出等价性验收；
 - [x] Provider 调用减少、内部批次、吞吐和加速比报告；
 - [x] 完全离线批处理专项脚本与 CI 证据。
+- [x] 缓存与 single-flight 之后的统一 LLM Provider 并发门禁；
+- [x] FIFO 有界队列、队满立即拒绝和排队超时；
+- [x] 排队/执行取消清理、关闭排空和上游资源单次关闭；
+- [x] 安全 503 错误、Provider 状态 API 与完全离线背压验收。
 
 ### 尚未实现
 
@@ -281,7 +286,7 @@ Phase 17：Embedding/Reranker 批处理优化（Day 26 已完成）
 - [ ] 权限过滤与提示注入专项评测；
 - [ ] 集中日志、指标采集和链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
-- [ ] 生产级持续压测、全局背压、分布式防击穿和真实模型 batch 调优。
+- [ ] 生产级持续压测、跨进程全局背压、分布式防击穿和真实模型 batch 调优。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -296,6 +301,7 @@ Phase 17：Embedding/Reranker 批处理优化（Day 26 已完成）
 以及可选、短 TTL、故障时直连模型的 Redis LLM 响应缓存和单进程异步防击穿，
 并能用三种请求分布测量并发 p95、吞吐、上游放大率和 Provider 峰值，
 同时具备 Embedding/Reranker 批量接口、结果等价性和调用减少证据，
+并在缓存与 single-flight 之后提供默认关闭的单进程 Provider 有界并发与安全过载语义，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1140,7 +1146,38 @@ docs/embedding_reranker_batching.md
 
 ---
 
-## 21. 计划系统架构
+## 21. LLM Provider 并发门禁与背压
+
+Day 27 在统一真实 LLM 边界增加进程内 Provider 容量保护。门禁位于 Redis cache-aside 和
+single-flight 之后，因此 cache hit 与 follower 不消耗执行 permit；不同请求和缓存绕过请求
+仍受相同的并发上限保护。
+
+默认保持关闭；启用后使用 FIFO 有界队列，队满立即返回安全 503，排队超过配置时间则清理
+waiter 并返回稳定超时错误。取消、上游异常和应用关闭都会归还容量或排空资源。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_provider_backpressure
+```
+
+运行时状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/provider/status |
+  ConvertTo-Json -Depth 5
+```
+
+配置、FIFO/取消语义、503 契约、指标解释和真实参数选择方法见：
+
+```text
+docs/provider_backpressure.md
+```
+
+---
+
+## 22. 计划系统架构
 
 ```text
 Client
@@ -1211,7 +1248,7 @@ Offline Performance Analysis
 
 ---
 
-## 22. 项目目录
+## 23. 项目目录
 
 ```text
 demo1/
@@ -1251,6 +1288,7 @@ demo1/
 │   ├── async_llm_singleflight.md
 │   ├── async_concurrency_load.md
 │   ├── embedding_reranker_batching.md
+│   ├── provider_backpressure.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1271,7 +1309,7 @@ demo1/
 
 ---
 
-## 23. 当前开发环境
+## 24. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1284,6 +1322,7 @@ Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
 异步合并：缓存启用时默认跟踪最多 128 个 single-flight 在途键
 并发负载：默认每场景 24 请求、客户端并发 12、固定离线 I/O 15 ms
+Provider 背压：默认关闭；示例上限 4、FIFO 队列 16、排队超时 2 秒
 性能基线：Python 内置 perf_counter_ns 与 cProfile
 采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
@@ -1328,7 +1367,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 24. 数据验证命令
+## 25. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1411,9 +1450,15 @@ python -X utf8 -m scripts.verify_embedding_reranker_batching
 python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
 ```
 
+### 验证 LLM Provider 背压
+
+```powershell
+python -X utf8 -m scripts.verify_provider_backpressure
+```
+
 ---
 
-## 25. 开发路线
+## 26. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1514,8 +1559,10 @@ python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
 - [x] 端到端 p95、吞吐、错误率和上游放大证据；
 - [x] Embedding/Reranker 逐条与批量调用对照；
 - [x] Provider 调用、内部批次、等价性和吞吐报告；
+- [x] 单进程统一 LLM Provider 并发门禁；
+- [x] FIFO 有界队列、排队超时、取消清理和安全 503；
 - [ ] 真实模型与 Provider 基线；
-- [ ] 生产级持续压测与基于 Provider 配额的全局背压；
+- [ ] 生产级持续压测与跨进程 Provider 配额协调；
 - [ ] 基于证据的性能优化。
 
 ### Phase 10：缓存优化
@@ -1547,7 +1594,7 @@ python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
 
 ---
 
-## 26. 设计原则
+## 27. 设计原则
 
 本项目遵循以下原则：
 
@@ -1564,13 +1611,14 @@ LLM 负责理解用户意图和生成自然语言
 缓存只能优化可重建结果，不能成为审批状态或业务正确性的来源
 相同异步请求可以共享结果，但取消、异常和敏感内容边界必须显式设计
 Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
+Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 27. 预期评测指标
+## 28. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1607,9 +1655,13 @@ Day 26 专项批处理固定使用每场景 32 条输入和 batch size 8。Embed
 Provider 调用都应从 32 次降为 1 次，内部批次从 32 降为 4；输出摘要和顺序必须完全等价。
 离线 fixture 的吞吐提升只验证方法，不代表真实 BGE 模型或硬件 SLA。
 
+Day 27 专项背压固定使用 Provider 并发 2、FIFO 队列 2：5 个请求中接纳并完成 4 个、立即
+拒绝 1 个，峰值执行和排队都不得超过 2；另行验证排队超时、取消清理、关闭资源和默认关闭
+时的兼容直通。该契约是单进程容量边界，不代表跨实例限流或真实 Provider SLA。
+
 ---
 
-## 28. 作品集价值
+## 29. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1651,7 +1703,7 @@ Provider 调用都应从 32 次降为 1 次，内部批次从 32 降为 4；输�
 
 ---
 
-## 29. 免责声明
+## 30. 免责声明
 
 本仓库仅用于：
 

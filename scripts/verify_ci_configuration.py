@@ -34,6 +34,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5",
     "python -X utf8 -m scripts.verify_llm_cache",
     "python -X utf8 -m scripts.verify_async_singleflight",
+    "python -X utf8 -m scripts.verify_provider_backpressure",
     "python -X utf8 -m scripts.run_concurrency_load_test",
     "--requests 24 --concurrency 12 --provider-latency-ms 15",
     "python -X utf8 -m scripts.run_batch_optimization",

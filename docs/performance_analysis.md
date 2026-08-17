@@ -264,4 +264,8 @@ Day 26 进一步增加 Embedding/Reranker 逐条与批量处理的对照报告�
 内部批次数量、输出等价性和顺序保持；详见 `docs/embedding_reranker_batching.md`。固定模型
 替身的吞吐增益仍不能代替真实 BGE、硬件内存和文本长度分布基线。
 
+Day 27 已增加默认关闭的单进程 LLM Provider 并发门禁、FIFO 有界队列、排队超时与 503
+过载语义，并用离线替身验证容量不会泄漏；详见 `docs/provider_backpressure.md`。它仍不是
+真实 Provider 容量、持续负载或跨实例配额基线。
+
 Day 22 的结论是“先建立证据并定位”，不是“已经完成生产性能优化”。

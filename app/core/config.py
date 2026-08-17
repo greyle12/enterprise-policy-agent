@@ -78,6 +78,22 @@ class Settings(BaseSettings):
         ge=1,
         le=4096,
     )
+    llm_provider_limit_enabled: bool = False
+    llm_provider_max_concurrency: int = Field(
+        default=4,
+        ge=1,
+        le=256,
+    )
+    llm_provider_max_queue: int = Field(
+        default=16,
+        ge=0,
+        le=4096,
+    )
+    llm_provider_queue_timeout_seconds: float = Field(
+        default=2.0,
+        gt=0,
+        le=60,
+    )
     agent_safe_tool_timeout_seconds: float = Field(
         default=65.0,
         gt=0,

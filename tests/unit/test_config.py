@@ -22,6 +22,10 @@ _ENVIRONMENT_NAMES = (
     "LLM_CACHE_MAX_VALUE_BYTES",
     "LLM_SINGLEFLIGHT_ENABLED",
     "LLM_SINGLEFLIGHT_MAX_KEYS",
+    "LLM_PROVIDER_LIMIT_ENABLED",
+    "LLM_PROVIDER_MAX_CONCURRENCY",
+    "LLM_PROVIDER_MAX_QUEUE",
+    "LLM_PROVIDER_QUEUE_TIMEOUT_SECONDS",
     "AGENT_SAFE_TOOL_TIMEOUT_SECONDS",
     "AGENT_MUTATION_TOOL_TIMEOUT_SECONDS",
     "AGENT_TOOL_MAX_ATTEMPTS",
@@ -62,6 +66,10 @@ def test_uses_default_llm_settings() -> None:
     assert settings.llm_cache_max_value_bytes == 262_144
     assert settings.llm_singleflight_enabled is True
     assert settings.llm_singleflight_max_keys == 128
+    assert settings.llm_provider_limit_enabled is False
+    assert settings.llm_provider_max_concurrency == 4
+    assert settings.llm_provider_max_queue == 16
+    assert settings.llm_provider_queue_timeout_seconds == 2.0
     assert settings.agent_safe_tool_timeout_seconds == 65.0
     assert settings.agent_mutation_tool_timeout_seconds == 10.0
     assert settings.agent_tool_max_attempts == 3
@@ -95,6 +103,10 @@ def test_loads_llm_settings_from_env_file(
             "LLM_CACHE_MAX_VALUE_BYTES=131072\n"
             "LLM_SINGLEFLIGHT_ENABLED=false\n"
             "LLM_SINGLEFLIGHT_MAX_KEYS=32\n"
+            "LLM_PROVIDER_LIMIT_ENABLED=true\n"
+            "LLM_PROVIDER_MAX_CONCURRENCY=6\n"
+            "LLM_PROVIDER_MAX_QUEUE=24\n"
+            "LLM_PROVIDER_QUEUE_TIMEOUT_SECONDS=1.5\n"
             "AGENT_SAFE_TOOL_TIMEOUT_SECONDS=20\n"
             "AGENT_MUTATION_TOOL_TIMEOUT_SECONDS=5\n"
             "AGENT_TOOL_MAX_ATTEMPTS=4\n"
@@ -125,6 +137,10 @@ def test_loads_llm_settings_from_env_file(
     assert settings.llm_cache_max_value_bytes == 131_072
     assert settings.llm_singleflight_enabled is False
     assert settings.llm_singleflight_max_keys == 32
+    assert settings.llm_provider_limit_enabled is True
+    assert settings.llm_provider_max_concurrency == 6
+    assert settings.llm_provider_max_queue == 24
+    assert settings.llm_provider_queue_timeout_seconds == 1.5
     assert settings.agent_safe_tool_timeout_seconds == 20.0
     assert settings.agent_mutation_tool_timeout_seconds == 5.0
     assert settings.agent_tool_max_attempts == 4
@@ -151,6 +167,12 @@ def test_loads_llm_settings_from_env_file(
         ("llm_cache_max_value_bytes", 1023),
         ("llm_singleflight_max_keys", 0),
         ("llm_singleflight_max_keys", 4097),
+        ("llm_provider_max_concurrency", 0),
+        ("llm_provider_max_concurrency", 257),
+        ("llm_provider_max_queue", -1),
+        ("llm_provider_max_queue", 4097),
+        ("llm_provider_queue_timeout_seconds", 0),
+        ("llm_provider_queue_timeout_seconds", 61),
         ("agent_safe_tool_timeout_seconds", 0),
         ("agent_mutation_tool_timeout_seconds", 0),
         ("agent_tool_max_attempts", 0),

@@ -4,7 +4,8 @@ Day 18 使用 GitHub Actions 将项目已有的测试、代码规范、黄金评
 构建和 Docker 构建检查连接成自动化持续集成流程。Day 22 在同一只读质量 Job 中
 增加完全离线的性能预算检查和结构化性能证据；Day 23 增加 Redis LLM 缓存契约验收，
 Day 24 增加异步 single-flight 并发契约，Day 25 增加三种请求分布的离线并发负载报告，
-Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用次数报告。
+Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用次数报告；Day 27 增加
+LLM Provider 有界并发、FIFO 排队、超时和取消清理的完全离线背压契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -79,6 +80,7 @@ timeout 30 分钟
 → 五场景离线性能预算
 → Redis LLM 缓存离线契约
 → 异步 LLM single-flight 离线并发契约
+→ LLM Provider 并发与背压离线契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
 → 构建 Python Wheel
@@ -86,7 +88,7 @@ timeout 30 分钟
 
 任意一步返回非零退出码，Job 即失败。
 
-离线黄金评测、性能基准、缓存契约、single-flight、并发负载和批处理对照都不使用 `.env`
+离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、并发负载和批处理对照都不使用 `.env`
 中的模型配置，也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。
 因此来自 Fork 的 Pull Request 可以在没有密钥的情况下执行相同质量门禁。
 
@@ -201,6 +203,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
   --iterations 5
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_llm_cache
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_async_singleflight
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_concurrency_load_test `
   --requests 24 `
@@ -232,6 +235,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | 性能预算失败 | 在同环境重复基准，再用 cProfile 定位最慢场景；不要直接抬高预算 |
 | 缓存契约失败 | 单独运行 `scripts.verify_llm_cache`，检查键、TTL、绕过和降级断言 |
 | single-flight 契约失败 | 单独运行 `scripts.verify_async_singleflight`，检查去重、取消隔离和并发断言 |
+| Provider 背压契约失败 | 单独运行 `scripts.verify_provider_backpressure`，检查执行峰值、FIFO、溢出、超时和取消清理 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | Dependency Review 不可用 | 检查仓库是否公开，或私有仓库是否具备所需安全功能 |
@@ -248,6 +252,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不把离线性能预算解释为真实模型或公网 SLA；
 - 不运行生产级持续压测、py-spy 或 Scalene；Day 25 只执行短时、确定性的离线 load shape；
 - 不运行真实 BGE Reranker；Day 26 只执行固定离线模型替身；
+- 不调用真实 LLM 验证容量；Day 27 只执行固定离线 Provider 替身；
 - 不验证 BGE 首次模型下载；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。

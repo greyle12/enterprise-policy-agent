@@ -200,14 +200,14 @@ docker compose up --detach --wait
 docker compose ps
 ```
 
-## 5. Improve：当前边界与 Day 26
+## 5. Improve：Day 26/27 进展与剩余边界
 
 Day 25 已完成的是安全、完全离线、可在 CI 重复的并发负载证据，不是生产压测。仍未实现：
 
 - 真实 DeepSeek/OpenAI-compatible Provider 的授权小流量基线；
 - 固定 QPS 或持续数分钟的 soak test；
 - 跨 FastAPI 进程聚合指标；
-- Provider 全局并发门禁、有限队列、排队超时与 503 映射；
+- 多进程或多实例共享的 Provider 全局配额；
 - Redis 分布式 single-flight；
 - Prometheus / OpenTelemetry 指标；
 - Embedding 和 Reranker 批处理。
@@ -215,6 +215,10 @@ Day 25 已完成的是安全、完全离线、可在 CI 重复的并发负载证
 Day 26 已完成 Embedding/Reranker 批处理优化：建立批量接口与等价性契约，并比较逐条和
 批量执行的 Provider 调用、内部批次与吞吐；没有把 LLM 请求拼成不安全的大批次。详见
 `docs/embedding_reranker_batching.md`。
+
+Day 27 已在 cache 和 single-flight 之后增加单进程 LLM Provider 并发门禁、FIFO 有界队列、
+排队超时、取消清理和安全 503。默认保持关闭，示例参数不代替真实 Provider 基线；详见
+`docs/provider_backpressure.md`。
 
 ## 6. 关联知识
 
