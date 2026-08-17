@@ -29,6 +29,13 @@ class ConcurrencyLoadScenarioName(StrEnum):
     UNIQUE_KEY_FANOUT = "unique_key_fanout"
 
 
+class BatchOptimizationScenarioName(StrEnum):
+    """Day 26 离线批处理对比覆盖的模型工作负载。"""
+
+    EMBEDDING_DOCUMENTS = "embedding_documents"
+    RERANKER_CANDIDATES = "reranker_candidates"
+
+
 class PerformanceBudget(_StrictModel):
     """一个场景允许的 p95 延迟和错误率上限。"""
 
@@ -164,6 +171,53 @@ class ConcurrencyLoadReport(_StrictModel):
         "collect_live_provider_baseline_before_setting_global_limit"
     )
     scenario_results: tuple[ConcurrencyLoadScenarioResult, ...]
+
+
+class BatchOptimizationScenarioResult(_StrictModel):
+    """逐条与批量模型调用的等价性、调用次数和吞吐对比。"""
+
+    scenario: BatchOptimizationScenarioName
+    description: str = Field(min_length=1, max_length=300)
+    item_count: int = Field(ge=1)
+    configured_batch_size: int = Field(ge=1)
+    sequential_provider_calls: int = Field(ge=1)
+    batched_provider_calls: int = Field(ge=1)
+    provider_call_reduction: float = Field(ge=0.0, le=1.0)
+    sequential_internal_batches: int = Field(ge=1)
+    batched_internal_batches: int = Field(ge=1)
+    sequential_duration_ms: float = Field(gt=0.0)
+    batched_duration_ms: float = Field(gt=0.0)
+    sequential_throughput_items_per_second: float = Field(gt=0.0)
+    batched_throughput_items_per_second: float = Field(gt=0.0)
+    throughput_speedup: float = Field(gt=0.0)
+    outputs_equivalent: bool
+    order_preserved: bool
+    batched_faster: bool
+    meets_contract: bool
+
+
+class BatchOptimizationReport(_StrictModel):
+    """可写入 JSON / Markdown 的 Day 26 离线批处理报告。"""
+
+    schema_version: Literal["1.0"] = "1.0"
+    suite_name: Literal["enterprise_policy_agent_offline_batch_optimization"] = (
+        "enterprise_policy_agent_offline_batch_optimization"
+    )
+    generated_at: datetime
+    benchmark_mode: Literal["offline"] = "offline"
+    item_count: int = Field(ge=1)
+    configured_batch_size: int = Field(ge=1)
+    simulated_call_overhead_ms: float = Field(gt=0.0)
+    simulated_batch_latency_ms: float = Field(gt=0.0)
+    duration_ms: float = Field(gt=0.0)
+    network_calls: bool
+    live_model_calls: bool
+    environment: PerformanceEnvironment
+    quality_gate_passed: bool
+    decision: Literal["batch_embedding_and_reranker_keep_llm_requests_independent"] = (
+        "batch_embedding_and_reranker_keep_llm_requests_independent"
+    )
+    scenario_results: tuple[BatchOptimizationScenarioResult, ...]
 
 
 class ProfileHotspot(_StrictModel):

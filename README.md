@@ -193,7 +193,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 16：异步并发负载与吞吐证据（Day 25 已完成）
+Phase 17：Embedding/Reranker 批处理优化（Day 26 已完成）
 ```
 
 ### 已完成
@@ -265,6 +265,10 @@ Phase 16：异步并发负载与吞吐证据（Day 25 已完成）
 - [x] 客户端端到端 p50 / p95、吞吐和错误率报告；
 - [x] 上游调用率、唯一键放大率和 Provider 峰值并发证据；
 - [x] JSON / Markdown 并发报告与 CI 自动质量门禁。
+- [x] BGE Reranker 批量 Provider、候选模型与稳定排序契约；
+- [x] Embedding/Reranker 逐条与批量输出等价性验收；
+- [x] Provider 调用减少、内部批次、吞吐和加速比报告；
+- [x] 完全离线批处理专项脚本与 CI 证据。
 
 ### 尚未实现
 
@@ -272,12 +276,12 @@ Phase 16：异步并发负载与吞吐证据（Day 25 已完成）
 - [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
-- [ ] Rerank；
+- [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
 - [ ] 权限过滤与提示注入专项评测；
 - [ ] 集中日志、指标采集和链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
-- [ ] 生产级持续压测、全局背压、分布式防击穿和批处理优化。
+- [ ] 生产级持续压测、全局背压、分布式防击穿和真实模型 batch 调优。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -291,6 +295,7 @@ Phase 16：异步并发负载与吞吐证据（Day 25 已完成）
 并具备离线性能预算和 cProfile 热点分析，
 以及可选、短 TTL、故障时直连模型的 Redis LLM 响应缓存和单进程异步防击穿，
 并能用三种请求分布测量并发 p95、吞吐、上游放大率和 Provider 峰值，
+同时具备 Embedding/Reranker 批量接口、结果等价性和调用减少证据，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1102,7 +1107,40 @@ docs/async_concurrency_load.md
 
 ---
 
-## 20. 计划系统架构
+## 20. Embedding/Reranker 批处理优化
+
+Day 26 对比 32 条输入逐条调用与一次列表调用。Embedding 和 Reranker 都从 32 次应用层
+Provider 调用降为 1 次，配置 `batch_size=8` 时由模型内部执行 4 个逻辑批次；质量门禁同时
+验证输出摘要和顺序与逐条基线完全一致。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_embedding_reranker_batching
+```
+
+生成 JSON / Markdown 报告：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_batch_optimization `
+  --items 32 `
+  --batch-size 8 `
+  --call-overhead-ms 1.5 `
+  --batch-latency-ms 0.25
+```
+
+当前 Reranker 已具备批量 Provider 和稳定排序契约，但尚未接入正式检索链路。完整指标、
+真实模型边界和 batch size 选择方法见：
+
+```text
+docs/embedding_reranker_batching.md
+```
+
+---
+
+## 21. 计划系统架构
 
 ```text
 Client
@@ -1161,15 +1199,19 @@ Offline Performance Analysis
   ├── p50 / p95 / Error Budget
   ├── cProfile Hotspots
   ├── Optional py-spy / Scalene
-  └── Concurrent Load Shapes
+  ├── Concurrent Load Shapes
       ├── Hot Key / Mixed Hotset / Unique Keys
       ├── Throughput / End-to-end p95 / Error Rate
       └── Upstream Amplification / Provider Peak
+  └── Model Batch Optimization
+      ├── Embedding Documents / Reranker Candidates
+      ├── Provider Calls / Internal Batches / Throughput
+      └── Exact Output and Order Equivalence
 ```
 
 ---
 
-## 21. 项目目录
+## 22. 项目目录
 
 ```text
 demo1/
@@ -1208,6 +1250,7 @@ demo1/
 │   ├── redis_llm_cache.md
 │   ├── async_llm_singleflight.md
 │   ├── async_concurrency_load.md
+│   ├── embedding_reranker_batching.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1228,7 +1271,7 @@ demo1/
 
 ---
 
-## 22. 当前开发环境
+## 23. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1285,7 +1328,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 23. 数据验证命令
+## 24. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1361,9 +1404,16 @@ python -X utf8 -m scripts.verify_concurrency_load
 python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 12
 ```
 
+### 验证 Embedding/Reranker 批处理
+
+```powershell
+python -X utf8 -m scripts.verify_embedding_reranker_batching
+python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
+```
+
 ---
 
-## 24. 开发路线
+## 25. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1387,9 +1437,10 @@ python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 
 
 - [x] Embedding 接入；
 - [x] 内存向量索引；
+- [x] Reranker 批量 Provider 与稳定排序契约；
 - [ ] BM25；
 - [ ] Hybrid Search；
-- [ ] Rerank；
+- [ ] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
 - [x] 引用生成；
 - [ ] RAG 评测。
@@ -1461,6 +1512,8 @@ python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 
 - [x] py-spy / Scalene 可选环境；
 - [x] 热点、hotset、唯一键三种完全离线并发负载；
 - [x] 端到端 p95、吞吐、错误率和上游放大证据；
+- [x] Embedding/Reranker 逐条与批量调用对照；
+- [x] Provider 调用、内部批次、等价性和吞吐报告；
 - [ ] 真实模型与 Provider 基线；
 - [ ] 生产级持续压测与基于 Provider 配额的全局背压；
 - [ ] 基于证据的性能优化。
@@ -1494,7 +1547,7 @@ python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 
 
 ---
 
-## 25. 设计原则
+## 26. 设计原则
 
 本项目遵循以下原则：
 
@@ -1510,13 +1563,14 @@ LLM 负责理解用户意图和生成自然语言
 性能优化必须先有可重复基线、预算和 profiler 证据
 缓存只能优化可重建结果，不能成为审批状态或业务正确性的来源
 相同异步请求可以共享结果，但取消、异常和敏感内容边界必须显式设计
+Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 26. 预期评测指标
+## 27. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1549,9 +1603,13 @@ Day 25 专项负载固定使用三种请求分布、每场景 24 请求和客户
 为 1、4、24，唯一键调用放大率均为 1.00x；p95 和吞吐保留为同环境趋势证据，不设置跨机器
 绝对预算，也不代表真实 DeepSeek/OpenAI-compatible Provider SLA。
 
+Day 26 专项批处理固定使用每场景 32 条输入和 batch size 8。Embedding 与 Reranker 的
+Provider 调用都应从 32 次降为 1 次，内部批次从 32 降为 4；输出摘要和顺序必须完全等价。
+离线 fixture 的吞吐提升只验证方法，不代表真实 BGE 模型或硬件 SLA。
+
 ---
 
-## 27. 作品集价值
+## 28. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1574,6 +1632,7 @@ Day 25 专项负载固定使用三种请求分布、每场景 24 请求和客户
 - Redis cache-aside、精确失效、隐私绕过和故障安全降级。
 - asyncio Task 协调、single-flight 防击穿、取消隔离和并发竞态测试。
 - 并发 load shape、端到端 p95、吞吐、上游放大率和容量边界分析。
+- Embedding/Reranker 批量推理、稳定排序、等价性门禁和吞吐对照。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1592,7 +1651,7 @@ Day 25 专项负载固定使用三种请求分布、每场景 24 请求和客户
 
 ---
 
-## 28. 免责声明
+## 29. 免责声明
 
 本仓库仅用于：
 

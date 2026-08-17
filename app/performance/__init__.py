@@ -4,6 +4,12 @@ from app.performance.benchmark import (
     PerformanceBenchmarkRunner,
     nearest_rank_percentile,
 )
+from app.performance.batching import (
+    BatchExecutionObservation,
+    BatchOptimizationRunner,
+    BatchOptimizationScenario,
+)
+from app.performance.batching_offline import run_offline_batch_optimization
 from app.performance.concurrency import (
     ConcurrencyLoadRunner,
     ConcurrencyLoadScenario,
@@ -11,6 +17,9 @@ from app.performance.concurrency import (
 )
 from app.performance.concurrency_offline import run_offline_concurrency_load
 from app.performance.models import (
+    BatchOptimizationReport,
+    BatchOptimizationScenarioName,
+    BatchOptimizationScenarioResult,
     BottleneckCandidate,
     CProfileReport,
     ConcurrencyLoadReport,
@@ -33,18 +42,28 @@ from app.performance.offline import (
 )
 from app.performance.profiling import build_cprofile_report
 from app.performance.reporting import (
+    BatchOptimizationReportPaths,
     CProfileReportPaths,
     ConcurrencyLoadReportPaths,
     PerformanceReportPaths,
+    render_batch_optimization_markdown,
     render_cprofile_markdown,
     render_concurrency_load_markdown,
     render_performance_markdown,
+    write_batch_optimization_report,
     write_cprofile_report,
     write_concurrency_load_report,
     write_performance_report,
 )
 
 __all__ = [
+    "BatchExecutionObservation",
+    "BatchOptimizationReport",
+    "BatchOptimizationReportPaths",
+    "BatchOptimizationRunner",
+    "BatchOptimizationScenario",
+    "BatchOptimizationScenarioName",
+    "BatchOptimizationScenarioResult",
     "BenchmarkScenario",
     "BenchmarkWarmupError",
     "BottleneckCandidate",
@@ -73,10 +92,13 @@ __all__ = [
     "build_cprofile_report",
     "nearest_rank_percentile",
     "render_cprofile_markdown",
+    "render_batch_optimization_markdown",
     "render_concurrency_load_markdown",
     "render_performance_markdown",
+    "run_offline_batch_optimization",
     "run_offline_concurrency_load",
     "run_offline_performance_benchmark",
+    "write_batch_optimization_report",
     "write_cprofile_report",
     "write_concurrency_load_report",
     "write_performance_report",

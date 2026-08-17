@@ -260,4 +260,8 @@ Day 25 已在串行单请求基线之外增加三种完全离线的并发 load s
 吞吐、错误率、上游调用放大率和 Provider 峰值。它验证并发测量与 single-flight 契约，
 但固定 I/O fixture 仍不代表真实模型容量；详见 `docs/async_concurrency_load.md`。
 
+Day 26 进一步增加 Embedding/Reranker 逐条与批量处理的对照报告，验证 Provider 调用减少、
+内部批次数量、输出等价性和顺序保持；详见 `docs/embedding_reranker_batching.md`。固定模型
+替身的吞吐增益仍不能代替真实 BGE、硬件内存和文本长度分布基线。
+
 Day 22 的结论是“先建立证据并定位”，不是“已经完成生产性能优化”。

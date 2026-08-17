@@ -73,6 +73,12 @@ jobs:
           python -X utf8 -m scripts.run_concurrency_load_test
           --requests 24 --concurrency 12 --provider-latency-ms 15
 
+      - name: Run the offline Embedding and Reranker batch benchmark
+        run: >-
+          python -X utf8 -m scripts.run_batch_optimization
+          --items 32 --batch-size 8
+          --call-overhead-ms 1.5 --batch-latency-ms 0.25
+
       - name: Build the Python wheel
         run: python -m pip wheel . --no-deps --wheel-dir dist
 
@@ -89,6 +95,8 @@ jobs:
             artifacts/performance/agent-performance-report.md
             artifacts/performance/agent-concurrency-load-report.json
             artifacts/performance/agent-concurrency-load-report.md
+            artifacts/performance/agent-batch-optimization-report.json
+            artifacts/performance/agent-batch-optimization-report.md
           if-no-files-found: warn
           retention-days: 14
 

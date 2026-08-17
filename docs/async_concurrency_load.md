@@ -212,8 +212,9 @@ Day 25 已完成的是安全、完全离线、可在 CI 重复的并发负载证
 - Prometheus / OpenTelemetry 指标；
 - Embedding 和 Reranker 批处理。
 
-Day 26 将进入批处理优化：先建立 Embedding/Reranker 的批量接口与等价性契约，再比较逐条和
-批量执行的调用次数与吞吐，不直接把 LLM 请求拼成不安全的大批次。
+Day 26 已完成 Embedding/Reranker 批处理优化：建立批量接口与等价性契约，并比较逐条和
+批量执行的 Provider 调用、内部批次与吞吐；没有把 LLM 请求拼成不安全的大批次。详见
+`docs/embedding_reranker_batching.md`。
 
 ## 6. 关联知识
 

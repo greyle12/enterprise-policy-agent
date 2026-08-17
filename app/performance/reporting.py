@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.performance.models import (
+    BatchOptimizationReport,
     CProfileReport,
     ConcurrencyLoadReport,
     PerformanceReport,
@@ -24,6 +25,12 @@ class CProfileReportPaths:
 
 @dataclass(frozen=True, slots=True)
 class ConcurrencyLoadReportPaths:
+    json_path: Path
+    markdown_path: Path
+
+
+@dataclass(frozen=True, slots=True)
+class BatchOptimizationReportPaths:
     json_path: Path
     markdown_path: Path
 
@@ -173,6 +180,59 @@ def render_concurrency_load_markdown(report: ConcurrencyLoadReport) -> str:
     return "\n".join(lines)
 
 
+def render_batch_optimization_markdown(report: BatchOptimizationReport) -> str:
+    gate = "通过" if report.quality_gate_passed else "未通过"
+    lines = [
+        "# 企业制度 Agent Embedding/Reranker 批处理报告",
+        "",
+        f"- 基准版本：`{report.schema_version}`",
+        f"- 生成时间：`{report.generated_at.isoformat()}`",
+        f"- 每场景条目数：{report.item_count}",
+        f"- 模型内部 batch size：{report.configured_batch_size}",
+        f"- 模拟调用固定开销：{report.simulated_call_overhead_ms:.3f} ms",
+        f"- 模拟每批推理开销：{report.simulated_batch_latency_ms:.3f} ms",
+        f"- 质量门禁：**{gate}**",
+        "",
+        "> 本报告完全离线，不下载或调用真实 Embedding、Reranker、LLM 与公网。",
+        "> 绝对耗时来自固定 fixture，仅用于验证批处理方法，不能作为真实模型 SLA。",
+        "",
+        "## 场景结果",
+        "",
+        (
+            "| 场景 | 条目 / batch | Provider 调用（逐条→批量） | 内部批次（逐条→批量） | "
+            "调用减少 | 吞吐（逐条→批量） | 加速 | 等价 / 顺序 | 结果 |"
+        ),
+        "|---|---:|---:|---:|---:|---:|---:|---:|---|",
+    ]
+    for result in report.scenario_results:
+        status = "通过" if result.meets_contract else "未通过"
+        equivalence = "是 / 是" if result.outputs_equivalent and result.order_preserved else "否"
+        lines.append(
+            f"| `{result.scenario.value}` | {result.item_count} / "
+            f"{result.configured_batch_size} | {result.sequential_provider_calls} → "
+            f"{result.batched_provider_calls} | {result.sequential_internal_batches} → "
+            f"{result.batched_internal_batches} | {result.provider_call_reduction:.2%} | "
+            f"{result.sequential_throughput_items_per_second:.1f} → "
+            f"{result.batched_throughput_items_per_second:.1f} items/s | "
+            f"{result.throughput_speedup:.2f}x | {equivalence} | {status} |"
+        )
+
+    lines.extend(
+        (
+            "",
+            "## 指标解释",
+            "",
+            "- `Provider 调用` 是应用层 `encode/predict` 的调用次数；",
+            "- `内部批次` 是模型根据 batch size 分出的逻辑推理批次数；",
+            "- 结果摘要与顺序必须和逐条基线完全相同，性能提升不能牺牲正确性；",
+            "- 调用减少来自摊薄 Python、序列化和 Provider 固定开销，不代表线性加速；",
+            "- 交互式 LLM 请求具有不同上下文和流式响应，本次没有把它们强行拼批。",
+            "",
+        )
+    )
+    return "\n".join(lines)
+
+
 def write_performance_report(
     report: PerformanceReport,
     output_directory: str | Path,
@@ -210,3 +270,16 @@ def write_concurrency_load_report(
     _atomic_write(json_path, report.model_dump_json(indent=2) + "\n")
     _atomic_write(markdown_path, render_concurrency_load_markdown(report))
     return ConcurrencyLoadReportPaths(json_path=json_path, markdown_path=markdown_path)
+
+
+def write_batch_optimization_report(
+    report: BatchOptimizationReport,
+    output_directory: str | Path,
+) -> BatchOptimizationReportPaths:
+    directory = Path(output_directory)
+    directory.mkdir(parents=True, exist_ok=True)
+    json_path = directory / "agent-batch-optimization-report.json"
+    markdown_path = directory / "agent-batch-optimization-report.md"
+    _atomic_write(json_path, report.model_dump_json(indent=2) + "\n")
+    _atomic_write(markdown_path, render_batch_optimization_markdown(report))
+    return BatchOptimizationReportPaths(json_path=json_path, markdown_path=markdown_path)

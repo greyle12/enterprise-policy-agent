@@ -36,6 +36,9 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -X utf8 -m scripts.verify_async_singleflight",
     "python -X utf8 -m scripts.run_concurrency_load_test",
     "--requests 24 --concurrency 12 --provider-latency-ms 15",
+    "python -X utf8 -m scripts.run_batch_optimization",
+    "--items 32 --batch-size 8",
+    "--call-overhead-ms 1.5 --batch-latency-ms 0.25",
     "python -m pip wheel . --no-deps --wheel-dir dist",
 )
 _REQUIRED_CONTAINER_COMMANDS = (
