@@ -9,6 +9,7 @@ from fastapi import FastAPI
 from app.agent.intent_classifier import IntentClassifier
 from app.agent.router import AgentRouter
 from app.api.provider_errors import provider_capacity_error_response
+from app.api.runtime_errors import unhandled_application_error_response
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
@@ -17,6 +18,10 @@ from app.api.routes.agent_sessions import (
 )
 from app.api.routes.cache_status import router as cache_status_router
 from app.api.routes.health import router as health_router
+from app.api.routes.observability import (
+    metrics_router,
+    router as observability_router,
+)
 from app.api.routes.policy_answers import (
     router as policy_answers_router,
 )
@@ -37,6 +42,7 @@ from app.llm.openai_compatible_client import (
     OpenAICompatibleLLMClient,
 )
 from app.llm import ConcurrencyLimitedLLMClient, ProviderCapacityError
+from app.observability import HttpMetricsRegistry, RuntimeObservabilityMiddleware
 from app.persistence import (
     SQLiteAgentStateStore,
     SQLiteCheckpointSaver,
@@ -229,17 +235,30 @@ async def _lifespan(
 def create_app(
     *,
     enable_lifespan: bool = True,
+    http_metrics_max_route_keys: int = 64,
 ) -> FastAPI:
     """创建 FastAPI 应用。"""
 
+    http_metrics = HttpMetricsRegistry(
+        max_route_keys=http_metrics_max_route_keys,
+    )
     application = FastAPI(
         title="Enterprise Policy Agent",
         version="0.1.0",
         lifespan=(_lifespan if enable_lifespan else None),
     )
+    application.state.http_metrics = http_metrics
+    application.add_middleware(
+        RuntimeObservabilityMiddleware,
+        metrics=http_metrics,
+    )
     application.add_exception_handler(
         ProviderCapacityError,
         provider_capacity_error_response,
+    )
+    application.add_exception_handler(
+        Exception,
+        unhandled_application_error_response,
     )
     application.include_router(
         health_router,
@@ -268,6 +287,11 @@ def create_app(
         provider_status_router,
         prefix="/api/v1",
     )
+    application.include_router(
+        observability_router,
+        prefix="/api/v1",
+    )
+    application.include_router(metrics_router)
 
     return application
 

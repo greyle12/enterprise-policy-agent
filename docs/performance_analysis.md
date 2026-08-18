@@ -245,7 +245,7 @@ policy_research_hybrid 最慢
 
 ## 10. 当前范围之外
 
-Day 22 暂不实现：
+Day 22 的原始基线暂不实现：
 
 - 真实 BGE 模型性能基线；
 - 真实 LLM / Tavily 延迟与 Token 成本；
@@ -253,7 +253,7 @@ Day 22 暂不实现：
 - API 全链路网络延迟；
 - 跨机器性能比较；
 - 缓存、批处理、连接池或并发优化；
-- Prometheus、OpenTelemetry 或分布式 trace；
+- Prometheus Server、Grafana、告警或 OpenTelemetry 分布式 trace；
 - 自动接受新的更慢基线。
 
 Day 25 已在串行单请求基线之外增加三种完全离线的并发 load shape，记录端到端 p95、
@@ -267,5 +267,9 @@ Day 26 进一步增加 Embedding/Reranker 逐条与批量处理的对照报告�
 Day 27 已增加默认关闭的单进程 LLM Provider 并发门禁、FIFO 有界队列、排队超时与 503
 过载语义，并用离线替身验证容量不会泄漏；详见 `docs/provider_backpressure.md`。它仍不是
 真实 Provider 容量、持续负载或跨实例配额基线。
+
+Day 28 已增加按路由模板聚合的进程内 HTTP 计数、固定延迟直方图、并发峰值和 Prometheus
+text format 0.0.4 导出；详见 `docs/runtime_observability.md`。这些运行时指标能持续观察真实
+请求，但仍需外部 Prometheus/Grafana 才能形成跨实例历史趋势、SLO 和告警。
 
 Day 22 的结论是“先建立证据并定位”，不是“已经完成生产性能优化”。

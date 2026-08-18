@@ -71,6 +71,9 @@ jobs:
       - name: Verify LLM provider concurrency and backpressure
         run: python -X utf8 -m scripts.verify_provider_backpressure
 
+      - name: Verify request correlation and runtime observability
+        run: python -X utf8 -m scripts.verify_runtime_observability
+
       - name: Run the offline concurrency load benchmark
         run: >-
           python -X utf8 -m scripts.run_concurrency_load_test

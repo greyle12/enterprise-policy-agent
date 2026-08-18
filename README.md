@@ -72,6 +72,7 @@
 14. 可重复的性能基准、预算门禁和 Python 热点分析。
 15. 可失效、可观测且故障安全的 Redis LLM 响应缓存。
 16. 单进程统一 LLM Provider 并发门禁、有限排队与安全过载降级。
+17. 请求关联、结构化访问日志、低基数 HTTP 指标和 Prometheus 兼容导出。
 
 ---
 
@@ -194,7 +195,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 18：LLM Provider 并发门禁与背压（Day 27 已完成）
+Phase 19：请求关联与运行时可观测性（Day 28 已完成）
 ```
 
 ### 已完成
@@ -274,6 +275,10 @@ Phase 18：LLM Provider 并发门禁与背压（Day 27 已完成）
 - [x] FIFO 有界队列、队满立即拒绝和排队超时；
 - [x] 排队/执行取消清理、关闭排空和上游资源单次关闭；
 - [x] 安全 503 错误、Provider 状态 API 与完全离线背压验收。
+- [x] 合法性校验、服务端生成和响应回传的 `X-Request-ID`；
+- [x] 不记录原始 URL/query/body 的 JSON 结构化访问日志；
+- [x] 路由模板、固定直方图和 64 键上限的进程内 HTTP 指标；
+- [x] 安全关联 500、JSON 状态、Prometheus Provider/HTTP 指标和离线验收。
 
 ### 尚未实现
 
@@ -284,7 +289,7 @@ Phase 18：LLM Provider 并发门禁与背压（Day 27 已完成）
 - [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
 - [ ] 权限过滤与提示注入专项评测；
-- [ ] 集中日志、指标采集和链路追踪。
+- [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
 - [ ] 生产级持续压测、跨进程全局背压、分布式防击穿和真实模型 batch 调优。
 
@@ -302,6 +307,7 @@ Phase 18：LLM Provider 并发门禁与背压（Day 27 已完成）
 并能用三种请求分布测量并发 p95、吞吐、上游放大率和 Provider 峰值，
 同时具备 Embedding/Reranker 批量接口、结果等价性和调用减少证据，
 并在缓存与 single-flight 之后提供默认关闭的单进程 Provider 有界并发与安全过载语义，
+同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -853,6 +859,11 @@ Push / Pull Request / 手动运行
 → 30 条离线黄金评测
 → 五场景离线性能预算
 → Redis LLM 缓存离线契约
+→ 异步 LLM single-flight 契约
+→ LLM Provider 并发与背压契约
+→ 请求关联与运行时可观测性契约
+→ 三种并发 load shape 对照
+→ Embedding/Reranker 批处理对照
 → 构建 Python Wheel
 ```
 
@@ -864,8 +875,8 @@ Docker Compose 配置
 → 非 root 用户和 Python 包检查
 ```
 
-Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、
-黄金评测与性能基准 JSON/Markdown，以及可安装 Wheel，方便查看失败原因和保存可复现证据。
+Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、黄金评测、
+串行性能、并发负载与批处理报告，以及可安装 Wheel，方便查看失败原因和保存可复现证据。
 
 本地检查 CI 配置：
 
@@ -1177,7 +1188,41 @@ docs/provider_backpressure.md
 
 ---
 
-## 22. 计划系统架构
+## 22. 请求关联与运行时可观测性
+
+Day 28 为每个 HTTP 请求校验或生成 `X-Request-ID`，写入处理上下文并回传响应。访问日志只
+记录请求 ID、方法、路由模板、状态、耗时和结果，不记录原始路径参数、query string、请求体
+或异常正文；未知异常统一返回带关联 ID 的安全 500。
+
+进程内指标按 FastAPI 路由模板聚合并限制为 64 个正常路由键，提供固定 latency histogram，
+避免用户输入造成标签基数失控。`/metrics` 使用 Prometheus text format 0.0.4，同时导出 Day 27
+Provider 执行、排队和事件指标。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_runtime_observability
+```
+
+运行时端点：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/observability/status |
+  ConvertTo-Json -Depth 8
+Invoke-WebRequest http://127.0.0.1:8000/metrics |
+  Select-Object -ExpandProperty Content
+```
+
+安全字段、直方图、PromQL 示例、Docker 验收和单进程边界见：
+
+```text
+docs/runtime_observability.md
+```
+
+---
+
+## 23. 计划系统架构
 
 ```text
 Client
@@ -1209,7 +1254,13 @@ Application Services
   │   ├── SHA-256 Exact-request Key
   │   ├── Optional Redis Cache
   │   ├── Process-local Async Single-flight
+  │   ├── Provider Concurrency + FIFO Backpressure
   │   └── OpenAI-compatible Upstream
+  │
+  ├── Runtime Observability
+  │   ├── Request ID + Safe JSON Access Log
+  │   ├── Bounded Route-template Metrics
+  │   └── Prometheus-compatible Export
   │
   ├── search_policy
   ├── check_required_materials
@@ -1248,7 +1299,7 @@ Offline Performance Analysis
 
 ---
 
-## 23. 项目目录
+## 24. 项目目录
 
 ```text
 demo1/
@@ -1269,6 +1320,7 @@ demo1/
 │   ├── resilience/
 │   ├── research/
 │   ├── performance/
+│   ├── observability/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -1289,6 +1341,7 @@ demo1/
 │   ├── async_concurrency_load.md
 │   ├── embedding_reranker_batching.md
 │   ├── provider_backpressure.md
+│   ├── runtime_observability.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1309,7 +1362,7 @@ demo1/
 
 ---
 
-## 24. 当前开发环境
+## 25. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1323,6 +1376,7 @@ LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
 异步合并：缓存启用时默认跟踪最多 128 个 single-flight 在途键
 并发负载：默认每场景 24 请求、客户端并发 12、固定离线 I/O 15 ms
 Provider 背压：默认关闭；示例上限 4、FIFO 队列 16、排队超时 2 秒
+运行时观测：JSON 访问日志、64 个路由键、固定延迟直方图和 `/metrics`
 性能基线：Python 内置 perf_counter_ns 与 cProfile
 采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
@@ -1367,7 +1421,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 25. 数据验证命令
+## 26. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1456,9 +1510,15 @@ python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
 python -X utf8 -m scripts.verify_provider_backpressure
 ```
 
+### 验证请求关联与运行时可观测性
+
+```powershell
+python -X utf8 -m scripts.verify_runtime_observability
+```
+
 ---
 
-## 26. 开发路线
+## 27. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1585,6 +1645,10 @@ python -X utf8 -m scripts.verify_provider_backpressure
 - [x] 健康检查；
 - [x] SQLite 持久卷自动验收；
 - [x] CI；
+- [x] 请求 ID 与安全 JSON 访问日志；
+- [x] 有界 HTTP 指标与 Prometheus 兼容端点；
+- [ ] Prometheus/Grafana 集中采集和告警；
+- [ ] OpenTelemetry 跨服务 Trace；
 - [ ] 演示数据初始化；
 - [ ] 演示脚本；
 - [ ] 架构图；
@@ -1594,7 +1658,7 @@ python -X utf8 -m scripts.verify_provider_backpressure
 
 ---
 
-## 27. 设计原则
+## 28. 设计原则
 
 本项目遵循以下原则：
 
@@ -1612,13 +1676,14 @@ LLM 负责理解用户意图和生成自然语言
 相同异步请求可以共享结果，但取消、异常和敏感内容边界必须显式设计
 Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
 Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
+运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 28. 预期评测指标
+## 29. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1659,9 +1724,13 @@ Day 27 专项背压固定使用 Provider 并发 2、FIFO 队列 2：5 个请求�
 拒绝 1 个，峰值执行和排队都不得超过 2；另行验证排队超时、取消清理、关闭资源和默认关闭
 时的兼容直通。该契约是单进程容量边界，不代表跨实例限流或真实 Provider SLA。
 
+Day 28 专项观测固定产生 3 个业务请求和 2 个路由模板，验证请求 ID 关联、成功/5xx 计数、
+固定 histogram、监控端点不自计数、500 脱敏和 Prometheus 格式。原始路径参数、query、凭据
+形态和异常正文不得出现在状态、指标、访问事件或错误响应中。
+
 ---
 
-## 29. 作品集价值
+## 30. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1685,6 +1754,7 @@ Day 27 专项背压固定使用 Provider 并发 2、FIFO 队列 2：5 个请求�
 - asyncio Task 协调、single-flight 防击穿、取消隔离和并发竞态测试。
 - 并发 load shape、端到端 p95、吞吐、上游放大率和容量边界分析。
 - Embedding/Reranker 批量推理、稳定排序、等价性门禁和吞吐对照。
+- 请求关联、结构化日志、指标基数控制、Prometheus 格式和安全错误观测。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1703,7 +1773,7 @@ Day 27 专项背压固定使用 Provider 并发 2、FIFO 队列 2：5 个请求�
 
 ---
 
-## 30. 免责声明
+## 31. 免责声明
 
 本仓库仅用于：
 

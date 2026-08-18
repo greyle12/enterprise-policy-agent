@@ -205,13 +205,16 @@ docker compose ps
 Little's Law 可用于初步核对：稳定状态下的并发约等于吞吐乘以平均响应时长，但最终值必须用
 真实流量验证。扩大队列不会提高吞吐，只会提高可等待请求数和尾延迟。
 
-Day 27 仍未实现：
+Day 27 的背压边界仍未实现：
 
 - 多进程或多实例共享的全局 Provider 配额；
 - Redis/数据库分布式 permit；
 - 按租户、模型或优先级隔离的多个队列；
-- Prometheus / OpenTelemetry 指标导出和告警；
+- 跨实例 Prometheus 聚合、告警和 OpenTelemetry Trace；
 - 生产 soak test、自动调参和自适应并发；
 - 真实 Provider 基线。
 
 因此本实现应描述为“单进程统一 LLM 容量边界”，不能描述为跨实例生产级全局限流。
+
+Day 28 已把本进程的 Provider 执行、排队、容量和事件计数导出到 `/metrics`，但没有部署
+Prometheus Server，也没有改变上述单进程容量边界。

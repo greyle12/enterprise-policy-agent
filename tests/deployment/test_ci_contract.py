@@ -51,6 +51,8 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "agent-performance-report.json" in workflow
     assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow
     assert "scripts.verify_async_singleflight" in workflow
+    assert "scripts.verify_provider_backpressure" in workflow
+    assert "scripts.verify_runtime_observability" in workflow
     assert "scripts.run_concurrency_load_test" in workflow
     assert "agent-concurrency-load-report.json" in workflow
     assert "agent-concurrency-load-report.md" in workflow

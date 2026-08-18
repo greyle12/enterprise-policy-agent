@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import Self
+from typing import Literal, Self
 from urllib.parse import urlsplit
 
 from pydantic import Field, SecretStr, field_validator, model_validator
@@ -33,6 +33,7 @@ class Settings(BaseSettings):
         ge=1,
         le=65535,
     )
+    log_level: Literal["CRITICAL", "DEBUG", "ERROR", "INFO", "WARNING"] = "INFO"
     llm_api_key: SecretStr
     llm_base_url: str = "https://api.deepseek.com"
     llm_model: str = "deepseek-v4-flash"
@@ -135,6 +136,11 @@ class Settings(BaseSettings):
         if parsed.scheme not in {"redis", "rediss"} or not parsed.hostname:
             raise ValueError("redis_url must use redis:// or rediss:// with a host")
         return normalized
+
+    @field_validator("log_level", mode="before")
+    @classmethod
+    def normalize_log_level(cls, value: object) -> object:
+        return value.strip().upper() if isinstance(value, str) else value
 
     @model_validator(mode="after")
     def validate_agent_retry_wait_range(self) -> Self:

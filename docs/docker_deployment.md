@@ -1,10 +1,11 @@
-# Docker 部署与验收（Day 17，Day 27 更新）
+# Docker 部署与验收（Day 17，Day 28 更新）
 
 本文档说明如何在 Windows Docker Desktop 上构建、启动、检查和停止企业制度 Agent。
 Day 23 的 Compose 同时启动临时 Redis，用于可丢失、短 TTL 的 LLM 响应缓存；Day 24
-在 Agent 进程内合并相同缓存键的并发未命中请求。Day 27 将 Compose 镜像标签更新为
-`enterprise-policy-agent:day27`，并增加默认关闭的单进程 LLM Provider 背压；专项验收仍在
-宿主机完全离线执行，不会从容器向真实 Provider 发送压测请求。
+在 Agent 进程内合并相同缓存键的并发未命中请求。Day 27 增加默认关闭的单进程 LLM
+Provider 背压。Day 28 将 Compose 镜像标签更新为
+`enterprise-policy-agent:day28`，并增加请求 ID、脱敏 JSON 访问日志、进程内 HTTP 指标和
+Prometheus 兼容抓取端点；专项验收仍在宿主机完全离线执行。
 
 ## 1. 前置条件
 
@@ -133,6 +134,24 @@ Day 27 默认返回 `state=disabled`。只有在 `.env` 显式设置
 `LLM_PROVIDER_LIMIT_ENABLED=true` 后才执行进程内限流；`in_flight`、`queued` 和所有 metrics
 只属于当前 Agent 进程，不是多个容器或 worker 的聚合值。
 
+Day 28 运行时观测状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/observability/status |
+  ConvertTo-Json -Depth 8
+```
+
+Prometheus 兼容指标：
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:8000/metrics |
+  Select-Object -ExpandProperty Content
+```
+
+每个 HTTP 响应都会带 `X-Request-ID`。Agent 的访问日志为单行 JSON，只记录路由模板、状态、
+耗时和请求 ID，不记录 query string、请求体、凭据或异常正文。状态和指标属于当前进程；生产
+环境仍应限制 `/metrics` 的网络访问，并由监控系统完成跨实例聚合。
+
 ## 5. 自动验收
 
 以下脚本会依次执行：
@@ -233,6 +252,8 @@ docker compose up --build --detach --wait
 | Redis 端口被占用 | 修改 `.env` 的 `REDIS_PORT`，Agent 容器内部地址不变 |
 | readiness 返回 503 | SQLite 卷权限、schema 版本、应用生命周期初始化 |
 | cache 状态为 `degraded` | `docker compose ps redis`、Redis 日志、容器内部 DNS |
+| `/metrics` 无业务请求 | 健康、状态和指标端点不会自计数；先调用一个业务 API 再抓取 |
+| 无法关联错误 | 从响应头或安全 500 正文取得 `X-Request-ID`，再过滤 Agent JSON 日志 |
 | Docker build 很慢 | PyTorch 依赖体积、镜像源和网络速度 |
 
 ## 8. 当前边界
@@ -254,6 +275,6 @@ Day 17 的 Docker 方案适合：
 - HTTPS 终止和域名；
 - 云平台密钥管理；
 - 镜像漏洞扫描；
-- 指标、链路追踪和集中日志；
+- Prometheus/Grafana 集中采集、跨实例聚合、链路追踪和集中日志；
 - 数据库备份恢复；
 - 正式 CI/CD 发布流水线。
