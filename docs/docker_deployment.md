@@ -6,7 +6,8 @@ Day 23 的 Compose 同时启动临时 Redis，用于可丢失、短 TTL 的 LLM 
 Provider 背压。Day 28 增加请求 ID、脱敏 JSON 访问日志、进程内 HTTP 指标和 Prometheus
 兼容抓取端点。Day 29 增加检索前权限过滤、提示注入防护和无内容安全指标；Day 30 将镜像
 标签更新为 `enterprise-policy-agent:day30`，并增加完全离线作品集演示与发布验收。专项脚本
-仍在宿主机执行，不要求容器访问真实 Provider。
+仍在宿主机执行，不要求容器访问真实 Provider。Advanced RAG Phase 29 增加
+PostgreSQL/pgvector、`pgvector_data` 具名卷和向量持久化重建验收；SQLite 仍保存 Agent 业务状态。
 
 ## 1. 前置条件
 
@@ -42,6 +43,19 @@ LLM_MODEL=你的模型名称
 ```
 
 `.env` 已被 Git 和 Docker build context 排除，不会写入镜像。不要把真实密钥写入 `Dockerfile`、`compose.yaml` 或 `.env.example`。
+
+本机 Compose 的 PostgreSQL 示例配置：
+
+```dotenv
+POSTGRES_DB=policy_agent
+POSTGRES_USER=policy_agent
+POSTGRES_PASSWORD=local-development-only
+POSTGRES_PORT=5432
+```
+
+请至少修改示例密码。Compose 会在 Agent 容器内设置 `RAG_VECTOR_STORE_PROVIDER=pgvector` 并使用
+服务名 `postgres`；直接运行本机 Python 时仍默认使用 `memory`。生产环境应使用托管密钥或
+Docker secrets，而不是把数据库密码提交到 Git。
 
 Reranker 默认关闭。需要真实 BGE 精排时在 `.env` 中设置：
 
@@ -80,6 +94,7 @@ docker compose up --build --detach --wait
 docker compose ps
 docker compose logs --tail 100 agent
 docker compose logs --tail 100 redis
+docker compose logs --tail 100 postgres
 ```
 
 ## 4. 健康检查
@@ -118,7 +133,9 @@ Invoke-RestMethod http://127.0.0.1:8000/health/ready
 }
 ```
 
-`/health/live` 只说明 API 进程能够响应；`/health/ready` 还会检查应用级组件和 SQLite 连接及 schema 版本。Docker 使用就绪检查判断容器是否健康。
+`/health/live` 只说明 API 进程能够响应；`/health/ready` 还会检查应用级组件、SQLite schema 和
+配置的 Vector Store。Compose 使用 pgvector 时，extension、业务表或数据库连接不可用都会让
+readiness 返回 503。Docker 使用该结果判断容器是否健康。
 
 Redis 缓存状态：
 
@@ -184,9 +201,10 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
 → 构建并启动服务
 → 等待 readiness 通过
 → 向 SQLite 写入隔离探针会话
-→ 强制重建容器
-→ 从同一数据库读取探针会话
-→ 删除探针会话
+→ 向 pgvector 写入隔离 collection
+→ 强制重建 PostgreSQL 与 Agent 容器
+→ 从两个持久卷读取探针
+→ 删除两个隔离探针
 ```
 
 运行：
@@ -203,7 +221,8 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
   "passed": true,
   "compose_config_valid": true,
   "container_ready": true,
-  "sqlite_volume_survived_recreation": true
+  "sqlite_volume_survived_recreation": true,
+  "pgvector_volume_survived_recreation": true
 }
 ```
 
@@ -217,14 +236,15 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
   --health-url http://127.0.0.1:9000/health/ready
 ```
 
-## 6. SQLite 持久卷
+## 6. SQLite、pgvector 与模型持久卷
 
-Compose 将两个具名卷挂载到容器：
+Compose 使用三个具名卷：
 
 | 具名卷 | 容器路径 | 内容 |
 |---|---|---|
 | `agent_runtime` | `/app/data/runtime` | SQLite 主文件、WAL 和共享内存文件 |
 | `model_cache` | `/app/data/model-cache` | BGE、Hugging Face 和 Torch 缓存 |
+| `pgvector_data` | `/var/lib/postgresql/data` | PostgreSQL 数据目录、pgvector 表和 WAL |
 
 执行以下操作不会删除具名卷：
 
@@ -234,7 +254,8 @@ docker compose down
 docker compose up --detach --wait
 ```
 
-因此草稿、会话、审批单和审计记录可以跨进程重启和容器重建恢复。
+因此草稿、会话、审批单、审计记录和制度向量可以跨进程重启和容器重建恢复。当前启动仍会全量生成
+Embedding 并幂等 upsert；Phase 30 才会增加内容哈希驱动的增量索引和陈旧 Chunk 删除。
 
 Redis 使用 128 MiB 临时 `/data`、`allkeys-lru`，并关闭 RDB 与 AOF。它不是具名卷，
 重建或停止 Redis 后缓存会丢失；业务状态和正确性不依赖这些缓存数据。
@@ -273,7 +294,8 @@ docker compose up --build --detach --wait
 | 长时间处于 `starting` | 首次 BGE 模型下载、网络连接和磁盘空间 |
 | 宿主机端口被占用 | 修改 `.env` 的 `APP_PORT` |
 | Redis 端口被占用 | 修改 `.env` 的 `REDIS_PORT`，Agent 容器内部地址不变 |
-| readiness 返回 503 | SQLite 卷权限、schema 版本、应用生命周期初始化 |
+| PostgreSQL 端口被占用 | 修改 `.env` 的 `POSTGRES_PORT`，Agent 容器内部地址不变 |
+| readiness 返回 503 | SQLite schema、`docker compose ps postgres`、pgvector extension/表和 Agent 初始化日志 |
 | cache 状态为 `degraded` | `docker compose ps redis`、Redis 日志、容器内部 DNS |
 | `/metrics` 无业务请求 | 健康、状态和指标端点不会自计数；先调用一个业务 API 再抓取 |
 | 无法关联错误 | 从响应头或安全 500 正文取得 `X-Request-ID`，再过滤 Agent JSON 日志 |
@@ -289,12 +311,14 @@ Day 17 的 Docker 方案适合：
 - 面试现场一键启动；
 - 单个 FastAPI 实例；
 - SQLite 持久化；
+- PostgreSQL/pgvector 向量持久化；
 - 自动健康检查。
 
 当前仍不等于正式生产部署，尚未包含：
 
 - 多实例共享数据库；
-- PostgreSQL / pgvector；
+- PostgreSQL 高可用、托管备份、PITR、TLS 和凭据轮换；
+- 独立数据库迁移 Job 与增量文档索引流水线；
 - 多实例 Redis 高可用、ACL、TLS 和托管服务认证；
 - HTTPS 终止和域名；
 - 云平台密钥管理；

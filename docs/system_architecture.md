@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Advanced RAG Phase 28 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 29 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -55,7 +55,7 @@ sequenceDiagram
 | Policy RAG | Loader 路由、解析、Chunk、Embedding、检索、上下文、引用 | 决定审批路线 |
 | LangGraph | 意图分支、多轮状态、确认节点、工具编排 | 自行创造业务规则 |
 | Rule Tools | 材料检查、审批路线、草稿字段计算 | 生成开放式自然语言 |
-| Persistence | SQLite checkpoint、会话、提交和审计 | 多节点分布式一致性 |
+| Persistence | SQLite 业务状态、可选 pgvector 向量存储 | 多节点分布式一致性 |
 | Research | 内部制度优先、显式外部检索、S/W 来源分区 | 用外部资料驱动审批 |
 | Observability | 脱敏日志、低基数指标、安全错误关联 | 集中式 Trace 和全局指标 |
 
@@ -90,16 +90,19 @@ sequenceDiagram
 flowchart LR
     Policies["Markdown / PDF / DOCX + sidecar"] --> Loader["Document Loader"]
     Loader --> Chunks["结构化 Chunk"]
-    Chunks --> Index["内存 Vector + BM25 索引"]
-    Index --> Fusion["RRF Hybrid Fusion"]
+    Chunks --> Vector["VectorIndex: memory / pgvector"]
+    Chunks --> BM25["内存 BM25"]
+    Vector --> Fusion["RRF Hybrid Fusion"]
+    BM25 --> Fusion
     Fusion --> Reranker["可选 BGE Reranker"]
     AgentState["Agent 状态"] --> SQLite["SQLite"]
     Audit["提交审计"] --> SQLite
     Cache["LLM 精确缓存"] --> Redis["可选 Redis"]
 ```
 
-- 制度索引目前为单进程内存结构，正式 BGE 默认维度为 512，BM25 使用同一批 `retrieval_text`；
-- 可信身份先产生授权 Chunk 白名单；向量相似度与 BM25 候选、DF、平均长度和评分都只能查看该白名单；
+- Vector Index 可选进程内精确索引或 PostgreSQL/pgvector 持久化精确索引；正式 BGE 维度为 512；
+- BM25 仍是单进程内存结构，并与 Vector 使用同一批 `retrieval_text`；
+- 可信身份先产生授权 Chunk 白名单；pgvector 先物化授权 SQL 候选，向量相似度与 BM25 候选、DF、平均长度和评分都只能查看该白名单；
 - Vector 与 BM25 分别召回授权候选，RRF 只按名次融合并保留每路诊断信号；
 - 制度问答正式使用统一 Reranked 入口；Provider disabled 时返回 RRF，配置 bge 时批量 Cross-Encoder 精排；
 - Reranker 只接收已经授权的 RRF 候选，并保留原始融合分数、名次和两路诊断信号；
@@ -112,6 +115,7 @@ flowchart LR
 
 ## 6. 部署拓扑
 
-当前 Compose 是单个 Agent 容器、可选 Redis 容器和具名卷。该拓扑适合作品集演示和单机验收，
-不代表多实例生产架构。生产化至少还需要真实认证、集中策略服务、PostgreSQL/pgvector、集中
-日志指标、OpenTelemetry、密钥管理、备份恢复和跨实例容量协调。
+当前 Compose 是单个 Agent、临时 Redis、PostgreSQL/pgvector 和三个具名卷。SQLite 继续保存
+Agent 会话、草稿与审计，pgvector 只保存制度向量。该拓扑适合作品集演示和单机验收，不代表
+PostgreSQL 高可用或多实例生产架构。生产化至少还需要真实认证、集中策略服务、数据库迁移与
+备份恢复、集中日志指标、OpenTelemetry、密钥管理和跨实例容量协调。

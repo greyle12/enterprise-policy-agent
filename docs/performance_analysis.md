@@ -36,7 +36,7 @@ schema_version = 1.0
 | 场景 | 实际覆盖 | 不包含 |
 |---|---|---|
 | `runtime_startup` | 五份制度解析、离线索引、业务规则、LangGraph 构建 | BGE 模型加载、数据库连接 |
-| `policy_rag_answer` | Vector/BM25、RRF、Reranker-disabled 回退、上下文和引用 | 真实 BGE Embedding/Reranker、真实 LLM |
+| `policy_rag_answer` | 内存 Vector/BM25、RRF、Reranker-disabled 回退、上下文和引用 | 真实 pgvector、BGE Embedding/Reranker、真实 LLM |
 | `agent_material_route` | 离线意图识别、LangGraph、真实材料规则 | 真实 LLM |
 | `agent_approval_route` | 离线意图识别、LangGraph、真实审批规则 | 真实 LLM |
 | `policy_research_hybrid` | 内部 RAG、Day 21 研究编排、固定 Web 结果 | 外部网络请求 |
@@ -248,6 +248,7 @@ policy_research_hybrid 最慢
 Day 22 的原始基线暂不实现：
 
 - 真实 BGE 模型性能基线；
+- PostgreSQL/pgvector 连接池、查询、批量 upsert 和容器卷 I/O 基线；
 - 真实 LLM / Tavily 延迟与 Token 成本；
 - 真实 Provider 的多并发、背压和持续负载测试；
 - API 全链路网络延迟；

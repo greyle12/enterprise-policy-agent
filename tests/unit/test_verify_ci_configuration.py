@@ -226,6 +226,18 @@ def test_rejects_missing_reranker_integration_gate(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_pgvector_store_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_pgvector_store",
+        "python -X utf8 -c \"print('pgvector store gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_portfolio_demo_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(

@@ -66,6 +66,10 @@ Web Search、Agent 工作流或工具。所有专项测试完全离线，不发�
 拒绝的 Chunk ID 不会参与余弦相似度计算，也不会进入引用、Prompt、日志或错误正文。没有可用
 Chunk 时沿用普通“未检索到制度依据”回答，避免通过不同错误枚举敏感制度是否存在。
 
+Advanced RAG Phase 29 迁移到 pgvector 后仍保持同一顺序：授权 ID 作为 SQL 数组参数，先构造
+`MATERIALIZED authorized_records`，外层才执行 `<=>` cosine distance。不是先从数据库取全库 Top-K
+再在 Python 中过滤；空授权集合也不会发起向量查询。
+
 ## 3. Build：提示注入与证据污染防护
 
 ### 3.1 用户输入

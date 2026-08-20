@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 28：BGE Reranker 正式接入（已完成）
+Advanced RAG Phase 29：PostgreSQL + pgvector 向量持久化（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -317,10 +317,15 @@ Advanced RAG Phase 28：BGE Reranker 正式接入（已完成）
 - [x] Rerank 后保留 Vector/BM25 信号、RRF 分数和原始名次；
 - [x] 可配置 BGE Provider、默认关闭和无 Provider 的 RRF 回退；
 - [x] 授权候选先于 Reranker 输入、正式问答入口和离线 CI 验收。
+- [x] 可替换 `VectorIndex`、内存与 pgvector 双存储实现；
+- [x] Psycopg 连接池、collection 隔离、事务批量 upsert 和精确 cosine search；
+- [x] 授权 ID 先形成 MATERIALIZED SQL 候选集，再执行 `<=>` 相似度排序；
+- [x] PostgreSQL/pgvector Compose 服务、具名卷、readiness 和重建持久化探针；
+- [x] Phase 29 完全离线 SQL/安全契约与 CI 门禁。
 
 ### 尚未实现
 
-- [ ] PostgreSQL / pgvector；
+- [ ] Document Indexing Pipeline：增量变更、陈旧 Chunk 删除和索引版本发布；
 - [ ] Retrieval Evaluation：Recall@K、MRR 与真实 BGE 消融评测；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
@@ -1403,7 +1408,9 @@ Application Services
        │   ├── Metadata Extractor
        │   ├── Chunker
        │   ├── Embedding
-       │   ├── Vector Search
+       │   ├── VectorIndex Protocol
+       │   │   ├── In-memory Exact Search
+       │   │   └── PostgreSQL / pgvector Exact Search
        │   ├── Authorized BM25 Search
        │   ├── RRF Hybrid Fusion
        │   └── Optional BGE Cross-Encoder Reranker
@@ -1484,6 +1491,7 @@ demo1/
 │   ├── bm25_retrieval.md
 │   ├── hybrid_search_rrf.md
 │   ├── reranker_integration.md
+│   ├── pgvector_store.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1718,6 +1726,12 @@ python -X utf8 -m scripts.verify_hybrid_search
 
 ```powershell
 python -X utf8 -m scripts.verify_reranker_integration
+```
+
+### 验证 Phase 29 PostgreSQL + pgvector 存储契约
+
+```powershell
+python -X utf8 -m scripts.verify_pgvector_store
 ```
 
 ### 运行 Day 30 作品集演示与发布验收
@@ -1958,6 +1972,22 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
 - [ ] 真实 BGE 模型的 Recall@K、MRR、nDCG、延迟和硬件消融（Phase 31）。
 
+### Advanced RAG Phase 29：PostgreSQL + pgvector
+
+- [x] `VectorIndex` Protocol 和 `InMemoryVectorIndex.upsert(...)`；
+- [x] `PgVectorIndex`、Psycopg 连接池和延迟导入边界；
+- [x] pgvector extension、`VECTOR(512)`、JSONB 元数据和 collection 复合主键；
+- [x] `ON CONFLICT` 事务批量 upsert 与跨连接池实例持久化；
+- [x] `MATERIALIZED authorized_records` 后再执行 cosine distance；
+- [x] 当前 199 Chunk 默认精确检索，不在无评测数据时引入 HNSW；
+- [x] memory/pgvector Provider、DSN、collection、pool 和 timeout 配置；
+- [x] PostgreSQL/pgvector Compose、healthcheck 与 `pgvector_data` 具名卷；
+- [x] readiness 同时验证 SQLite 与配置的 Vector Store；
+- [x] Docker 重建后的 SQLite/pgvector 双持久化探针；
+- [x] 完全离线 SQL/权限专项验证与 CI 门禁；
+- [ ] 增量 Document Indexing Pipeline、陈旧 Chunk 删除与 collection 发布（Phase 30）；
+- [ ] Recall@K、MRR 和 ANN 参数评测（Phase 31）。
+
 ---
 
 ## 30. 设计原则
@@ -1981,6 +2011,7 @@ Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
 权限过滤必须发生在 Vector/BM25、RRF 和 Prompt 构造之前，聊天自述不能覆盖可信身份
 Reranker 只能处理已经授权并经过 RRF 去重的有限候选，不能接收全库或未授权正文
+pgvector 必须先物化授权记录集合，再在该集合上计算向量距离，不能全库 Top-K 后过滤
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```

@@ -25,6 +25,7 @@ RUN /opt/venv/bin/python -m pip install \
     && /opt/venv/bin/python -m pip check \
     && rm -f /tmp/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl
 
+
 FROM python:3.12.10-slim AS runtime
 
 ENV PATH="/opt/venv/bin:${PATH}" \
@@ -57,6 +58,7 @@ COPY --chown=agent:agent app ./app
 COPY --chown=agent:agent data/policies ./data/policies
 COPY --chown=agent:agent scripts/check_container_health.py ./scripts/
 COPY --chown=agent:agent scripts/container_persistence_probe.py ./scripts/
+COPY --chown=agent:agent scripts/pgvector_persistence_probe.py ./scripts/
 
 USER agent
 

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from app.cache import CacheProviderName
 from app.core.config import Settings
 from app.rag.reranking import RerankerProviderName
+from app.rag.vector_index import VectorStoreProviderName
 from app.research import WebSearchProviderName
 
 _ENVIRONMENT_NAMES = (
@@ -41,6 +42,12 @@ _ENVIRONMENT_NAMES = (
     "RAG_RERANKER_DEVICE",
     "RAG_RERANKER_BATCH_SIZE",
     "RAG_RERANKER_CANDIDATE_K",
+    "RAG_VECTOR_STORE_PROVIDER",
+    "RAG_PGVECTOR_DSN",
+    "RAG_PGVECTOR_COLLECTION",
+    "RAG_PGVECTOR_MIN_POOL_SIZE",
+    "RAG_PGVECTOR_MAX_POOL_SIZE",
+    "RAG_PGVECTOR_CONNECT_TIMEOUT_SECONDS",
     "SQLITE_DATABASE_PATH",
 )
 
@@ -90,6 +97,12 @@ def test_uses_default_llm_settings() -> None:
     assert settings.rag_reranker_device is None
     assert settings.rag_reranker_batch_size == 8
     assert settings.rag_reranker_candidate_k == 20
+    assert settings.rag_vector_store_provider is VectorStoreProviderName.MEMORY
+    assert settings.rag_pgvector_dsn.get_secret_value().startswith("postgresql://")
+    assert settings.rag_pgvector_collection == "enterprise-policy-bge-small-zh-v1"
+    assert settings.rag_pgvector_min_pool_size == 1
+    assert settings.rag_pgvector_max_pool_size == 4
+    assert settings.rag_pgvector_connect_timeout_seconds == 5.0
     assert settings.sqlite_database_path == Path("data/runtime/enterprise_policy_agent.db")
     assert settings.llm_api_key.get_secret_value() == "test-key"
 
@@ -132,6 +145,12 @@ def test_loads_llm_settings_from_env_file(
             "RAG_RERANKER_DEVICE=cpu\n"
             "RAG_RERANKER_BATCH_SIZE=16\n"
             "RAG_RERANKER_CANDIDATE_K=30\n"
+            "RAG_VECTOR_STORE_PROVIDER=pgvector\n"
+            "RAG_PGVECTOR_DSN=postgresql://rag:secret@postgres.example:5432/rag\n"
+            "RAG_PGVECTOR_COLLECTION=company-policy-v2\n"
+            "RAG_PGVECTOR_MIN_POOL_SIZE=2\n"
+            "RAG_PGVECTOR_MAX_POOL_SIZE=8\n"
+            "RAG_PGVECTOR_CONNECT_TIMEOUT_SECONDS=9\n"
             "SQLITE_DATABASE_PATH=data/test-agent.db"
         ),
         encoding="utf-8",
@@ -172,6 +191,15 @@ def test_loads_llm_settings_from_env_file(
     assert settings.rag_reranker_device == "cpu"
     assert settings.rag_reranker_batch_size == 16
     assert settings.rag_reranker_candidate_k == 30
+    assert settings.rag_vector_store_provider is VectorStoreProviderName.PGVECTOR
+    assert settings.rag_pgvector_dsn.get_secret_value() == (
+        "postgresql://rag:secret@postgres.example:5432/rag"
+    )
+    assert settings.rag_pgvector_collection == "company-policy-v2"
+    assert settings.rag_pgvector_min_pool_size == 2
+    assert settings.rag_pgvector_max_pool_size == 8
+    assert settings.rag_pgvector_connect_timeout_seconds == 9.0
+    assert "postgresql://rag:secret" not in repr(settings)
     assert settings.sqlite_database_path == Path("data/test-agent.db")
 
 
@@ -206,6 +234,12 @@ def test_loads_llm_settings_from_env_file(
         ("rag_reranker_batch_size", 129),
         ("rag_reranker_candidate_k", 4),
         ("rag_reranker_candidate_k", 101),
+        ("rag_pgvector_min_pool_size", 0),
+        ("rag_pgvector_min_pool_size", 17),
+        ("rag_pgvector_max_pool_size", 0),
+        ("rag_pgvector_max_pool_size", 65),
+        ("rag_pgvector_connect_timeout_seconds", 0),
+        ("rag_pgvector_connect_timeout_seconds", 61),
     ],
 )
 def test_rejects_invalid_numeric_settings(
@@ -230,6 +264,29 @@ def test_rejects_inverted_agent_retry_wait_range() -> None:
             llm_api_key="test-key",
             agent_retry_min_wait_seconds=2.0,
             agent_retry_max_wait_seconds=1.0,
+            _env_file=None,
+        )
+
+
+def test_rejects_inverted_pgvector_pool_range() -> None:
+    with pytest.raises(ValidationError, match="rag_pgvector_max_pool_size"):
+        Settings(
+            llm_api_key="test-key",
+            rag_pgvector_min_pool_size=5,
+            rag_pgvector_max_pool_size=4,
+            _env_file=None,
+        )
+
+
+@pytest.mark.parametrize(
+    "dsn",
+    ["", "sqlite:///tmp/rag.db", "postgresql:///missing-host"],
+)
+def test_rejects_invalid_pgvector_dsn(dsn: str) -> None:
+    with pytest.raises(ValidationError, match="rag_pgvector_dsn"):
+        Settings(
+            llm_api_key="test-key",
+            rag_pgvector_dsn=dsn,
             _env_file=None,
         )
 

@@ -6,6 +6,7 @@ from app.rag.policy_chunker import (
     chunk_policy_directory,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.rag.vector_index import InMemoryVectorIndex
 from app.schemas.chunk import PolicyChunk
 
 POLICY_DIRECTORY = Path("data/policies")
@@ -169,4 +170,30 @@ def test_rejects_mismatched_embedding_count(
         PolicyRetriever(
             embedding_provider=(IncompleteEmbeddingProvider()),
             chunks=sample_chunks,
+        )
+
+
+def test_uses_injected_vector_index_and_upserts_chunks(
+    sample_chunks: list[PolicyChunk],
+) -> None:
+    index = InMemoryVectorIndex(dimension=2)
+
+    retriever = PolicyRetriever(
+        embedding_provider=FakeEmbeddingProvider(),
+        chunks=sample_chunks,
+        vector_index=index,
+    )
+
+    assert retriever.size == 2
+    assert index.size == 2
+
+
+def test_rejects_vector_store_dimension_mismatch(
+    sample_chunks: list[PolicyChunk],
+) -> None:
+    with pytest.raises(ValueError, match="does not match embedding provider"):
+        PolicyRetriever(
+            embedding_provider=FakeEmbeddingProvider(),
+            chunks=sample_chunks,
+            vector_index=InMemoryVectorIndex(dimension=3),
         )

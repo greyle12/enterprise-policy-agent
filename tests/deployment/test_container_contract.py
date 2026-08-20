@@ -6,6 +6,7 @@ import yaml
 
 from scripts.verify_docker_deployment import (
     _compose_command,
+    _pgvector_probe_command,
     _probe_command,
 )
 
@@ -22,6 +23,7 @@ def test_dockerfile_uses_pinned_python_and_non_root_runtime() -> None:
     assert "EXPOSE 8000" in dockerfile
     assert "HEALTHCHECK" in dockerfile
     assert 'CMD ["python", "-m", "app"]' in dockerfile
+    assert "scripts/pgvector_persistence_probe.py" in dockerfile
     assert "COPY . ." not in dockerfile
 
 
@@ -70,6 +72,35 @@ def test_compose_provides_ephemeral_hardened_redis_cache() -> None:
     assert agent_environment["REDIS_URL"] == "redis://redis:6379/0"
 
 
+def test_compose_provides_persistent_pgvector_and_authorized_store_configuration() -> None:
+    compose = yaml.safe_load((_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8"))
+    postgres = compose["services"]["postgres"]
+    agent = compose["services"]["agent"]
+
+    assert postgres["image"] == "pgvector/pgvector:0.8.6-pg17-bookworm"
+    assert postgres["ports"] == ["127.0.0.1:${POSTGRES_PORT:-5432}:5432"]
+    assert postgres["healthcheck"]["test"][0] == "CMD-SHELL"
+    assert "pg_isready" in postgres["healthcheck"]["test"][1]
+    assert postgres["security_opt"] == ["no-new-privileges:true"]
+    assert postgres["volumes"] == [
+        {
+            "type": "volume",
+            "source": "pgvector_data",
+            "target": "/var/lib/postgresql/data",
+        }
+    ]
+    assert "pgvector_data" in compose["volumes"]
+    assert agent["depends_on"]["postgres"]["condition"] == "service_healthy"
+    assert agent["environment"]["RAG_VECTOR_STORE_PROVIDER"] == "pgvector"
+    assert "@postgres:5432/" in agent["environment"]["RAG_PGVECTOR_DSN"]
+
+
+def test_runtime_dependencies_include_psycopg_binary_and_pool() -> None:
+    pyproject = (_PROJECT_ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert '"psycopg[binary,pool]>=3.2,<4.0"' in pyproject
+
+
 def test_docker_build_context_excludes_secrets_and_runtime_data() -> None:
     patterns = {
         line.strip()
@@ -92,6 +123,11 @@ def test_verifier_recreates_service_and_uses_isolated_probe() -> None:
         "write",
         "DAY17-TEST-PROBE",
     )
+    pgvector_probe_command = _pgvector_probe_command(
+        compose_command,
+        "read",
+        "PHASE29-TEST-PROBE",
+    )
 
     assert compose_command[:2] == ["docker", "compose"]
     assert probe_command[-3:] == [
@@ -100,3 +136,9 @@ def test_verifier_recreates_service_and_uses_isolated_probe() -> None:
         "DAY17-TEST-PROBE",
     ]
     assert "scripts.container_persistence_probe" in probe_command
+    assert pgvector_probe_command[-3:] == [
+        "read",
+        "--probe-id",
+        "PHASE29-TEST-PROBE",
+    ]
+    assert "scripts.pgvector_persistence_probe" in pgvector_probe_command

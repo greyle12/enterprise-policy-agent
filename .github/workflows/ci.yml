@@ -101,6 +101,9 @@ jobs:
       - name: Verify Phase 28 authorized Reranker integration
         run: python -X utf8 -m scripts.verify_reranker_integration
 
+      - name: Verify Phase 29 pgvector storage and authorization contract
+        run: python -X utf8 -m scripts.verify_pgvector_store
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo

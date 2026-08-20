@@ -85,7 +85,8 @@ RRF 只融合两路授权排名。未授权 Chunk 可以存在于进程的启动
 当前不能宣称已经达到生产级，原因包括：
 
 - 运行时使用固定可信演示身份，未接 JWT/OIDC、员工目录和集中策略服务；
-- 制度索引仍是单进程内存 Vector/BM25，未接 PostgreSQL/pgvector 或持久化倒排索引；
+- Vector 已支持内存与 PostgreSQL/pgvector 双实现，但启动仍全量 Embedding/upsert，尚无 Phase 30
+  增量索引流水线；BM25 仍是单进程内存倒排结构；
 - 文档加载已支持 Markdown、PDF、DOCX 和显式 OCR fallback，但缺复杂 layout/table parser 和真实企业扫描集；
 - Reranker 已接入正式检索主链路，但默认关闭，尚无真实模型相关性与延迟消融；
 - 指标和 single-flight 是单进程状态，未做跨实例聚合与协调；

@@ -36,6 +36,14 @@ from app.rag.ocr import (
     OCRResult,
     TesseractOCRProvider,
 )
+from app.rag.pgvector_index import PgVectorIndex
+from app.rag.vector_index import (
+    InMemoryVectorIndex,
+    SearchResult,
+    VectorIndex,
+    VectorRecord,
+    VectorStoreProviderName,
+)
 
 __all__ = [
     "BM25Record",
@@ -67,5 +75,11 @@ __all__ = [
     "OCRQualityError",
     "OCRQualityGate",
     "OCRResult",
+    "PgVectorIndex",
+    "InMemoryVectorIndex",
+    "SearchResult",
     "TesseractOCRProvider",
+    "VectorIndex",
+    "VectorRecord",
+    "VectorStoreProviderName",
 ]

@@ -1,8 +1,17 @@
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
-from math import sqrt
+from enum import StrEnum
+from math import isfinite, sqrt
+from typing import Protocol
 
 from app.rag.embeddings import EmbeddingVector
+
+
+class VectorStoreProviderName(StrEnum):
+    """Supported vector storage backends."""
+
+    MEMORY = "memory"
+    PGVECTOR = "pgvector"
 
 
 @dataclass(frozen=True)
@@ -21,6 +30,36 @@ class SearchResult:
 
     record: VectorRecord
     score: float
+
+
+class VectorIndex(Protocol):
+    """Storage-independent vector index contract used by PolicyRetriever."""
+
+    @property
+    def dimension(self) -> int:
+        """Return the embedding dimension accepted by this index."""
+
+    @property
+    def size(self) -> int:
+        """Return the number of records in the active collection."""
+
+    def upsert(self, records: Sequence[VectorRecord]) -> None:
+        """Insert or replace records atomically by record ID."""
+
+    def search(
+        self,
+        query_vector: EmbeddingVector,
+        top_k: int = 5,
+        *,
+        allowed_record_ids: Collection[str] | None = None,
+    ) -> list[SearchResult]:
+        """Search only inside an optional pre-authorized record scope."""
+
+    def ping(self) -> None:
+        """Raise when the storage backend is unavailable."""
+
+    def close(self) -> None:
+        """Release resources owned by the index."""
 
 
 @dataclass(frozen=True)
@@ -54,41 +93,18 @@ class InMemoryVectorIndex:
 
     def add(self, records: Sequence[VectorRecord]) -> None:
         """向索引中添加多条向量记录。"""
-        prepared_records: list[_StoredRecord] = []
-        incoming_ids: set[str] = set()
-
-        for record in records:
-            if not record.record_id.strip():
-                raise ValueError("record_id must not be empty")
-
-            if record.record_id in self._records or record.record_id in incoming_ids:
-                raise ValueError(f"record id already exists: {record.record_id}")
-
-            self._validate_vector(record.vector)
-
-            vector = tuple(record.vector)
-            norm = _calculate_norm(vector)
-
-            if norm == 0.0:
-                raise ValueError("zero vectors cannot be indexed")
-
-            stored_record = VectorRecord(
-                record_id=record.record_id,
-                text=record.text,
-                vector=list(vector),
-                metadata=dict(record.metadata),
-            )
-
-            prepared_records.append(
-                _StoredRecord(
-                    record=stored_record,
-                    vector=vector,
-                    norm=norm,
-                )
-            )
-            incoming_ids.add(record.record_id)
+        prepared_records = self._prepare_records(records)
+        for stored_record in prepared_records:
+            if stored_record.record.record_id in self._records:
+                raise ValueError(f"record id already exists: {stored_record.record.record_id}")
 
         for stored_record in prepared_records:
+            self._records[stored_record.record.record_id] = stored_record
+
+    def upsert(self, records: Sequence[VectorRecord]) -> None:
+        """Insert or replace records while preserving index validation."""
+
+        for stored_record in self._prepare_records(records):
             self._records[stored_record.record.record_id] = stored_record
 
     def search(
@@ -137,6 +153,44 @@ class InMemoryVectorIndex:
             raise ValueError(
                 f"vector dimension mismatch: expected {self._dimension}, got {len(vector)}"
             )
+        if any(not isfinite(value) for value in vector):
+            raise ValueError("vectors must contain only finite values")
+
+    def _prepare_records(self, records: Sequence[VectorRecord]) -> list[_StoredRecord]:
+        prepared_records: list[_StoredRecord] = []
+        incoming_ids: set[str] = set()
+        for record in records:
+            if not record.record_id.strip():
+                raise ValueError("record_id must not be empty")
+            if record.record_id in incoming_ids:
+                raise ValueError(f"record id already exists in batch: {record.record_id}")
+
+            self._validate_vector(record.vector)
+            vector = tuple(record.vector)
+            norm = _calculate_norm(vector)
+            if norm == 0.0:
+                raise ValueError("zero vectors cannot be indexed")
+
+            prepared_records.append(
+                _StoredRecord(
+                    record=VectorRecord(
+                        record_id=record.record_id,
+                        text=record.text,
+                        vector=list(vector),
+                        metadata=dict(record.metadata),
+                    ),
+                    vector=vector,
+                    norm=norm,
+                )
+            )
+            incoming_ids.add(record.record_id)
+        return prepared_records
+
+    def ping(self) -> None:
+        """The process-local store is ready while its object exists."""
+
+    def close(self) -> None:
+        """The process-local store owns no external resources."""
 
 
 def _calculate_norm(vector: Sequence[float]) -> float:

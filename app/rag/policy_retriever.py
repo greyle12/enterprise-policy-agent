@@ -30,6 +30,7 @@ from app.rag.reranking import (
 )
 from app.rag.vector_index import (
     InMemoryVectorIndex,
+    VectorIndex,
     VectorRecord,
 )
 from app.schemas.chunk import PolicyChunk
@@ -140,6 +141,7 @@ class PolicyRetriever:
         keyword_tokenizer: KeywordTokenizer | None = None,
         reranking_provider: RerankingProvider | None = None,
         rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
+        vector_index: VectorIndex | None = None,
     ) -> None:
         chunk_list = list(chunks)
 
@@ -179,8 +181,13 @@ class PolicyRetriever:
             )
         ]
 
-        index = InMemoryVectorIndex(dimension=embedding_provider.dimension)
-        index.add(records)
+        index = vector_index or InMemoryVectorIndex(dimension=embedding_provider.dimension)
+        if index.dimension != embedding_provider.dimension:
+            raise ValueError(
+                "vector index dimension does not match embedding provider: "
+                f"{index.dimension} != {embedding_provider.dimension}"
+            )
+        index.upsert(records)
 
         keyword_index = InMemoryBM25Index(tokenizer=keyword_tokenizer)
         keyword_index.add(
@@ -212,6 +219,7 @@ class PolicyRetriever:
         keyword_tokenizer: KeywordTokenizer | None = None,
         reranking_provider: RerankingProvider | None = None,
         rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
+        vector_index: VectorIndex | None = None,
     ) -> Self:
         """解析指定目录并建立制度检索器。"""
 
@@ -226,6 +234,7 @@ class PolicyRetriever:
             keyword_tokenizer=keyword_tokenizer,
             reranking_provider=reranking_provider,
             rerank_candidate_k=rerank_candidate_k,
+            vector_index=vector_index,
         )
 
     @property

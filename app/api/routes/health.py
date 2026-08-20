@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Protocol
 
@@ -23,6 +24,11 @@ router = APIRouter(
 class _DatabaseReadinessProbe(Protocol):
     async def ping(self) -> None:
         """Raise when the configured persistence backend is unavailable."""
+
+
+class _VectorReadinessProbe(Protocol):
+    def ping(self) -> None:
+        """Raise when the configured vector store is unavailable."""
 
 
 @router.get(
@@ -61,6 +67,7 @@ async def readiness(
         "policy_answer_service",
         "agent_router",
         "agent_state_store",
+        "policy_vector_index",
     )
     components_ready = all(hasattr(application.state, name) for name in required_components)
 
@@ -78,11 +85,13 @@ async def readiness(
         )
 
     database_probe: _DatabaseReadinessProbe = application.state.agent_state_store
+    vector_probe: _VectorReadinessProbe = application.state.policy_vector_index
     try:
         await database_probe.ping()
+        await asyncio.to_thread(vector_probe.ping)
     except Exception:
         logger.warning(
-            "SQLite readiness probe failed",
+            "Runtime persistence readiness probe failed",
             exc_info=True,
         )
         response = ReadinessResponse(
