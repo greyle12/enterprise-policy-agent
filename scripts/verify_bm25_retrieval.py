@@ -144,7 +144,7 @@ def run_verification() -> dict[str, object]:
         "bm25_b": DEFAULT_BM25_B,
         "network_calls": False,
         "model_calls": False,
-        "hybrid_search_enabled": False,
+        "verification_scope": "bm25_channel_only",
         "checks": checks,
     }
 

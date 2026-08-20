@@ -11,6 +11,9 @@
 
 本阶段只提供 BM25 检索，不把向量分数与 BM25 分数直接相加。Hybrid Search 和 RRF 属于 Phase 27。
 
+> 当前状态更新：Phase 27 已使用 RRF 将本通道与 Vector Search 融合，并接入正式制度问答；
+> 本文其余内容保留 Phase 26 的设计边界和实现说明。
+
 ## 2. 它在 RAG Pipeline 中的位置
 
 ```text
@@ -106,7 +109,7 @@ Trusted Identity
 - 两个通道必须索引完全相同的 Chunk；
 - 两个通道必须复用完全相同的授权集合；
 - 下游 Context Builder 已经消费 `PolicyRetrievalResult`；
-- Phase 27 可以在同一边界上执行 RRF；
+- Phase 27 已在同一边界上执行 RRF；
 - 避免两套 Retriever 在生命周期、元数据和权限逻辑上漂移。
 
 ## 8. 安全和可靠性边界
@@ -129,7 +132,7 @@ Phase 26 的 `InMemoryBM25Index` 适合当前 199 个 Chunk 的作品集验证�
 - 没有字段权重、短语查询、模糊匹配和增量删除；
 - 单进程索引不适合多实例一致性；
 - 尚未通过 Recall@K、MRR 数据集比较参数和 Tokenizer；
-- 尚未与向量检索融合，也未正式接入 BGE Reranker。
+- Phase 27 已与向量检索融合，但尚未通过 Retrieval Evaluation 调参，也未正式接入 BGE Reranker。
 
 较大规模生产系统通常会考虑 PostgreSQL 全文检索、OpenSearch/Elasticsearch/Lucene 或专用检索服务。Phase 29 的 pgvector 解决向量持久化，不会自动替代 BM25 倒排索引设计。
 
@@ -161,7 +164,7 @@ python -X utf8 -m scripts.verify_bm25_retrieval
   "document_count": 5,
   "chunk_count": 199,
   "keyword_index_size": 199,
-  "hybrid_search_enabled": false
+  "verification_scope": "bm25_channel_only"
 }
 ```
 

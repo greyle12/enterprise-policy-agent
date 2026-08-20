@@ -110,8 +110,7 @@ SQLite checkpoint 保存业务状态
 ## 7. 当前边界
 
 本周完成的是可测试、可容器化的单机作品集版本，不代表多实例生产系统。仍未完成的
-重点包括权限过滤、提示注入专项评测、BM25/Hybrid Search/Rerank、集中式日志与指标、
-PostgreSQL/pgvector、Redis 和真实企业数据验证。
+重点包括 Rerank、集中式日志与指标、PostgreSQL/pgvector、Redis 和真实企业数据验证。
 
-后续 Day 29 已补充检索前权限过滤和提示注入专项评测；其余边界仍然成立，详见
-`docs/rag_security_guardrails.md`。
+后续 Day 29 已补充检索前权限过滤和提示注入专项评测；Advanced RAG Phase 26/27 已补充
+BM25 与 RRF Hybrid Search。其余边界仍然成立。

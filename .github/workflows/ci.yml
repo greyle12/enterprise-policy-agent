@@ -95,6 +95,9 @@ jobs:
       - name: Verify Phase 26 authorized BM25 lexical retrieval
         run: python -X utf8 -m scripts.verify_bm25_retrieval
 
+      - name: Verify Phase 27 authorized Hybrid Search and RRF
+        run: python -X utf8 -m scripts.verify_hybrid_search
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo

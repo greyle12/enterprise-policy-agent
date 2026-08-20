@@ -36,7 +36,7 @@ schema_version = 1.0
 | 场景 | 实际覆盖 | 不包含 |
 |---|---|---|
 | `runtime_startup` | 五份制度解析、离线索引、业务规则、LangGraph 构建 | BGE 模型加载、数据库连接 |
-| `policy_rag_answer` | 向量检索、上下文构造、S 引用校验 | 真实 BGE、真实 LLM |
+| `policy_rag_answer` | Vector/BM25、RRF、上下文构造、S 引用校验 | 真实 BGE、真实 LLM |
 | `agent_material_route` | 离线意图识别、LangGraph、真实材料规则 | 真实 LLM |
 | `agent_approval_route` | 离线意图识别、LangGraph、真实审批规则 | 真实 LLM |
 | `policy_research_hybrid` | 内部 RAG、Day 21 研究编排、固定 Web 结果 | 外部网络请求 |

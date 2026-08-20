@@ -43,6 +43,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -X utf8 -m scripts.verify_docx_document_parsing",
     "python -X utf8 -m scripts.verify_ocr_fallback",
     "python -X utf8 -m scripts.verify_bm25_retrieval",
+    "python -X utf8 -m scripts.verify_hybrid_search",
     "python -X utf8 -m scripts.run_portfolio_demo",
     "--output-dir artifacts/portfolio",
     "python -X utf8 -m scripts.verify_portfolio_release",

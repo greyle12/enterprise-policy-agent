@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 26：BM25 关键词检索（已完成）
+Advanced RAG Phase 27：Hybrid Search + RRF（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -282,7 +282,7 @@ Advanced RAG Phase 26：BM25 关键词检索（已完成）
 - [x] 路由模板、固定直方图和 64 键上限的进程内 HTTP 指标；
 - [x] 安全关联 500、JSON 状态、Prometheus Provider/HTTP 指标和离线验收。
 - [x] 可信身份、制度生命周期、等级、部门、角色和区域授权；
-- [x] 未授权 Chunk 在向量评分前排除且不进入 Prompt；
+- [x] 未授权 Chunk 在 Vector/BM25 候选与评分前排除且不进入 RRF 或 Prompt；
 - [x] 中英文提示注入、权限提升、工具绕过和编码指令检测；
 - [x] 污染制度证据隔离、JSON 数据边界和安全关联 400；
 - [x] 无内容安全状态、Prometheus 指标与完全离线 CI 评测。
@@ -309,11 +309,14 @@ Advanced RAG Phase 26：BM25 关键词检索（已完成）
 - [x] `PolicyRetriever` 内并列的内存 BM25 索引与显式检索通道；
 - [x] 未授权 Chunk 在候选、DF、平均长度和 BM25 评分前排除；
 - [x] 5 文档/199 Chunk 完全离线 BM25 专项验证与 CI 门禁。
+- [x] Vector 与 BM25 的独立候选窗口和标准 RRF 融合；
+- [x] 跨通道 Chunk 去重、来源名次、原始分数和融合贡献诊断；
+- [x] `PolicyAnswerService` 正式切换到授权范围内的 Hybrid Search；
+- [x] RRF、单通道降级、权限前置和 199 Chunk 完全离线 CI 验收。
 
 ### 尚未实现
 
 - [ ] PostgreSQL / pgvector；
-- [ ] Hybrid Search；
 - [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
@@ -338,6 +341,7 @@ Advanced RAG Phase 26：BM25 关键词检索（已完成）
 并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
 并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
 同时具备授权范围内的 BM25 关键词检索、企业编号精确匹配和确定性排序，
+并使用 RRF 将 Vector 与 BM25 名次融合为正式制度问答候选，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -690,7 +694,7 @@ submission
 即使最终回答没有显示敏感内容，也不应让无权限内容进入模型上下文。
 
 Day 29 已在运行时实现该顺序：固定可信演示身份先检查制度状态、有效期、安全等级、部门、
-角色和地域，只有授权 Chunk ID 才参与向量评分。生产环境仍须用登录认证结果替换演示身份。
+角色和地域，只有授权 Chunk ID 才参与 Vector/BM25 与 RRF。生产环境仍须用登录认证结果替换演示身份。
 
 ---
 
@@ -1268,7 +1272,7 @@ docs/runtime_observability.md
 ## 23. RAG 权限过滤与提示注入防护
 
 Day 29 把安全设计变成强制执行边界：服务器固定注入可信演示身份，制度 Chunk 先检查状态、
-有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做向量评分。用户在聊天中自称管理员
+有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做 Vector/BM25 检索和 RRF。用户在聊天中自称管理员
 不能改变该上下文，也不能让无权限内容进入 LLM。
 
 用户输入在意图分类、内部 RAG、Web Search、Agent 工作流和工具执行前检查；疑似污染的制度
@@ -1394,6 +1398,7 @@ Application Services
        │   ├── Embedding
        │   ├── Vector Search
        │   ├── Authorized BM25 Search
+       │   ├── RRF Hybrid Fusion
        │   └── Reranker（contract only）
        │
        ├── Policy Repository
@@ -1470,6 +1475,7 @@ demo1/
 │   ├── docx_document_parsing.md
 │   ├── ocr_fallback.md
 │   ├── bm25_retrieval.md
+│   ├── hybrid_search_rrf.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1694,6 +1700,12 @@ python -X utf8 -m scripts.verify_ocr_fallback
 python -X utf8 -m scripts.verify_bm25_retrieval
 ```
 
+### 验证 Phase 27 Hybrid Search + RRF
+
+```powershell
+python -X utf8 -m scripts.verify_hybrid_search
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1729,7 +1741,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 内存向量索引；
 - [x] Reranker 批量 Provider 与稳定排序契约；
 - [x] BM25；
-- [ ] Hybrid Search；
+- [x] Hybrid Search + RRF；
 - [ ] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
 - [x] 引用生成；
@@ -1900,8 +1912,22 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] authorization-before-candidate/statistics/scoring 安全契约；
 - [x] 查询/文档 Token 上限、重复 ID 和非法输入防护；
 - [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
-- [ ] Hybrid Search + RRF（Phase 27）；
+- [x] Hybrid Search + RRF（Phase 27）；
 - [ ] 持久化倒排索引、专业中文分词和 Retrieval Evaluation。
+
+### Advanced RAG Phase 27：Hybrid Search + RRF
+
+- [x] 通用 `RankedList`、`RRFContribution` 和 `RRFResult` 契约；
+- [x] 标准 `1 / (k + rank)` 融合，默认 `k=60`；
+- [x] Vector/BM25 每路默认 20 个候选，再输出融合 Top-K；
+- [x] 跨通道 Chunk ID 去重和确定性同分排序；
+- [x] Hybrid 结果保留每路 rank、raw score 和 RRF contribution；
+- [x] `AccessControlledPolicyRetriever` 将同一授权集合传给两个子检索；
+- [x] `PolicyAnswerService` 正式使用 `search_hybrid(...)`；
+- [x] 单通道空结果降级、参数校验和 Prompt Guard 链路回归；
+- [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
+- [ ] BGE Reranker 正式接入（Phase 28）；
+- [ ] Recall@K、MRR 和候选窗口消融评测（Phase 31）。
 
 ---
 
@@ -1924,7 +1950,7 @@ LLM 负责理解用户意图和生成自然语言
 Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
 Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
-权限过滤必须发生在向量评分和 Prompt 构造之前，聊天自述不能覆盖可信身份
+权限过滤必须发生在 Vector/BM25、RRF 和 Prompt 构造之前，聊天自述不能覆盖可信身份
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```

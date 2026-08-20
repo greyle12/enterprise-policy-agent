@@ -17,6 +17,10 @@ _TOKEN_SEGMENT_PATTERN = re.compile(r"[a-z0-9]+(?:[._/-][a-z0-9]+)*|[\u3400-\u4d
 _CJK_PATTERN = re.compile(r"^[\u3400-\u4dbf\u4e00-\u9fff]+$")
 
 
+class BM25UnsearchableQueryError(ValueError):
+    """Raised when a nonblank query produces no lexical terms."""
+
+
 class KeywordTokenizer(Protocol):
     """Convert policy or query text into deterministic lexical terms."""
 
@@ -151,7 +155,7 @@ class InMemoryBM25Index:
 
         query_tokens = tuple(dict.fromkeys(self._tokenizer.tokenize(query)))
         if not query_tokens:
-            raise ValueError("query contains no searchable terms")
+            raise BM25UnsearchableQueryError("query contains no searchable terms")
         if len(query_tokens) > self._max_query_tokens:
             raise ValueError(
                 f"query exceeds BM25 token limit: {len(query_tokens)} > {self._max_query_tokens}"
@@ -219,6 +223,7 @@ class InMemoryBM25Index:
 __all__ = [
     "BM25Record",
     "BM25SearchResult",
+    "BM25UnsearchableQueryError",
     "DEFAULT_BM25_B",
     "DEFAULT_BM25_K1",
     "DEFAULT_MAX_DOCUMENT_TOKENS",

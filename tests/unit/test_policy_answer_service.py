@@ -28,7 +28,7 @@ class FakePolicyRetriever:
         self.results = results
         self.calls: list[tuple[str, int]] = []
 
-    def search(
+    def search_hybrid(
         self,
         query: str,
         *,

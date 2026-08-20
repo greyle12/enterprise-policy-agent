@@ -13,7 +13,7 @@ def test_bm25_retrieval_verification_passes() -> None:
     assert report["keyword_index_size"] == 199
     assert report["network_calls"] is False
     assert report["model_calls"] is False
-    assert report["hybrid_search_enabled"] is False
+    assert report["verification_scope"] == "bm25_channel_only"
     assert all(report["checks"].values())
 
 

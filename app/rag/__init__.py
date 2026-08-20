@@ -1,6 +1,7 @@
 from app.rag.bm25 import (
     BM25Record,
     BM25SearchResult,
+    BM25UnsearchableQueryError,
     InMemoryBM25Index,
     KeywordTokenizer,
     PolicyKeywordTokenizer,
@@ -19,6 +20,13 @@ from app.rag.document_loader import (
     docx_metadata_sidecar_path,
     pdf_metadata_sidecar_path,
 )
+from app.rag.fusion import (
+    DEFAULT_RRF_RANK_CONSTANT,
+    RRFContribution,
+    RRFResult,
+    RankedList,
+    reciprocal_rank_fusion,
+)
 from app.rag.ocr import (
     OCRError,
     OCRImage,
@@ -32,7 +40,9 @@ from app.rag.ocr import (
 __all__ = [
     "BM25Record",
     "BM25SearchResult",
+    "BM25UnsearchableQueryError",
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
+    "DEFAULT_RRF_RANK_CONSTANT",
     "DOCXDocumentLoader",
     "DocumentLoadError",
     "DocumentLoader",
@@ -44,9 +54,13 @@ __all__ = [
     "OCRRequiredError",
     "PDFDocumentLoader",
     "PolicyKeywordTokenizer",
+    "RRFContribution",
+    "RRFResult",
+    "RankedList",
     "UnsupportedDocumentFormatError",
     "docx_metadata_sidecar_path",
     "pdf_metadata_sidecar_path",
+    "reciprocal_rank_fusion",
     "OCRError",
     "OCRImage",
     "OCRProvider",

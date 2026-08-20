@@ -7,10 +7,20 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Protocol, Self
 
-from app.rag.bm25 import BM25Record, InMemoryBM25Index, KeywordTokenizer
+from app.rag.bm25 import (
+    BM25Record,
+    BM25UnsearchableQueryError,
+    InMemoryBM25Index,
+    KeywordTokenizer,
+)
 from app.rag.document_loader import (
     DEFAULT_DOCUMENT_LOADER_REGISTRY,
     DocumentLoaderRegistry,
+)
+from app.rag.fusion import (
+    DEFAULT_RRF_RANK_CONSTANT,
+    RankedList,
+    reciprocal_rank_fusion,
 )
 from app.rag.policy_chunker import chunk_policy_directory
 from app.rag.vector_index import (
@@ -19,6 +29,8 @@ from app.rag.vector_index import (
 )
 from app.schemas.chunk import PolicyChunk
 from app.security import PolicyAccessContext, authorized_chunk_ids
+
+DEFAULT_HYBRID_CANDIDATE_K = 20
 
 
 class EmbeddingProvider(Protocol):
@@ -46,6 +58,17 @@ class RetrievalMethod(StrEnum):
 
     VECTOR = "vector"
     BM25 = "bm25"
+    HYBRID = "hybrid"
+
+
+@dataclass(frozen=True, slots=True)
+class RetrievalSignal:
+    """One source ranking that contributed to a hybrid result."""
+
+    method: RetrievalMethod
+    rank: int
+    raw_score: float
+    rrf_contribution: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +78,7 @@ class PolicyRetrievalResult:
     chunk: PolicyChunk
     score: float
     retrieval_method: RetrievalMethod = RetrievalMethod.VECTOR
+    retrieval_signals: tuple[RetrievalSignal, ...] = ()
 
 
 def _build_record_metadata(
@@ -97,7 +121,7 @@ def _build_record_metadata(
 
 
 class PolicyRetriever:
-    """负责制度向量索引构建和语义检索。"""
+    """Build vector/BM25 indexes and expose independent or fused retrieval."""
 
     def __init__(
         self,
@@ -213,7 +237,7 @@ class PolicyRetriever:
         if not normalized_query:
             raise ValueError("query must not be blank")
 
-        if top_k < 1:
+        if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1:
             raise ValueError("top_k must be greater than zero")
 
         query_vector = self._embedding_provider.embed_query(normalized_query)
@@ -253,6 +277,88 @@ class PolicyRetriever:
             )
             for result in keyword_results
         ]
+
+    def search_hybrid(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        candidate_k: int | None = None,
+        rank_constant: int = DEFAULT_RRF_RANK_CONSTANT,
+        allowed_chunk_ids: Collection[str] | None = None,
+    ) -> list[PolicyRetrievalResult]:
+        """Fuse authorization-scoped Vector and BM25 rankings with RRF."""
+
+        normalized_query = query.strip()
+        if not normalized_query:
+            raise ValueError("query must not be blank")
+        if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1:
+            raise ValueError("top_k must be greater than zero")
+
+        resolved_candidate_k = (
+            max(DEFAULT_HYBRID_CANDIDATE_K, top_k) if candidate_k is None else candidate_k
+        )
+        if (
+            isinstance(resolved_candidate_k, bool)
+            or not isinstance(resolved_candidate_k, int)
+            or resolved_candidate_k < top_k
+        ):
+            raise ValueError("candidate_k must be greater than or equal to top_k")
+
+        vector_results = self.search(
+            normalized_query,
+            top_k=resolved_candidate_k,
+            allowed_chunk_ids=allowed_chunk_ids,
+        )
+        try:
+            keyword_results = self.search_keywords(
+                normalized_query,
+                top_k=resolved_candidate_k,
+                allowed_chunk_ids=allowed_chunk_ids,
+            )
+        except BM25UnsearchableQueryError:
+            keyword_results = []
+        results_by_method = {
+            RetrievalMethod.VECTOR: {result.chunk.chunk_id: result for result in vector_results},
+            RetrievalMethod.BM25: {result.chunk.chunk_id: result for result in keyword_results},
+        }
+        fused_results = reciprocal_rank_fusion(
+            [
+                RankedList(
+                    source=RetrievalMethod.VECTOR.value,
+                    record_ids=tuple(result.chunk.chunk_id for result in vector_results),
+                ),
+                RankedList(
+                    source=RetrievalMethod.BM25.value,
+                    record_ids=tuple(result.chunk.chunk_id for result in keyword_results),
+                ),
+            ],
+            rank_constant=rank_constant,
+            top_k=top_k,
+        )
+
+        hybrid_results: list[PolicyRetrievalResult] = []
+        for fused_result in fused_results:
+            signals = tuple(
+                RetrievalSignal(
+                    method=RetrievalMethod(contribution.source),
+                    rank=contribution.rank,
+                    raw_score=results_by_method[RetrievalMethod(contribution.source)][
+                        fused_result.record_id
+                    ].score,
+                    rrf_contribution=contribution.score,
+                )
+                for contribution in fused_result.contributions
+            )
+            hybrid_results.append(
+                PolicyRetrievalResult(
+                    chunk=self._chunks_by_id[fused_result.record_id],
+                    score=fused_result.score,
+                    retrieval_method=RetrievalMethod.HYBRID,
+                    retrieval_signals=signals,
+                )
+            )
+        return hybrid_results
 
     def restrict(
         self,
@@ -319,4 +425,21 @@ class AccessControlledPolicyRetriever:
             query,
             top_k=top_k,
             allowed_chunk_ids=self._allowed_chunk_ids(),
+        )
+
+    def search_hybrid(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        candidate_k: int | None = None,
+        rank_constant: int = DEFAULT_RRF_RANK_CONSTANT,
+    ) -> list[PolicyRetrievalResult]:
+        allowed_chunk_ids = self._allowed_chunk_ids()
+        return self._retriever.search_hybrid(
+            query,
+            top_k=top_k,
+            candidate_k=candidate_k,
+            rank_constant=rank_constant,
+            allowed_chunk_ids=allowed_chunk_ids,
         )
