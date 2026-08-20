@@ -8,6 +8,13 @@ from app.evaluation.models import (
     GoldenCase,
 )
 from app.evaluation.runner import GoldenEvaluationRunner
+from app.evaluation.retrieval_dataset import RetrievalDataset, load_retrieval_dataset
+from app.evaluation.retrieval_models import (
+    RetrievalCase,
+    RetrievalEvaluationMode,
+    RetrievalEvaluationReport,
+)
+from app.evaluation.retrieval_runner import RetrievalEvaluationRunner
 
 __all__ = [
     "EvaluationMode",
@@ -16,5 +23,11 @@ __all__ = [
     "GoldenCase",
     "GoldenDataset",
     "GoldenEvaluationRunner",
+    "RetrievalCase",
+    "RetrievalDataset",
+    "RetrievalEvaluationMode",
+    "RetrievalEvaluationReport",
+    "RetrievalEvaluationRunner",
     "load_golden_dataset",
+    "load_retrieval_dataset",
 ]

@@ -107,6 +107,12 @@ jobs:
       - name: Verify Phase 30 incremental document indexing contract
         run: python -X utf8 -m scripts.verify_document_indexing
 
+      - name: Run the Phase 31 offline retrieval evaluation
+        run: python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+
+      - name: Verify the Phase 31 retrieval evaluation contract
+        run: python -X utf8 -m scripts.verify_retrieval_evaluation
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo
@@ -138,6 +144,8 @@ jobs:
             artifacts/test-results/pytest.xml
             artifacts/evaluation/golden-evaluation-report.json
             artifacts/evaluation/golden-evaluation-report.md
+            artifacts/evaluation/retrieval-evaluation-report.json
+            artifacts/evaluation/retrieval-evaluation-report.md
             artifacts/performance/agent-performance-report.json
             artifacts/performance/agent-performance-report.md
             artifacts/performance/agent-concurrency-load-report.json

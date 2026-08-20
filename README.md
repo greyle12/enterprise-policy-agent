@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 30：Document Indexing Pipeline（已完成）
+Advanced RAG Phase 31：Retrieval Evaluation（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -328,10 +328,15 @@ Advanced RAG Phase 30：Document Indexing Pipeline（已完成）
 - [x] Vector Store 原子 upsert + stale Chunk deletion 和独立 indexing CLI；
 - [x] Runtime 复用已同步向量，同时保留现有 BM25、权限过滤、RRF、Reranker 与 Citation；
 - [x] Phase 30 完全离线幂等/增量/删除/安全专项验证与 CI 门禁。
+- [x] 独立于答案生成的 20 条跨领域检索 Judgments；
+- [x] Vector、BM25、Hybrid/RRF、Reranker 四通道消融；
+- [x] Recall@1/3/5、MRR@5、语料/数据集指纹与 JSON/Markdown 报告；
+- [x] 授权标签预检、Offline CI 门禁与可选真实 BGE 运行模式；
+- [x] Phase 31 完全离线检索质量评测与 CI 证据。
 
 ### 尚未实现
 
-- [ ] Retrieval Evaluation：Recall@K、MRR 与真实 BGE 消融评测；
+- [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
 - [ ] 蓝绿 collection 发布指针、回滚和分布式 indexing leader；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
@@ -1427,6 +1432,11 @@ Application Services
        │   ├── RRF Hybrid Fusion
        │   └── Optional BGE Cross-Encoder Reranker
        │
+       ├── Retrieval Evaluation
+       │   ├── Versioned Query / Relevant Chunk Judgments
+       │   ├── Vector / BM25 / Hybrid / Reranker Ablation
+       │   └── Recall@1/3/5 + MRR@5 Quality Gate
+       │
        ├── Policy Repository
        ├── Application Repository
        ├── Workflow Repository
@@ -1505,6 +1515,7 @@ demo1/
 │   ├── reranker_integration.md
 │   ├── pgvector_store.md
 │   ├── document_indexing_pipeline.md
+│   ├── retrieval_evaluation.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1754,6 +1765,19 @@ python -X utf8 -m scripts.verify_document_indexing
 python -X utf8 -m scripts.index_policy_documents
 ```
 
+### 验证 Phase 31 Retrieval Evaluation
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+python -X utf8 -m scripts.verify_retrieval_evaluation
+```
+
+可选真实 BGE 消融（首次可能下载模型）：
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode bge --device cpu
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1975,7 +1999,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 单通道空结果降级、参数校验和 Prompt Guard 链路回归；
 - [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
 - [x] BGE Reranker 正式接入（Phase 28）；
-- [ ] Recall@K、MRR 和候选窗口消融评测（Phase 31）。
+- [x] Recall@K、MRR 和候选窗口消融评测（Phase 31）。
 
 ### Advanced RAG Phase 28：BGE Reranker 正式接入
 
@@ -1990,7 +2014,8 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `RAG_RERANKER_PROVIDER=bge` 显式启用和模型/设备/batch/candidate 配置；
 - [x] `PolicyAnswerService` 正式调用统一 Reranked 入口；
 - [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
-- [ ] 真实 BGE 模型的 Recall@K、MRR、nDCG、延迟和硬件消融（Phase 31）。
+- [x] 相同 Judgments 上的真实 BGE Recall@K、MRR 运行入口（Phase 31）；
+- [ ] nDCG、固定硬件延迟和正式 BGE 基准快照。
 
 ### Advanced RAG Phase 29：PostgreSQL + pgvector
 
@@ -2006,7 +2031,8 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] Docker 重建后的 SQLite/pgvector 双持久化探针；
 - [x] 完全离线 SQL/权限专项验证与 CI 门禁；
 - [x] 增量 Document Indexing Pipeline 与陈旧 Chunk 原子删除（Phase 30）；
-- [ ] Recall@K、MRR 和 ANN 参数评测（Phase 31）。
+- [x] 精确检索 Recall@K、MRR 四通道评测（Phase 31）；
+- [ ] HNSW ANN 参数与 Recall–Latency 曲线。
 
 ### Advanced RAG Phase 30：Document Indexing Pipeline
 
@@ -2020,7 +2046,19 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 独立 `scripts.index_policy_documents` JSON CLI；
 - [x] 完全离线幂等、单 Chunk 更新、源删除和授权前置专项验证；
 - [ ] 蓝绿 collection 构建、发布指针和一键回滚；
-- [ ] Recall@K、MRR 与真实 BGE 检索评测（Phase 31）。
+- [x] Recall@K、MRR、四通道消融与可选真实 BGE 检索评测（Phase 31）。
+
+### Advanced RAG Phase 31：Retrieval Evaluation
+
+- [x] 20 条 JSONL Query / relevant Chunk judgments，覆盖五个制度域和多相关条款；
+- [x] 复用授权绑定 Retriever，对照 Vector、BM25、Hybrid/RRF、Reranked；
+- [x] Recall@1/3/5、截断 MRR@5 与查询级宏平均；
+- [x] Hybrid/Reranked 默认 Recall@5 与 MRR@5 双 0.80 质量门禁；
+- [x] 数据集 SHA-256、语料 Chunk/content SHA-256 与逐查询排名审计；
+- [x] 确定性、无网络 Offline CI 模式和真实 BGE 可选模式；
+- [x] 无权限/不存在相关标签预检，保持 authorization-before-similarity；
+- [x] JSON / Markdown 报告、稳定退出码、专项验证与 CI Artifact；
+- [ ] 扩大真实匿名查询集、双人标注、graded relevance / nDCG 和 ANN 参数实验。
 
 ---
 
