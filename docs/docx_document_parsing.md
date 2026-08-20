@@ -1,7 +1,8 @@
 # Advanced RAG Phase 24：DOCX 文档解析
 
 Phase 24 在现有 `DocumentLoaderRegistry` 上注册 `DOCXDocumentLoader`。它读取 Word 正文中的
-段落、标题样式和表格，再交给同一个 Policy Parser 与 Policy Chunker；本阶段不执行 OCR。
+段落、标题样式和表格，再交给同一个 Policy Parser 与 Policy Chunker；Phase 25 可显式注入 OCR
+Provider 识别无原生文字的图片段落。
 
 ## 1. 本阶段解决什么问题
 
@@ -101,14 +102,14 @@ Trusted identity
 
 ## 6. OCR 边界与错误类型
 
-空正文或只有图片、原生字符少于阈值的 DOCX 会抛出 `OCRRequiredError`。Phase 24 只明确 handoff，
-不读取图片、不执行 OCR、不把低置信度文字写入索引。默认阈值为 20 个非空白字符。
+空正文或只有图片、原生字符少于阈值的 DOCX 在未配置 Provider 时抛出 `OCRRequiredError`。
+Phase 25 可提取图片段落执行 OCR，并在 Parser/索引前拒绝低置信度文字。默认阈值为 20 个非空白字符。
 
 | 错误 | 含义 |
 |---|---|
 | `DocumentMetadataError` | sidecar 缺失、为空或不是 UTF-8 |
 | `InvalidDocumentError` | DOCX/OOXML 包损坏或提取失败 |
-| `OCRRequiredError` | 原生文本不足，需要 Phase 25 OCR |
+| `OCRRequiredError` | 原生文本不足且没有可用 Provider，或超出 OCR 图片上限 |
 | `DocumentDependencyError` | 未安装 python-docx |
 
 ## 7. 为什么选择 python-docx
@@ -165,7 +166,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 - 未在隔离进程进行恶意 OOXML/ZIP bomb 扫描；
 - 样式映射是确定性启发式，不是通用 Word 语义模型；
 - Sidecar 尚未和文档哈希、上传审批与审计记录绑定；
-- OCR、索引状态机和失败重试队列尚未实现。
+- OCR 异步任务、人工复核、索引状态机和失败重试队列尚未实现。
 
 ## 10. 面试官可能追问
 

@@ -1,8 +1,8 @@
 # Advanced RAG Phase 23：PDF 文档解析
 
 Phase 23 在 Phase 22 的 `DocumentLoader` Protocol 上增加 `PDFDocumentLoader`。本阶段只读取
-PDF 原生文本层，不执行 OCR；没有可用文本层的扫描件会返回稳定的 `OCRRequiredError`，由
-Phase 25 处理。
+PDF 原生文本层；Phase 25 可以显式注入 OCR Provider 处理扫描页。没有配置 Provider 时仍返回
+稳定的 `OCRRequiredError`。
 
 ## 1. 本阶段解决什么问题
 
@@ -104,13 +104,13 @@ native text < minimum_text_characters
 → OCRRequiredError
 ```
 
-当前默认阈值为 20，可在构造 `PDFDocumentLoader` 时调整。该判断只负责把扫描件交给后续 OCR，
-不会自动渲染页面或调用 OCR Provider，因此：
+当前默认阈值为每页 20 个非空白字符，可在构造 `PDFDocumentLoader` 时调整。Phase 25 只有在
+显式注入 OCR Provider 时才通过 PyMuPDF 渲染扫描页，并执行置信度门禁，因此：
 
 - 不产生隐藏网络请求；
 - 不增加本阶段不可控的模型依赖；
 - 不把 OCR 低置信度文字直接写入正式索引；
-- Phase 25 可以独立测试 OCR 成功、失败和人工复核边界。
+- Phase 25 已测试 OCR 成功、低置信度失败和来源传播；人工复核队列仍未实现。
 
 ## 6. 错误类型
 
@@ -119,7 +119,7 @@ native text < minimum_text_characters
 | `DocumentMetadataError` | sidecar 缺失、为空或不是 UTF-8 |
 | `EncryptedDocumentError` | PDF 需要密码 |
 | `InvalidDocumentError` | PDF 损坏、无页面或提取接口异常 |
-| `OCRRequiredError` | 原生文本不足，需要 Phase 25 OCR |
+| `OCRRequiredError` | 原生文本不足且没有可用 Provider，或超出 OCR 单元上限 |
 | `DocumentDependencyError` | 未安装 PyMuPDF |
 
 `parse_policy_file` 仍把 Loader 错误封装为统一的 `PolicyParseError`，同时保留异常 cause，应用层
@@ -226,7 +226,7 @@ PyMuPDF 提供简单的页级文本 API、稳定页码和离线执行能力，�
 - 表格没有转成结构化行列；
 - 页眉页脚没有自动去重；
 - Sidecar 尚未接上传审批、内容哈希绑定和审计；
-- OCR 尚未实现；
+- OCR 人工复核、异步队列和真实中文扫描评测尚未实现；
 - 尚无真实企业 PDF 检索评测集。
 
 ## 12. 面试官可能追问
@@ -250,4 +250,3 @@ PyMuPDF 提供简单的页级文本 API、稳定页码和离线执行能力，�
 
 如果只保留最终文本，检索结果无法回到原始 PDF。页码 provenance 能支持用户核验、审计和后续
 高亮定位。
-

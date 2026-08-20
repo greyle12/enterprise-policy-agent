@@ -1,7 +1,7 @@
 # Phase 22：Document Loader 抽象
 
-Phase 22 在既有制度 RAG 之前增加统一的文档加载边界。Phase 23 和 Phase 24 已在该边界上注册
-PDF 原生文本 Loader 与 DOCX 段落/表格 Loader；OCR 仍属于后续阶段。
+Phase 22 在既有制度 RAG 之前增加统一的文档加载边界。Phase 23/24 注册 PDF 原生文本与 DOCX
+段落/表格 Loader，Phase 25 在这两个 Loader 内加入显式 OCR Provider fallback 和质量门禁。
 
 ## 1. 它解决什么问题
 
@@ -160,7 +160,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 - 未限制文件字节数、页数、压缩比或提取耗时；
 - 没有恶意文件扫描、沙箱进程和文档级审计记录；
 - PDF 已保留页码，但没有表格和复杂版面结构信息；DOCX 已保留顶层块序号，但不伪造页码；
-- 没有 OCR 质量分数、语言检测或人工复核队列；
+- OCR 已保留 Provider 置信度，但没有真实扫描集标定、语言检测或人工复核队列；
 - 文档元数据仍依赖 YAML front matter；非 Markdown 格式如何携带可信元数据将在对应 Phase
   显式设计。
 

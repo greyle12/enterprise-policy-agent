@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 24：DOCX 文档解析（已完成）
+Advanced RAG Phase 25：OCR fallback（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -301,10 +301,13 @@ Advanced RAG Phase 24：DOCX 文档解析（已完成）
 - [x] DOCX 可信 sidecar 元数据与顶层块 provenance 传递；
 - [x] 空/图片型 DOCX `OCRRequiredError`、损坏/缺少 sidecar 拒绝；
 - [x] Phase 24 完全离线真实 DOCX 专项验证与 CI 门禁。
+- [x] 可替换 OCR Provider、质量门禁与本机 Tesseract 适配器；
+- [x] 扫描 PDF 页渲染和 DOCX 内嵌图片 OCR fallback；
+- [x] OCR engine、页/块单元和置信度贯穿 Chunk、Citation 与 Research API；
+- [x] 低置信度拒绝、授权前置和 OCR 污染证据隔离专项验证。
 
 ### 尚未实现
 
-- [ ] OCR fallback；
 - [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
@@ -1380,7 +1383,7 @@ Application Services
        │   │   ├── Markdown Loader
        │   │   ├── PDF Native-text Loader
        │   │   ├── DOCX Paragraph/Table Loader
-       │   │   └── OCR（planned）
+       │   │   └── Explicit OCR Fallback + Quality Gate
        │   ├── Policy Parser
        │   ├── Metadata Extractor
        │   ├── Chunker
@@ -1461,6 +1464,7 @@ demo1/
 │   ├── document_loader.md
 │   ├── pdf_document_parsing.md
 │   ├── docx_document_parsing.md
+│   ├── ocr_fallback.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1494,6 +1498,7 @@ FastAPI：0.140.8
 pytest：9.1.1
 PDF Parser：PyMuPDF 1.26.x
 DOCX Parser：python-docx 1.2.x
+OCR：可选 pytesseract 0.3.13 + 本机 Tesseract
 Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
@@ -1529,6 +1534,14 @@ python -m venv .venv
 ```powershell
 python -m pip install -e ".[dev]"
 ```
+
+需要验证本机 Tesseract 适配器时安装可选 Python 依赖：
+
+```powershell
+python -m pip install -e ".[dev,ocr]"
+```
+
+`pytesseract` 不包含 Tesseract 可执行文件和中文语言包，Windows 仍需单独安装并配置。
 
 可选安装 Day 22 采样 profiler：
 
@@ -1662,6 +1675,12 @@ python -X utf8 -m scripts.verify_pdf_document_parsing
 
 ```powershell
 python -X utf8 -m scripts.verify_docx_document_parsing
+```
+
+### 验证 Phase 25 OCR fallback
+
+```powershell
+python -X utf8 -m scripts.verify_ocr_fallback
 ```
 
 ### 运行 Day 30 作品集演示与发布验收
@@ -1821,7 +1840,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 原有安全边界和 5 文档/199 Chunk 回归验证；
 - [x] PDF Loader（Phase 23）；
 - [x] DOCX Loader（Phase 24）；
-- [ ] OCR fallback（Phase 25）。
+- [x] OCR fallback（Phase 25）。
 
 ### Advanced RAG Phase 23：PDF 文档解析
 
@@ -1833,7 +1852,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 加密、损坏、缺元数据和 OCR-required 错误边界；
 - [x] 完全离线真实 PDF 生成与 CI 验收；
 - [x] DOCX Loader（Phase 24）；
-- [ ] OCR fallback（Phase 25）。
+- [x] OCR fallback（Phase 25）。
 
 ### Advanced RAG Phase 24：DOCX 文档解析
 
@@ -1845,7 +1864,20 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `PolicyChunk`、Context、Citation、Retriever 元数据和 Research API 块范围传递；
 - [x] 损坏、缺元数据和 OCR-required 错误边界；
 - [x] 完全离线真实 DOCX 生成与 CI 验收；
-- [ ] OCR fallback（Phase 25）。
+- [x] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 25：OCR fallback
+
+- [x] 最小 `OCRProvider`、`OCRImage`、`OCRResult` 契约；
+- [x] 非空字符数和置信度双质量门禁；
+- [x] PDF 逐页原生文本判定、PyMuPDF rasterize 和 OCR fallback；
+- [x] DOCX 图片段落提取和 block-level OCR fallback；
+- [x] 本机 `TesseractOCRProvider`、超时、字节与像素上限；
+- [x] OCR engine、unit kind、unit number 和 confidence provenance；
+- [x] 低置信度内容在 Parser/索引前拒绝；
+- [x] OCR 证据继续经过 authorization-before-similarity 与 Prompt Guard；
+- [x] 完全离线 Provider 替身、PDF/DOCX 动态夹具与 CI 门禁；
+- [ ] OCR 人工复核队列、异步任务和真实中文扫描集评测。
 
 ---
 

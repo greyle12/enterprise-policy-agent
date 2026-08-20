@@ -12,6 +12,15 @@ from app.rag.document_loader import (
     docx_metadata_sidecar_path,
     pdf_metadata_sidecar_path,
 )
+from app.rag.ocr import (
+    OCRError,
+    OCRImage,
+    OCRProvider,
+    OCRQualityError,
+    OCRQualityGate,
+    OCRResult,
+    TesseractOCRProvider,
+)
 
 __all__ = [
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
@@ -26,4 +35,11 @@ __all__ = [
     "UnsupportedDocumentFormatError",
     "docx_metadata_sidecar_path",
     "pdf_metadata_sidecar_path",
+    "OCRError",
+    "OCRImage",
+    "OCRProvider",
+    "OCRQualityError",
+    "OCRQualityGate",
+    "OCRResult",
+    "TesseractOCRProvider",
 ]

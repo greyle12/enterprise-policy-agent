@@ -89,6 +89,9 @@ jobs:
       - name: Verify Phase 24 DOCX parsing and block provenance
         run: python -X utf8 -m scripts.verify_docx_document_parsing
 
+      - name: Verify Phase 25 OCR fallback and quality boundaries
+        run: python -X utf8 -m scripts.verify_ocr_fallback
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo

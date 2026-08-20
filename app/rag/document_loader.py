@@ -7,6 +7,13 @@ import re
 from types import MappingProxyType
 from typing import Protocol
 
+from app.rag.ocr import (
+    OCRError,
+    OCRImage,
+    OCRProvider,
+    OCRQualityGate,
+)
+
 
 class DocumentLoadError(ValueError):
     """A source document could not be converted into trusted plain text."""
@@ -66,6 +73,10 @@ class LoadedDocument:
     line_page_numbers: tuple[int, ...] = ()
     block_count: int | None = None
     line_block_numbers: tuple[int, ...] = ()
+    ocr_engine: str | None = None
+    ocr_unit_kind: str | None = None
+    ocr_unit_numbers: tuple[int, ...] = ()
+    ocr_unit_confidences: tuple[float, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.text.strip():
@@ -96,6 +107,23 @@ class LoadedDocument:
                 raise ValueError("line_block_numbers must align with text lines")
             if any(block < 1 or block > self.block_count for block in self.line_block_numbers):
                 raise ValueError("line_block_numbers must be within block_count")
+        if self.ocr_unit_numbers:
+            if self.ocr_engine is None or self.ocr_unit_kind is None:
+                raise ValueError("OCR units require ocr_engine and ocr_unit_kind")
+            if self.ocr_unit_kind not in {"page", "block"}:
+                raise ValueError("ocr_unit_kind must be 'page' or 'block'")
+            if len(self.ocr_unit_numbers) != len(self.ocr_unit_confidences):
+                raise ValueError("OCR unit numbers and confidences must align")
+            if any(unit < 1 for unit in self.ocr_unit_numbers):
+                raise ValueError("OCR unit numbers must be greater than zero")
+            if any(not 0.0 <= confidence <= 1.0 for confidence in self.ocr_unit_confidences):
+                raise ValueError("OCR confidences must be between zero and one")
+        elif self.ocr_engine is not None or self.ocr_unit_kind is not None:
+            raise ValueError("OCR engine and kind require OCR units")
+
+    @property
+    def ocr_applied(self) -> bool:
+        return bool(self.ocr_unit_numbers)
 
 
 class DocumentLoader(Protocol):
@@ -179,6 +207,9 @@ DEFAULT_DOCX_MIN_TEXT_CHARACTERS = 20
 class _PDFPage(Protocol):
     def get_text(self, option: str, *, sort: bool) -> str:
         """Extract page text."""
+
+    def get_pixmap(self, *, dpi: int, alpha: bool) -> object:
+        """Render a page for configured OCR fallback."""
 
 
 class _PDFDocument(Protocol):
@@ -302,11 +333,23 @@ class PDFDocumentLoader:
         *,
         minimum_text_characters: int = DEFAULT_PDF_MIN_TEXT_CHARACTERS,
         backend: _PDFBackend | None = None,
+        ocr_provider: OCRProvider | None = None,
+        ocr_quality_gate: OCRQualityGate | None = None,
+        ocr_dpi: int = 200,
+        max_ocr_pages: int = 20,
     ) -> None:
         if minimum_text_characters < 1:
             raise ValueError("minimum_text_characters must be greater than zero")
         self._minimum_text_characters = minimum_text_characters
         self._configured_backend = backend
+        if ocr_dpi < 72 or ocr_dpi > 600:
+            raise ValueError("ocr_dpi must be between 72 and 600")
+        if max_ocr_pages < 1:
+            raise ValueError("max_ocr_pages must be greater than zero")
+        self._ocr_provider = ocr_provider
+        self._ocr_quality_gate = ocr_quality_gate or OCRQualityGate()
+        self._ocr_dpi = ocr_dpi
+        self._max_ocr_pages = max_ocr_pages
 
     @property
     def minimum_text_characters(self) -> int:
@@ -331,7 +374,36 @@ class PDFDocumentLoader:
             metadata_path=metadata_path,
         )
 
-    def _extract_text(self, source_path: Path) -> tuple[str, int, tuple[int, ...]]:
+    def _ocr_page(
+        self, page: _PDFPage, *, source_path: Path, page_number: int
+    ) -> tuple[str, str, float]:
+        if self._ocr_provider is None:
+            raise OCRRequiredError(
+                "PDF page native text is below the configured threshold; "
+                f"OCR fallback is required: page {page_number}"
+            )
+        try:
+            pixmap = page.get_pixmap(dpi=self._ocr_dpi, alpha=False)
+            image_bytes = pixmap.tobytes("png")
+        except Exception as exc:
+            raise InvalidDocumentError(
+                f"cannot render PDF page {page_number} for OCR: {type(exc).__name__}"
+            ) from exc
+        image = OCRImage(
+            data=image_bytes,
+            media_type="image/png",
+            source_path=source_path,
+            container_media_type=self.media_type,
+            unit_kind="page",
+            unit_number=page_number,
+        )
+        result = self._ocr_provider.recognize(image)
+        text = self._ocr_quality_gate.accept(result, image=image)
+        return text, result.engine, result.confidence
+
+    def _extract_text(
+        self, source_path: Path
+    ) -> tuple[str, int, tuple[int, ...], str | None, tuple[int, ...], tuple[float, ...]]:
         try:
             document = self._backend().open(str(source_path))
         except DocumentLoadError:
@@ -347,13 +419,33 @@ class PDFDocumentLoader:
 
             lines: list[str] = []
             page_numbers: list[int] = []
+            ocr_engine: str | None = None
+            ocr_page_numbers: list[int] = []
+            ocr_confidences: list[float] = []
             for zero_based_page in range(document.page_count):
                 page_number = zero_based_page + 1
-                page_text = document[zero_based_page].get_text("text", sort=True)
+                page = document[zero_based_page]
+                page_text = page.get_text("text", sort=True)
                 if not isinstance(page_text, str):
                     raise InvalidDocumentError(
                         f"PDF page extraction returned non-text data: page {page_number}"
                     )
+                native_character_count = sum(not character.isspace() for character in page_text)
+                if native_character_count < self._minimum_text_characters:
+                    if len(ocr_page_numbers) >= self._max_ocr_pages:
+                        raise OCRRequiredError(
+                            f"PDF exceeds configured OCR page limit: {self._max_ocr_pages}"
+                        )
+                    page_text, result_engine, confidence = self._ocr_page(
+                        page,
+                        source_path=source_path,
+                        page_number=page_number,
+                    )
+                    if ocr_engine is not None and ocr_engine != result_engine:
+                        raise OCRError("one document cannot mix multiple OCR engines")
+                    ocr_engine = result_engine
+                    ocr_page_numbers.append(page_number)
+                    ocr_confidences.append(confidence)
                 if lines and lines[-1]:
                     _append_pdf_line(
                         lines,
@@ -372,14 +464,15 @@ class PDFDocumentLoader:
 
             _trim_pdf_lines(lines, page_numbers)
             text = "\n".join(lines)
-            native_character_count = sum(not character.isspace() for character in text)
-            if native_character_count < self._minimum_text_characters:
-                raise OCRRequiredError(
-                    "PDF native text is below the configured threshold; OCR fallback is required: "
-                    f"{native_character_count} < {self._minimum_text_characters}"
-                )
-            return text, document.page_count, tuple(page_numbers)
-        except DocumentLoadError:
+            return (
+                text,
+                document.page_count,
+                tuple(page_numbers),
+                ocr_engine,
+                tuple(ocr_page_numbers),
+                tuple(ocr_confidences),
+            )
+        except (DocumentLoadError, OCRError):
             raise
         except Exception as exc:
             raise InvalidDocumentError(f"cannot extract PDF text: {source_path}: {exc}") from exc
@@ -395,7 +488,14 @@ class PDFDocumentLoader:
             )
 
         metadata_text, metadata_path = self._load_metadata(source_path)
-        text, page_count, line_page_numbers = self._extract_text(source_path)
+        (
+            text,
+            page_count,
+            line_page_numbers,
+            ocr_engine,
+            ocr_page_numbers,
+            ocr_confidences,
+        ) = self._extract_text(source_path)
         return LoadedDocument(
             source_path=source_path,
             text=text,
@@ -405,6 +505,10 @@ class PDFDocumentLoader:
             metadata_source_path=metadata_path,
             page_count=page_count,
             line_page_numbers=line_page_numbers,
+            ocr_engine=ocr_engine,
+            ocr_unit_kind="page" if ocr_page_numbers else None,
+            ocr_unit_numbers=ocr_page_numbers,
+            ocr_unit_confidences=ocr_confidences,
         )
 
 
@@ -473,6 +577,24 @@ def _render_docx_table(table: object) -> tuple[str, ...]:
     return tuple(lines)
 
 
+def _docx_paragraph_images(paragraph: object) -> tuple[tuple[bytes, str], ...]:
+    element = getattr(paragraph, "_p")
+    part = getattr(paragraph, "part")
+    relationship_ids = element.xpath(".//a:blip/@r:embed")
+    images: list[tuple[bytes, str]] = []
+    seen_relationship_ids: set[str] = set()
+    for relationship_id in relationship_ids:
+        if relationship_id in seen_relationship_ids:
+            continue
+        seen_relationship_ids.add(relationship_id)
+        image_part = part.related_parts[relationship_id]
+        blob = bytes(image_part.blob)
+        content_type = str(image_part.content_type)
+        if blob and content_type.startswith("image/"):
+            images.append((blob, content_type))
+    return tuple(images)
+
+
 class DOCXDocumentLoader:
     """Extract DOCX paragraphs and tables with trusted sidecar metadata."""
 
@@ -484,10 +606,18 @@ class DOCXDocumentLoader:
         self,
         *,
         minimum_text_characters: int = DEFAULT_DOCX_MIN_TEXT_CHARACTERS,
+        ocr_provider: OCRProvider | None = None,
+        ocr_quality_gate: OCRQualityGate | None = None,
+        max_ocr_images: int = 50,
     ) -> None:
         if minimum_text_characters < 1:
             raise ValueError("minimum_text_characters must be greater than zero")
         self._minimum_text_characters = minimum_text_characters
+        if max_ocr_images < 1:
+            raise ValueError("max_ocr_images must be greater than zero")
+        self._ocr_provider = ocr_provider
+        self._ocr_quality_gate = ocr_quality_gate or OCRQualityGate()
+        self._max_ocr_images = max_ocr_images
 
     @property
     def minimum_text_characters(self) -> int:
@@ -513,7 +643,31 @@ class DOCXDocumentLoader:
         except Exception as exc:
             raise InvalidDocumentError(f"cannot open DOCX document: {source_path}: {exc}") from exc
 
-    def _extract_text(self, source_path: Path) -> tuple[str, int, tuple[int, ...]]:
+    def _ocr_docx_image(
+        self,
+        data: bytes,
+        media_type: str,
+        *,
+        source_path: Path,
+        block_number: int,
+    ) -> tuple[tuple[str, ...], str, float]:
+        if self._ocr_provider is None:
+            return (), "", 0.0
+        image = OCRImage(
+            data=data,
+            media_type=media_type,
+            source_path=source_path,
+            container_media_type=self.media_type,
+            unit_kind="block",
+            unit_number=block_number,
+        )
+        result = self._ocr_provider.recognize(image)
+        text = self._ocr_quality_gate.accept(result, image=image)
+        return _normalize_docx_paragraph(text, ""), result.engine, result.confidence
+
+    def _extract_text(
+        self, source_path: Path
+    ) -> tuple[str, int, tuple[int, ...], str | None, tuple[int, ...], tuple[float, ...]]:
         document = self._open(source_path)
         try:
             from docx.table import Table
@@ -526,11 +680,37 @@ class DOCXDocumentLoader:
         lines: list[str] = []
         block_numbers: list[int] = []
         block_count = 0
+        ocr_engine: str | None = None
+        ocr_block_numbers: list[int] = []
+        ocr_confidences: list[float] = []
+        embedded_image_count = 0
         try:
             for block_count, block in enumerate(document.iter_inner_content(), start=1):
                 if isinstance(block, Paragraph):
                     style_name = block.style.name if block.style is not None else ""
                     block_lines = _normalize_docx_paragraph(block.text, style_name)
+                    images = _docx_paragraph_images(block)
+                    embedded_image_count += len(images)
+                    if embedded_image_count > self._max_ocr_images:
+                        raise OCRRequiredError(
+                            f"DOCX exceeds configured OCR image limit: {self._max_ocr_images}"
+                        )
+                    if images and not block_lines and self._ocr_provider is not None:
+                        recognized_lines: list[str] = []
+                        for image_data, image_media_type in images:
+                            image_lines, result_engine, confidence = self._ocr_docx_image(
+                                image_data,
+                                image_media_type,
+                                source_path=source_path,
+                                block_number=block_count,
+                            )
+                            if ocr_engine is not None and ocr_engine != result_engine:
+                                raise OCRError("one document cannot mix multiple OCR engines")
+                            ocr_engine = result_engine
+                            recognized_lines.extend(image_lines)
+                            ocr_block_numbers.append(block_count)
+                            ocr_confidences.append(confidence)
+                        block_lines = tuple(recognized_lines)
                 elif isinstance(block, Table):
                     block_lines = _render_docx_table(block)
                 else:
@@ -543,7 +723,7 @@ class DOCXDocumentLoader:
                     block_numbers.append(block_count)
                 lines.extend(block_lines)
                 block_numbers.extend(block_count for _ in block_lines)
-        except DocumentLoadError:
+        except (DocumentLoadError, OCRError):
             raise
         except Exception as exc:
             raise InvalidDocumentError(f"cannot extract DOCX text: {source_path}: {exc}") from exc
@@ -555,12 +735,19 @@ class DOCXDocumentLoader:
         native_character_count = sum(not character.isspace() for character in text)
         if native_character_count < self._minimum_text_characters:
             raise OCRRequiredError(
-                "DOCX native text is below the configured threshold; OCR fallback is required: "
+                "DOCX extracted text is below the configured threshold; OCR fallback is required: "
                 f"{native_character_count} < {self._minimum_text_characters}"
             )
         if block_count < 1:
             raise InvalidDocumentError(f"DOCX document contains no body blocks: {source_path}")
-        return text, block_count, tuple(block_numbers)
+        return (
+            text,
+            block_count,
+            tuple(block_numbers),
+            ocr_engine,
+            tuple(ocr_block_numbers),
+            tuple(ocr_confidences),
+        )
 
     def load(self, path: Path) -> LoadedDocument:
         source_path = Path(path)
@@ -571,7 +758,14 @@ class DOCXDocumentLoader:
             )
 
         metadata_text, metadata_path = self._load_metadata(source_path)
-        text, block_count, line_block_numbers = self._extract_text(source_path)
+        (
+            text,
+            block_count,
+            line_block_numbers,
+            ocr_engine,
+            ocr_block_numbers,
+            ocr_confidences,
+        ) = self._extract_text(source_path)
         return LoadedDocument(
             source_path=source_path,
             text=text,
@@ -581,6 +775,10 @@ class DOCXDocumentLoader:
             metadata_source_path=metadata_path,
             block_count=block_count,
             line_block_numbers=line_block_numbers,
+            ocr_engine=ocr_engine,
+            ocr_unit_kind="block" if ocr_block_numbers else None,
+            ocr_unit_numbers=ocr_block_numbers,
+            ocr_unit_confidences=ocr_confidences,
         )
 
 

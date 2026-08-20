@@ -115,6 +115,10 @@ class PolicyDocument(BaseModel):
         ge=1,
     )
     content_block_numbers: tuple[int, ...] = ()
+    source_ocr_engine: str | None = None
+    source_ocr_unit_kind: str | None = None
+    source_ocr_unit_numbers: tuple[int, ...] = ()
+    source_ocr_unit_confidences: tuple[float, ...] = ()
     raw_text: str = Field(
         min_length=1,
         description="Document Loader 输出的规范化全文",
@@ -142,7 +146,22 @@ class PolicyDocument(BaseModel):
                 for block_number in self.content_block_numbers
             ):
                 raise ValueError("content_block_numbers 必须位于 DOCX 块序号范围内")
+        if self.source_ocr_unit_numbers:
+            if self.source_ocr_engine is None or self.source_ocr_unit_kind is None:
+                raise ValueError("OCR 来源单元需要 engine 和 unit kind")
+            if self.source_ocr_unit_kind not in {"page", "block"}:
+                raise ValueError("OCR unit kind 必须是 page 或 block")
+            if len(self.source_ocr_unit_numbers) != len(self.source_ocr_unit_confidences):
+                raise ValueError("OCR 来源单元与置信度必须一一对应")
+            if any(not 0.0 <= confidence <= 1.0 for confidence in self.source_ocr_unit_confidences):
+                raise ValueError("OCR 置信度必须位于 0 到 1")
+        elif self.source_ocr_engine is not None or self.source_ocr_unit_kind is not None:
+            raise ValueError("OCR engine 和 unit kind 需要 OCR 来源单元")
         return self
+
+    @property
+    def source_ocr_applied(self) -> bool:
+        return bool(self.source_ocr_unit_numbers)
 
     @property
     def document_id(self) -> str:

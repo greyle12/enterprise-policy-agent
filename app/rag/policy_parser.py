@@ -17,6 +17,7 @@ from app.rag.document_loader import (
     LoadedDocument,
     UnsupportedDocumentFormatError,
 )
+from app.rag.ocr import OCRError
 from app.schemas.policy import PolicyDocument, PolicyMetadata
 
 
@@ -89,6 +90,10 @@ def parse_policy_text(
     content_page_numbers: tuple[int, ...] = (),
     source_block_count: int | None = None,
     content_block_numbers: tuple[int, ...] = (),
+    source_ocr_engine: str | None = None,
+    source_ocr_unit_kind: str | None = None,
+    source_ocr_unit_numbers: tuple[int, ...] = (),
+    source_ocr_unit_confidences: tuple[float, ...] = (),
 ) -> PolicyDocument:
     """Parse normalized policy text with inline or trusted external metadata."""
 
@@ -147,6 +152,10 @@ def parse_policy_text(
         content_page_numbers=normalized_page_numbers,
         source_block_count=source_block_count,
         content_block_numbers=normalized_block_numbers,
+        source_ocr_engine=source_ocr_engine,
+        source_ocr_unit_kind=source_ocr_unit_kind,
+        source_ocr_unit_numbers=source_ocr_unit_numbers,
+        source_ocr_unit_confidences=source_ocr_unit_confidences,
         raw_text=raw_text,
     )
 
@@ -165,6 +174,10 @@ def parse_loaded_policy(loaded: LoadedDocument) -> PolicyDocument:
         content_page_numbers=loaded.line_page_numbers,
         source_block_count=loaded.block_count,
         content_block_numbers=loaded.line_block_numbers,
+        source_ocr_engine=loaded.ocr_engine,
+        source_ocr_unit_kind=loaded.ocr_unit_kind,
+        source_ocr_unit_numbers=loaded.ocr_unit_numbers,
+        source_ocr_unit_confidences=loaded.ocr_unit_confidences,
     )
 
 
@@ -194,6 +207,8 @@ def parse_policy_file(
         raise PolicyParseError("制度文件内容为空") from exc
     except DocumentLoadError as exc:
         raise PolicyParseError(f"读取制度文件失败：{source_path}，原因：{exc}") from exc
+    except OCRError as exc:
+        raise PolicyParseError(f"制度 OCR 失败：{source_path}，原因：{exc}") from exc
 
     return parse_loaded_policy(loaded)
 

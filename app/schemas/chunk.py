@@ -91,6 +91,10 @@ class PolicyChunk(BaseModel):
     source_page_end: int | None = Field(default=None, ge=1)
     source_block_start: int | None = Field(default=None, ge=1)
     source_block_end: int | None = Field(default=None, ge=1)
+    source_ocr_engine: str | None = None
+    source_ocr_unit_kind: str | None = None
+    source_ocr_unit_numbers: tuple[int, ...] = ()
+    source_ocr_confidence_min: float | None = Field(default=None, ge=0.0, le=1.0)
 
     effective_date: date
     expiry_date: date | None = None
@@ -147,6 +151,20 @@ class PolicyChunk(BaseModel):
         ):
             raise ValueError("source_block_end 不能小于 source_block_start")
 
+        if self.source_ocr_unit_numbers:
+            if self.source_ocr_engine is None or self.source_ocr_unit_kind is None:
+                raise ValueError("OCR 来源单元需要 engine 和 unit kind")
+            if self.source_ocr_unit_kind not in {"page", "block"}:
+                raise ValueError("OCR unit kind 必须是 page 或 block")
+            if self.source_ocr_confidence_min is None:
+                raise ValueError("OCR 来源单元需要最低置信度")
+        elif (
+            self.source_ocr_engine is not None
+            or self.source_ocr_unit_kind is not None
+            or self.source_ocr_confidence_min is not None
+        ):
+            raise ValueError("OCR provenance 需要 OCR 来源单元")
+
         if self.char_count != len(self.content):
             raise ValueError("char_count 必须等于 content 的实际字符数")
 
@@ -156,3 +174,7 @@ class PolicyChunk(BaseModel):
             raise ValueError("content_hash 与 content 内容不一致")
 
         return self
+
+    @property
+    def source_ocr_applied(self) -> bool:
+        return bool(self.source_ocr_unit_numbers)

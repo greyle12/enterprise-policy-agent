@@ -147,6 +147,47 @@ def _source_block_range(
     return min(block_numbers), max(block_numbers)
 
 
+def _source_ocr_provenance(
+    document: PolicyDocument,
+    *,
+    source_page_start: int | None,
+    source_page_end: int | None,
+    source_block_start: int | None,
+    source_block_end: int | None,
+) -> tuple[str | None, str | None, tuple[int, ...], float | None]:
+    if not document.source_ocr_unit_numbers:
+        return None, None, (), None
+
+    if document.source_ocr_unit_kind == "page":
+        range_start, range_end = source_page_start, source_page_end
+    else:
+        range_start, range_end = source_block_start, source_block_end
+    if range_start is None or range_end is None:
+        raise PolicyChunkingError("OCR 来源单元没有对应的 Chunk 范围")
+
+    confidences_by_unit: dict[int, float] = {}
+    for unit_number, confidence in zip(
+        document.source_ocr_unit_numbers,
+        document.source_ocr_unit_confidences,
+        strict=True,
+    ):
+        if range_start <= unit_number <= range_end:
+            previous = confidences_by_unit.get(unit_number)
+            confidences_by_unit[unit_number] = (
+                confidence if previous is None else min(previous, confidence)
+            )
+
+    if not confidences_by_unit:
+        return None, None, (), None
+    unit_numbers = tuple(sorted(confidences_by_unit))
+    return (
+        document.source_ocr_engine,
+        document.source_ocr_unit_kind,
+        unit_numbers,
+        min(confidences_by_unit.values()),
+    )
+
+
 def _finalize_article(
     *,
     document: PolicyDocument,
@@ -190,6 +231,18 @@ def _finalize_article(
         source_line_start=buffer.source_line_start,
         source_line_end=actual_line_end,
     )
+    (
+        source_ocr_engine,
+        source_ocr_unit_kind,
+        source_ocr_unit_numbers,
+        source_ocr_confidence_min,
+    ) = _source_ocr_provenance(
+        document,
+        source_page_start=source_page_start,
+        source_page_end=source_page_end,
+        source_block_start=source_block_start,
+        source_block_end=source_block_end,
+    )
 
     return PolicyChunk(
         chunk_id=_build_chunk_id(
@@ -218,6 +271,10 @@ def _finalize_article(
         source_page_end=source_page_end,
         source_block_start=source_block_start,
         source_block_end=source_block_end,
+        source_ocr_engine=source_ocr_engine,
+        source_ocr_unit_kind=source_ocr_unit_kind,
+        source_ocr_unit_numbers=source_ocr_unit_numbers,
+        source_ocr_confidence_min=source_ocr_confidence_min,
         effective_date=metadata.effective_date,
         expiry_date=metadata.expiry_date,
         allowed_departments=list(metadata.allowed_departments),

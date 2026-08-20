@@ -63,6 +63,10 @@ def _result() -> PolicyResearchAnswer:
         source_page_end=4,
         source_block_start=9,
         source_block_end=11,
+        source_ocr_engine="tesseract",
+        source_ocr_unit_kind="page",
+        source_ocr_unit_numbers=(4,),
+        source_ocr_confidence_min=0.91,
     )
     policy_answer = PolicyAnswer(
         question="对比差旅报销要求",
@@ -151,6 +155,10 @@ def test_returns_research_sources_with_explicit_authority_boundary() -> None:
     assert payload["internal_sources"][0]["source_page_end"] == 4
     assert payload["internal_sources"][0]["source_block_start"] == 9
     assert payload["internal_sources"][0]["source_block_end"] == 11
+    assert payload["internal_sources"][0]["source_ocr_engine"] == "tesseract"
+    assert payload["internal_sources"][0]["source_ocr_unit_kind"] == "page"
+    assert payload["internal_sources"][0]["source_ocr_unit_numbers"] == [4]
+    assert payload["internal_sources"][0]["source_ocr_confidence_min"] == 0.91
     assert payload["external_sources"][0] == {
         "source_id": "W1",
         "title": "公开指南",

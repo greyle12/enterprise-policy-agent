@@ -58,6 +58,7 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_document_loader" in workflow
     assert "scripts.verify_pdf_document_parsing" in workflow
     assert "scripts.verify_docx_document_parsing" in workflow
+    assert "scripts.verify_ocr_fallback" in workflow
     assert "scripts.run_portfolio_demo" in workflow
     assert "--output-dir artifacts/portfolio" in workflow
     assert "scripts.verify_portfolio_release" in workflow

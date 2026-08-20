@@ -76,6 +76,13 @@ def _build_record_metadata(
     if chunk.source_block_start is not None and chunk.source_block_end is not None:
         metadata["source_block_start"] = str(chunk.source_block_start)
         metadata["source_block_end"] = str(chunk.source_block_end)
+    if chunk.source_ocr_applied:
+        metadata["source_ocr_engine"] = chunk.source_ocr_engine or ""
+        metadata["source_ocr_unit_kind"] = chunk.source_ocr_unit_kind or ""
+        metadata["source_ocr_unit_numbers"] = ",".join(
+            str(number) for number in chunk.source_ocr_unit_numbers
+        )
+        metadata["source_ocr_confidence_min"] = str(chunk.source_ocr_confidence_min)
     return metadata
 
 
