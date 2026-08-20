@@ -56,6 +56,11 @@ from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.rag.reranking import (
+    BGERerankingProvider,
+    RerankerProviderName,
+    RerankingProvider,
+)
 from app.resilience import ResilientToolExecutor
 from app.research import (
     DisabledWebSearchProvider,
@@ -107,16 +112,19 @@ def _build_policy_answer_service(
 ]:
     """创建真实制度问答服务及其 LLM 客户端。"""
 
+    settings = get_settings()
     embedding_provider = BGEEmbeddingProvider(
         model_name=_EMBEDDING_MODEL_NAME,
     )
+    reranking_provider = _build_reranking_provider(settings)
     raw_retriever = PolicyRetriever.from_directory(
         _POLICY_DIRECTORY,
         embedding_provider=embedding_provider,
+        reranking_provider=reranking_provider,
+        rerank_candidate_k=settings.rag_reranker_candidate_k,
     )
     retriever = raw_retriever.restrict(_DEMO_POLICY_ACCESS_CONTEXT)
 
-    settings = get_settings()
     raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
     provider_limiter = _build_llm_provider_limiter(settings, raw_llm_client)
     cache_backend = _build_llm_cache_backend(settings)
@@ -140,6 +148,18 @@ def _build_policy_answer_service(
     )
 
     return service, llm_client, provider_limiter
+
+
+def _build_reranking_provider(settings: Settings) -> RerankingProvider | None:
+    """Create the explicit optional Cross-Encoder boundary."""
+
+    if settings.rag_reranker_provider is RerankerProviderName.DISABLED:
+        return None
+    return BGERerankingProvider(
+        model_name=settings.rag_reranker_model_name,
+        device=settings.rag_reranker_device,
+        batch_size=settings.rag_reranker_batch_size,
+    )
 
 
 def _build_llm_provider_limiter(

@@ -214,6 +214,18 @@ def test_rejects_missing_hybrid_search_gate(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_reranker_integration_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_reranker_integration",
+        "python -X utf8 -c \"print('Reranker integration gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_portfolio_demo_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(

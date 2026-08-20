@@ -151,7 +151,7 @@ Trusted metadata
 → Context Builder
 ```
 
-未授权 PDF Chunk 仍然在 Vector/BM25 和 RRF 前排除。PDF 正文即使包含恶意指令，召回后仍会在进入 Prompt
+未授权 PDF Chunk 仍然在 Vector/BM25、RRF 和 Reranker 前排除。PDF 正文即使包含恶意指令，召回后仍会在进入 Prompt
 前被证据污染检测隔离。
 
 ## 9. 测试和验证

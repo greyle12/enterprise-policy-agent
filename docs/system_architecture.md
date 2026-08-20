@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Advanced RAG Phase 27 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 28 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -14,13 +14,13 @@ flowchart TD
     Agent --> Rules["确定性业务规则"]
     Agent --> State["SQLite 状态与审计"]
     Agent --> Research["Research Assistant"]
-    RAG --> Policies["Loader / Vector + BM25 / RRF"]
+    RAG --> Policies["Loader / Hybrid / Optional Reranker"]
     Research --> External["外部系统边界"]
     Services --> Observe["日志 / 指标 / Request ID"]
 ```
 
 请求首先经过 FastAPI 输入校验、请求 ID 和提示注入检查。制度问答在可信身份允许的 Chunk
-范围内分别进行 Vector 与 BM25 检索，再用 RRF 融合候选，构建带 `S1/S2` 映射的 JSON 证据并交给 LLM。业务办理由 LangGraph
+范围内分别进行 Vector 与 BM25 检索，再用 RRF 融合候选；启用时由 BGE Cross-Encoder 精排，随后构建带 `S1/S2` 映射的 JSON 证据并交给 LLM。业务办理由 LangGraph
 编排，但材料、金额、审批路线、草稿状态和提交幂等性由确定性代码负责。
 
 ## 2. 一次请求的关键顺序
@@ -92,6 +92,7 @@ flowchart LR
     Loader --> Chunks["结构化 Chunk"]
     Chunks --> Index["内存 Vector + BM25 索引"]
     Index --> Fusion["RRF Hybrid Fusion"]
+    Fusion --> Reranker["可选 BGE Reranker"]
     AgentState["Agent 状态"] --> SQLite["SQLite"]
     Audit["提交审计"] --> SQLite
     Cache["LLM 精确缓存"] --> Redis["可选 Redis"]
@@ -100,7 +101,8 @@ flowchart LR
 - 制度索引目前为单进程内存结构，正式 BGE 默认维度为 512，BM25 使用同一批 `retrieval_text`；
 - 可信身份先产生授权 Chunk 白名单；向量相似度与 BM25 候选、DF、平均长度和评分都只能查看该白名单；
 - Vector 与 BM25 分别召回授权候选，RRF 只按名次融合并保留每路诊断信号；
-- 制度问答正式使用 Hybrid Search；BGE Reranker 仍是独立契约，尚未接入主链路；
+- 制度问答正式使用统一 Reranked 入口；Provider disabled 时返回 RRF，配置 bge 时批量 Cross-Encoder 精排；
+- Reranker 只接收已经授权的 RRF 候选，并保留原始融合分数、名次和两路诊断信号；
 - Loader Registry 注册 Markdown、PyMuPDF 和 python-docx Loader；PDF/DOCX 可显式注入 OCR Provider；
 - PDF/DOCX 权限元数据来自受控 sidecar；PDF 保留页码，DOCX 保留顶层块范围；
 - OCR 低置信度结果在 Parser/索引前拒绝，通过结果保留 engine、单元与置信度来源；

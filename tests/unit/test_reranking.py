@@ -64,6 +64,8 @@ def test_bge_reranker_scores_all_pairs_in_one_call() -> None:
 
     assert scores == [0.2, 0.9]
     assert provider.batch_size == 8
+    assert provider.model_name == "BAAI/bge-reranker-v2-m3"
+    assert provider.device is None
     assert model.calls == [
         {
             "sentences": [("差旅要求", "第一条制度"), ("差旅要求", "第二条制度")],

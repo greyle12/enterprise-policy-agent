@@ -190,4 +190,5 @@ DOCX 使用相同的受信任 sidecar 规则：`policy.docx` 对应 `policy.meta
 ### 这个改动怎样保证授权过滤仍在 Hybrid Search 前？
 
 Loader 只改变索引输入；`AccessControlledPolicyRetriever` 仍先计算授权 Chunk ID，再将
-`allowed_record_ids` 同时交给 Vector 与 BM25。RRF 只能融合两路已经授权的排名。
+`allowed_record_ids` 同时交给 Vector 与 BM25。RRF 只能融合两路已经授权的排名，Phase 28 Reranker
+也只能接收这批授权候选。

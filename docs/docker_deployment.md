@@ -43,6 +43,17 @@ LLM_MODEL=你的模型名称
 
 `.env` 已被 Git 和 Docker build context 排除，不会写入镜像。不要把真实密钥写入 `Dockerfile`、`compose.yaml` 或 `.env.example`。
 
+Reranker 默认关闭。需要真实 BGE 精排时在 `.env` 中设置：
+
+```dotenv
+RAG_RERANKER_PROVIDER=bge
+RAG_RERANKER_MODEL_NAME=BAAI/bge-reranker-v2-m3
+RAG_RERANKER_BATCH_SIZE=8
+RAG_RERANKER_CANDIDATE_K=20
+```
+
+模型会复用 Compose 的 `model_cache` 具名卷。首次启动可能下载权重并延长 readiness 时间；CPU 环境还会增加请求延迟，不能把离线 fixture 性能当作真实模型性能。
+
 ## 3. 校验并一键启动
 
 先校验 Compose 配置：
@@ -57,7 +68,7 @@ docker compose config --quiet
 docker compose up --build --detach --wait
 ```
 
-第一次构建需要安装 `sentence-transformers` 和 PyTorch，第一次启动还需要下载 `BAAI/bge-small-zh-v1.5`。因此所需时间和镜像体积都会明显大于普通 FastAPI 项目。模型下载完成后会保存在 `model_cache` 具名卷中，后续重建容器不必重复下载。
+第一次构建需要安装 `sentence-transformers` 和 PyTorch，第一次启动还需要下载 `BAAI/bge-small-zh-v1.5`；如果显式启用 Reranker，还会下载 `BAAI/bge-reranker-v2-m3`。因此所需时间和镜像体积都会明显大于普通 FastAPI 项目。模型下载完成后会保存在 `model_cache` 具名卷中，后续重建容器不必重复下载。
 
 如果 Docker Desktop 内下载大型 PyTorch wheel 不稳定，可以把已校验的 CPU wheel 保留在
 `vendor/wheels/`。该二进制已被 `.gitignore` 排除，不应提交；CI 在 Dockerfile 引用它时会

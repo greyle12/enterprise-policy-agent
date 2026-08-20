@@ -132,7 +132,7 @@ Phase 26 的 `InMemoryBM25Index` 适合当前 199 个 Chunk 的作品集验证�
 - 没有字段权重、短语查询、模糊匹配和增量删除；
 - 单进程索引不适合多实例一致性；
 - 尚未通过 Recall@K、MRR 数据集比较参数和 Tokenizer；
-- Phase 27 已与向量检索融合，但尚未通过 Retrieval Evaluation 调参，也未正式接入 BGE Reranker。
+- Phase 27 已与向量检索融合，Phase 28 已接入可选 BGE Reranker，但仍未通过 Retrieval Evaluation 调参。
 
 较大规模生产系统通常会考虑 PostgreSQL 全文检索、OpenSearch/Elasticsearch/Lucene 或专用检索服务。Phase 29 的 pgvector 解决向量持久化，不会自动替代 BM25 倒排索引设计。
 

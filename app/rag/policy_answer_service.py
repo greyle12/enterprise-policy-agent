@@ -37,13 +37,13 @@ _NO_EVIDENCE_ANSWER = "未检索到可用于回答该问题的制度依据，暂
 class PolicySearcher(Protocol):
     """回答服务依赖的最小制度检索接口。"""
 
-    def search_hybrid(
+    def search_reranked(
         self,
         query: str,
         *,
         top_k: int = 5,
     ) -> list[PolicyRetrievalResult]:
-        """通过 Vector、BM25 和 RRF 检索与问题相关的制度内容。"""
+        """通过授权 Hybrid 候选和可选 Reranker 检索制度内容。"""
 
         ...
 
@@ -100,7 +100,7 @@ class PolicyAnswerService:
 
         self._prompt_guard.enforce_user_input(normalized_question)
 
-        retrieval_results = self._retriever.search_hybrid(
+        retrieval_results = self._retriever.search_reranked(
             normalized_question,
             top_k=self._top_k,
         )

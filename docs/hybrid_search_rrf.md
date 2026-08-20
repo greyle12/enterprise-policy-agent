@@ -13,6 +13,9 @@ Phase 26 已经具备两个独立检索通道：
 本阶段不接 BGE Reranker。RRF 负责召回融合，Phase 28 的 cross-encoder 负责对融合后的候选做
 更精细的 Query-Document 相关性判断。
 
+> 当前状态更新：Phase 28 已将可选 BGE Reranker 接入 RRF 候选之后；本文其余内容保留
+> Phase 27 的融合层设计和消融边界。
+
 ## 2. Pipeline 位置
 
 ```text
@@ -119,13 +122,14 @@ Vector Search 的余弦相似度和 BM25 的词频相关分数没有共同量纲
 
 ## 7. 正式检索链路接入
 
-`PolicyAnswerService` 的最小检索 Protocol 从 `search()` 调整为 `search_hybrid()`。因此正式制度问答
-现在执行：
+Phase 27 时，`PolicyAnswerService` 的最小检索 Protocol 从 `search()` 调整为 `search_hybrid()`；
+Phase 28 又统一为 `search_reranked()`。因此当前正式制度问答执行：
 
 ```text
 user input guard
-→ AccessControlledPolicyRetriever.search_hybrid
-→ RRF fused results
+→ AccessControlledPolicyRetriever.search_reranked
+→ RRF fused candidates
+→ optional Cross-Encoder reranker
 → evidence prompt-injection guard
 → context builder
 → LLM
@@ -136,14 +140,15 @@ user input guard
 
 ## 8. 安全设计
 
-`AccessControlledPolicyRetriever.search_hybrid()` 只计算一次授权集合，并把同一不可扩大的白名单传给
-Vector 与 BM25：
+`AccessControlledPolicyRetriever.search_hybrid()` 与 `search_reranked()` 都只计算一次授权集合，并把
+同一不可扩大的白名单传给 Vector 与 BM25；Reranker 只能接收它们产生的授权候选：
 
 ```text
 Authorization Filter
 → Vector Similarity
 → BM25 candidate/statistics/scoring
 → RRF
+→ optional Reranker
 ```
 
 不允许：
@@ -211,7 +216,7 @@ python -X utf8 -m scripts.verify_hybrid_search
   "bm25_index_size": 199,
   "rrf_rank_constant": 60,
   "default_candidate_k": 20,
-  "bge_reranker_enabled": false
+  "verification_scope": "hybrid_rrf_without_reranker"
 }
 ```
 
@@ -223,7 +228,7 @@ python -X utf8 -m scripts.verify_hybrid_search
 - `candidate_k` 与 `rank_constant` 尚未通过标注集调优；
 - 未实现 Weighted RRF、字段权重和 Query Router；
 - 没有记录线上点击或人工相关性反馈；
-- 尚未接入 BGE Reranker；
+- Phase 28 已接入可选 BGE Reranker，但尚无真实模型效果与延迟评测；
 - 尚未用 Recall@K、MRR、nDCG 比较 Vector、BM25 和 Hybrid。
 
 ## 12. 面试官可能追问

@@ -13,6 +13,10 @@ from pydantic_settings import (
 
 from app.cache import CacheProviderName
 from app.research.models import WebSearchProviderName
+from app.rag.reranking import (
+    DEFAULT_BGE_RERANKER_MODEL_NAME,
+    RerankerProviderName,
+)
 
 
 class Settings(BaseSettings):
@@ -126,6 +130,22 @@ class Settings(BaseSettings):
         ge=1,
         le=5,
     )
+    rag_reranker_provider: RerankerProviderName = RerankerProviderName.DISABLED
+    rag_reranker_model_name: str = Field(
+        default=DEFAULT_BGE_RERANKER_MODEL_NAME,
+        min_length=1,
+    )
+    rag_reranker_device: str | None = None
+    rag_reranker_batch_size: int = Field(
+        default=8,
+        ge=1,
+        le=128,
+    )
+    rag_reranker_candidate_k: int = Field(
+        default=20,
+        ge=5,
+        le=100,
+    )
     sqlite_database_path: Path = Path("data/runtime/enterprise_policy_agent.db")
 
     @field_validator("redis_url")
@@ -141,6 +161,14 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_log_level(cls, value: object) -> object:
         return value.strip().upper() if isinstance(value, str) else value
+
+    @field_validator("rag_reranker_device", mode="before")
+    @classmethod
+    def normalize_optional_reranker_device(cls, value: object) -> object:
+        if isinstance(value, str):
+            normalized = value.strip()
+            return normalized or None
+        return value
 
     @model_validator(mode="after")
     def validate_agent_retry_wait_range(self) -> Self:

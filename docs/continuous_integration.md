@@ -16,6 +16,7 @@ Advanced RAG Phase 24 增加真实 DOCX 动态生成、段落/表格顺序、sid
 Advanced RAG Phase 25 增加扫描 PDF、图片型 DOCX、OCR provenance、低置信度拒绝和安全边界契约。
 Advanced RAG Phase 26 增加 BM25 词面排序、企业编号检索、授权范围统计和原有向量通道回归契约。
 Advanced RAG Phase 27 增加 Vector/BM25 候选融合、RRF 贡献、单通道降级和正式问答链路契约。
+Advanced RAG Phase 28 增加 RRF 候选批量精排、授权前置、配置回退和正式 Reranker 入口契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -100,6 +101,7 @@ timeout 30 分钟
 → Phase 25 PDF/DOCX OCR fallback 与质量门禁离线契约
 → Phase 26 authorization-scoped BM25 关键词检索离线契约
 → Phase 27 authorization-scoped Hybrid Search 与 RRF 离线契约
+→ Phase 28 authorization-scoped Reranker 正式接入离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -109,7 +111,7 @@ timeout 30 分钟
 任意一步返回非零退出码，Job 即失败。
 
 离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
-Document Loader、PDF/DOCX/OCR、BM25/Hybrid、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
+Document Loader、PDF/DOCX/OCR、BM25/Hybrid/Reranker、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
 也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。Loader 专项读取
 仓库中的 Markdown；PDF/DOCX/OCR 专项在临时目录动态生成真实文档和 sidecar，不保存用户文档。
 OCR CI 使用确定性进程内 Provider，不安装或调用系统 Tesseract。可观测性
@@ -238,6 +240,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_ocr_fallback
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_bm25_retrieval
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_hybrid_search
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_reranker_integration
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -282,6 +285,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | OCR fallback 契约失败 | 单独运行 `scripts.verify_ocr_fallback`，检查 PDF 页渲染、DOCX 图片、置信度门禁、provenance 和安全顺序 |
 | BM25 检索契约失败 | 单独运行 `scripts.verify_bm25_retrieval`，检查 199 Chunk、词面命中、企业编号、授权候选和 scope-local 统计 |
 | Hybrid/RRF 契约失败 | 单独运行 `scripts.verify_hybrid_search`，检查两路候选、RRF 贡献、去重、单通道降级和融合前授权 |
+| Reranker 接入契约失败 | 单独运行 `scripts.verify_reranker_integration`，检查候选池、单次批量调用、原始 RRF 诊断、禁用回退和 Provider 前授权 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -298,7 +302,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不运行真实 LLM 评测；
 - 不把离线性能预算解释为真实模型或公网 SLA；
 - 不运行生产级持续压测、py-spy 或 Scalene；Day 25 只执行短时、确定性的离线 load shape；
-- 不运行真实 BGE Reranker；Day 26 只执行固定离线模型替身；
+- 不运行真实 BGE Reranker；Day 26 的批处理对照与 Advanced RAG Phase 28 的主链路验收都只执行固定离线模型替身；
 - 不调用真实 LLM 验证容量；Day 27 只执行固定离线 Provider 替身；
 - 不启动 Prometheus、Grafana 或日志采集器；Day 28 只验证进程内指标、格式和脱敏契约；
 - 不连接真实身份系统或调用模型执行红队；Day 29 只使用固定离线身份、制度和攻击夹具；

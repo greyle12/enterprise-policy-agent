@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from app.cache import CacheProviderName
 from app.core.config import Settings
+from app.rag.reranking import RerankerProviderName
 from app.research import WebSearchProviderName
 
 _ENVIRONMENT_NAMES = (
@@ -35,6 +36,11 @@ _ENVIRONMENT_NAMES = (
     "TAVILY_API_KEY",
     "WEB_SEARCH_TIMEOUT_SECONDS",
     "WEB_SEARCH_MAX_RESULTS",
+    "RAG_RERANKER_PROVIDER",
+    "RAG_RERANKER_MODEL_NAME",
+    "RAG_RERANKER_DEVICE",
+    "RAG_RERANKER_BATCH_SIZE",
+    "RAG_RERANKER_CANDIDATE_K",
     "SQLITE_DATABASE_PATH",
 )
 
@@ -79,6 +85,11 @@ def test_uses_default_llm_settings() -> None:
     assert settings.tavily_api_key is None
     assert settings.web_search_timeout_seconds == 10.0
     assert settings.web_search_max_results == 3
+    assert settings.rag_reranker_provider is RerankerProviderName.DISABLED
+    assert settings.rag_reranker_model_name == "BAAI/bge-reranker-v2-m3"
+    assert settings.rag_reranker_device is None
+    assert settings.rag_reranker_batch_size == 8
+    assert settings.rag_reranker_candidate_k == 20
     assert settings.sqlite_database_path == Path("data/runtime/enterprise_policy_agent.db")
     assert settings.llm_api_key.get_secret_value() == "test-key"
 
@@ -116,6 +127,11 @@ def test_loads_llm_settings_from_env_file(
             "TAVILY_API_KEY=tvly-env-test-key\n"
             "WEB_SEARCH_TIMEOUT_SECONDS=8\n"
             "WEB_SEARCH_MAX_RESULTS=4\n"
+            "RAG_RERANKER_PROVIDER=bge\n"
+            "RAG_RERANKER_MODEL_NAME=company/reranker\n"
+            "RAG_RERANKER_DEVICE=cpu\n"
+            "RAG_RERANKER_BATCH_SIZE=16\n"
+            "RAG_RERANKER_CANDIDATE_K=30\n"
             "SQLITE_DATABASE_PATH=data/test-agent.db"
         ),
         encoding="utf-8",
@@ -151,6 +167,11 @@ def test_loads_llm_settings_from_env_file(
     assert settings.tavily_api_key.get_secret_value() == "tvly-env-test-key"
     assert settings.web_search_timeout_seconds == 8.0
     assert settings.web_search_max_results == 4
+    assert settings.rag_reranker_provider is RerankerProviderName.BGE
+    assert settings.rag_reranker_model_name == "company/reranker"
+    assert settings.rag_reranker_device == "cpu"
+    assert settings.rag_reranker_batch_size == 16
+    assert settings.rag_reranker_candidate_k == 30
     assert settings.sqlite_database_path == Path("data/test-agent.db")
 
 
@@ -181,6 +202,10 @@ def test_loads_llm_settings_from_env_file(
         ("web_search_timeout_seconds", 0),
         ("web_search_max_results", 0),
         ("web_search_max_results", 6),
+        ("rag_reranker_batch_size", 0),
+        ("rag_reranker_batch_size", 129),
+        ("rag_reranker_candidate_k", 4),
+        ("rag_reranker_candidate_k", 101),
     ],
 )
 def test_rejects_invalid_numeric_settings(

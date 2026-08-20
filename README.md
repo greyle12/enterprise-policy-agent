@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 27：Hybrid Search + RRF（已完成）
+Advanced RAG Phase 28：BGE Reranker 正式接入（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -313,11 +313,15 @@ Advanced RAG Phase 27：Hybrid Search + RRF（已完成）
 - [x] 跨通道 Chunk 去重、来源名次、原始分数和融合贡献诊断；
 - [x] `PolicyAnswerService` 正式切换到授权范围内的 Hybrid Search；
 - [x] RRF、单通道降级、权限前置和 199 Chunk 完全离线 CI 验收。
+- [x] RRF Top-20 候选到 Cross-Encoder 的单次批量重排；
+- [x] Rerank 后保留 Vector/BM25 信号、RRF 分数和原始名次；
+- [x] 可配置 BGE Provider、默认关闭和无 Provider 的 RRF 回退；
+- [x] 授权候选先于 Reranker 输入、正式问答入口和离线 CI 验收。
 
 ### 尚未实现
 
 - [ ] PostgreSQL / pgvector；
-- [ ] Reranker 接入正式检索链路与黄金相关性评测；
+- [ ] Retrieval Evaluation：Recall@K、MRR 与真实 BGE 消融评测；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -342,6 +346,7 @@ Advanced RAG Phase 27：Hybrid Search + RRF（已完成）
 并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
 同时具备授权范围内的 BM25 关键词检索、企业编号精确匹配和确定性排序，
 并使用 RRF 将 Vector 与 BM25 名次融合为正式制度问答候选，
+并可将授权 RRF 候选批量交给 BGE Cross-Encoder 做第二阶段精排，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -909,6 +914,8 @@ Push / Pull Request / 手动运行
 → 异步 LLM single-flight 契约
 → LLM Provider 并发与背压契约
 → 请求关联与运行时可观测性契约
+→ RAG 权限、Document Loader、PDF/DOCX/OCR 契约
+→ BM25、RRF Hybrid 与 Reranker 正式接入契约
 → 三种并发 load shape 对照
 → Embedding/Reranker 批处理对照
 → 构建 Python Wheel
@@ -1195,8 +1202,8 @@ Provider 调用降为 1 次，配置 `batch_size=8` 时由模型内部执行 4 �
   --batch-latency-ms 0.25
 ```
 
-当前 Reranker 已具备批量 Provider 和稳定排序契约，但尚未接入正式检索链路。完整指标、
-真实模型边界和 batch size 选择方法见：
+当前 Reranker 已在 Advanced RAG Phase 28 接入正式检索链路；默认 Provider 仍关闭，显式配置
+`RAG_RERANKER_PROVIDER=bge` 后才加载真实模型。完整指标、真实模型边界和 batch size 选择方法见：
 
 ```text
 docs/embedding_reranker_batching.md
@@ -1399,7 +1406,7 @@ Application Services
        │   ├── Vector Search
        │   ├── Authorized BM25 Search
        │   ├── RRF Hybrid Fusion
-       │   └── Reranker（contract only）
+       │   └── Optional BGE Cross-Encoder Reranker
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1476,6 +1483,7 @@ demo1/
 │   ├── ocr_fallback.md
 │   ├── bm25_retrieval.md
 │   ├── hybrid_search_rrf.md
+│   ├── reranker_integration.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1706,6 +1714,12 @@ python -X utf8 -m scripts.verify_bm25_retrieval
 python -X utf8 -m scripts.verify_hybrid_search
 ```
 
+### 验证 Phase 28 BGE Reranker 正式接入
+
+```powershell
+python -X utf8 -m scripts.verify_reranker_integration
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1742,7 +1756,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] Reranker 批量 Provider 与稳定排序契约；
 - [x] BM25；
 - [x] Hybrid Search + RRF；
-- [ ] Reranker 接入正式检索链路；
+- [x] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
 - [x] 引用生成；
 - [ ] RAG 评测。
@@ -1926,8 +1940,23 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `PolicyAnswerService` 正式使用 `search_hybrid(...)`；
 - [x] 单通道空结果降级、参数校验和 Prompt Guard 链路回归；
 - [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
-- [ ] BGE Reranker 正式接入（Phase 28）；
+- [x] BGE Reranker 正式接入（Phase 28）；
 - [ ] Recall@K、MRR 和候选窗口消融评测（Phase 31）。
+
+### Advanced RAG Phase 28：BGE Reranker 正式接入
+
+- [x] 复用 `RerankingProvider` 与 `BGERerankingProvider` batch-first 契约；
+- [x] `PolicyRetriever.search_reranked(...)` 统一第二阶段入口；
+- [x] RRF Top-20 候选一次 Provider 调用并输出最终 Top-5；
+- [x] Cross-Encoder 输入使用标题、章节、条款和正文组成的 `retrieval_text`；
+- [x] `RetrievalMethod.RERANKED`、Reranker score、原始 RRF rank/score；
+- [x] Vector/BM25 的 rank、raw score 和 RRF contribution 继续保留；
+- [x] 授权过滤发生在 Reranker Provider 输入前；
+- [x] Provider disabled 时透明回退到 RRF Hybrid；
+- [x] `RAG_RERANKER_PROVIDER=bge` 显式启用和模型/设备/batch/candidate 配置；
+- [x] `PolicyAnswerService` 正式调用统一 Reranked 入口；
+- [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
+- [ ] 真实 BGE 模型的 Recall@K、MRR、nDCG、延迟和硬件消融（Phase 31）。
 
 ---
 
@@ -1951,6 +1980,7 @@ Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性
 Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
 权限过滤必须发生在 Vector/BM25、RRF 和 Prompt 构造之前，聊天自述不能覆盖可信身份
+Reranker 只能处理已经授权并经过 RRF 去重的有限候选，不能接收全库或未授权正文
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```

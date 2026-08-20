@@ -4,9 +4,17 @@ import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Protocol
 
 DEFAULT_BGE_RERANKER_MODEL_NAME = "BAAI/bge-reranker-v2-m3"
+
+
+class RerankerProviderName(StrEnum):
+    """Supported runtime reranker implementations."""
+
+    DISABLED = "disabled"
+    BGE = "bge"
 
 
 class RerankingProvider(ABC):
@@ -53,11 +61,21 @@ class BGERerankingProvider(RerankingProvider):
             model = CrossEncoder(model_name, device=device)
 
         self._model = model
+        self._model_name = model_name
+        self._device = device
         self._batch_size = batch_size
 
     @property
     def batch_size(self) -> int:
         return self._batch_size
+
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @property
+    def device(self) -> str | None:
+        return self._device
 
     def score(self, query: str, documents: Sequence[str]) -> list[float]:
         normalized_query = query.strip()

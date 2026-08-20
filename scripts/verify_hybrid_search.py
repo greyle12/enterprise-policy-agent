@@ -160,7 +160,7 @@ def run_verification() -> dict[str, object]:
         "network_calls": False,
         "external_model_calls": False,
         "offline_llm_fixture_calls": llm.calls,
-        "bge_reranker_enabled": False,
+        "verification_scope": "hybrid_rrf_without_reranker",
         "checks": checks,
     }
 

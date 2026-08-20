@@ -23,6 +23,11 @@ from app.rag.fusion import (
     reciprocal_rank_fusion,
 )
 from app.rag.policy_chunker import chunk_policy_directory
+from app.rag.reranking import (
+    RerankCandidate,
+    RerankingProvider,
+    rerank_candidates,
+)
 from app.rag.vector_index import (
     InMemoryVectorIndex,
     VectorRecord,
@@ -31,6 +36,7 @@ from app.schemas.chunk import PolicyChunk
 from app.security import PolicyAccessContext, authorized_chunk_ids
 
 DEFAULT_HYBRID_CANDIDATE_K = 20
+DEFAULT_RERANK_CANDIDATE_K = 20
 
 
 class EmbeddingProvider(Protocol):
@@ -59,6 +65,7 @@ class RetrievalMethod(StrEnum):
     VECTOR = "vector"
     BM25 = "bm25"
     HYBRID = "hybrid"
+    RERANKED = "reranked"
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,6 +86,8 @@ class PolicyRetrievalResult:
     score: float
     retrieval_method: RetrievalMethod = RetrievalMethod.VECTOR
     retrieval_signals: tuple[RetrievalSignal, ...] = ()
+    pre_rerank_score: float | None = None
+    pre_rerank_rank: int | None = None
 
 
 def _build_record_metadata(
@@ -129,6 +138,8 @@ class PolicyRetriever:
         embedding_provider: EmbeddingProvider,
         chunks: Sequence[PolicyChunk],
         keyword_tokenizer: KeywordTokenizer | None = None,
+        reranking_provider: RerankingProvider | None = None,
+        rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
     ) -> None:
         chunk_list = list(chunks)
 
@@ -139,6 +150,12 @@ class PolicyRetriever:
 
         if len(chunks_by_id) != len(chunk_list):
             raise ValueError("chunk_id values must be unique")
+        if (
+            isinstance(rerank_candidate_k, bool)
+            or not isinstance(rerank_candidate_k, int)
+            or rerank_candidate_k < 1
+        ):
+            raise ValueError("rerank_candidate_k must be greater than zero")
 
         retrieval_texts = [chunk.retrieval_text for chunk in chunk_list]
         vectors = embedding_provider.embed_documents(retrieval_texts)
@@ -182,6 +199,8 @@ class PolicyRetriever:
         self._chunks_by_id = chunks_by_id
         self._index = index
         self._keyword_index = keyword_index
+        self._reranking_provider = reranking_provider
+        self._rerank_candidate_k = rerank_candidate_k
 
     @classmethod
     def from_directory(
@@ -191,6 +210,8 @@ class PolicyRetriever:
         embedding_provider: EmbeddingProvider,
         loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
         keyword_tokenizer: KeywordTokenizer | None = None,
+        reranking_provider: RerankingProvider | None = None,
+        rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
     ) -> Self:
         """解析指定目录并建立制度检索器。"""
 
@@ -203,6 +224,8 @@ class PolicyRetriever:
             embedding_provider=embedding_provider,
             chunks=chunks,
             keyword_tokenizer=keyword_tokenizer,
+            reranking_provider=reranking_provider,
+            rerank_candidate_k=rerank_candidate_k,
         )
 
     @property
@@ -222,6 +245,12 @@ class PolicyRetriever:
         """Return the number of chunks in the BM25 index."""
 
         return self._keyword_index.size
+
+    @property
+    def reranker_enabled(self) -> bool:
+        """Return whether a second-stage relevance provider is configured."""
+
+        return self._reranking_provider is not None
 
     def search(
         self,
@@ -360,6 +389,70 @@ class PolicyRetriever:
             )
         return hybrid_results
 
+    def search_reranked(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        candidate_k: int | None = None,
+        rank_constant: int = DEFAULT_RRF_RANK_CONSTANT,
+        allowed_chunk_ids: Collection[str] | None = None,
+    ) -> list[PolicyRetrievalResult]:
+        """Rerank an authorization-scoped RRF candidate pool in one provider call."""
+
+        if isinstance(top_k, bool) or not isinstance(top_k, int) or top_k < 1:
+            raise ValueError("top_k must be greater than zero")
+        resolved_candidate_k = (
+            max(self._rerank_candidate_k, top_k) if candidate_k is None else candidate_k
+        )
+        if (
+            isinstance(resolved_candidate_k, bool)
+            or not isinstance(resolved_candidate_k, int)
+            or resolved_candidate_k < top_k
+        ):
+            raise ValueError("candidate_k must be greater than or equal to top_k")
+        if self._reranking_provider is None:
+            return self.search_hybrid(
+                query,
+                top_k=top_k,
+                candidate_k=resolved_candidate_k,
+                rank_constant=rank_constant,
+                allowed_chunk_ids=allowed_chunk_ids,
+            )
+
+        hybrid_results = self.search_hybrid(
+            query,
+            top_k=resolved_candidate_k,
+            candidate_k=resolved_candidate_k,
+            rank_constant=rank_constant,
+            allowed_chunk_ids=allowed_chunk_ids,
+        )
+        reranked = rerank_candidates(
+            query,
+            [
+                RerankCandidate(
+                    candidate_id=result.chunk.chunk_id,
+                    text=result.chunk.retrieval_text,
+                    retrieval_score=result.score,
+                )
+                for result in hybrid_results
+            ],
+            provider=self._reranking_provider,
+            top_k=top_k,
+        )
+        hybrid_by_id = {result.chunk.chunk_id: result for result in hybrid_results}
+        return [
+            PolicyRetrievalResult(
+                chunk=hybrid_by_id[result.candidate.candidate_id].chunk,
+                score=result.rerank_score,
+                retrieval_method=RetrievalMethod.RERANKED,
+                retrieval_signals=hybrid_by_id[result.candidate.candidate_id].retrieval_signals,
+                pre_rerank_score=result.candidate.retrieval_score,
+                pre_rerank_rank=result.original_rank + 1,
+            )
+            for result in reranked
+        ]
+
     def restrict(
         self,
         access_context: PolicyAccessContext,
@@ -437,6 +530,23 @@ class AccessControlledPolicyRetriever:
     ) -> list[PolicyRetrievalResult]:
         allowed_chunk_ids = self._allowed_chunk_ids()
         return self._retriever.search_hybrid(
+            query,
+            top_k=top_k,
+            candidate_k=candidate_k,
+            rank_constant=rank_constant,
+            allowed_chunk_ids=allowed_chunk_ids,
+        )
+
+    def search_reranked(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        candidate_k: int | None = None,
+        rank_constant: int = DEFAULT_RRF_RANK_CONSTANT,
+    ) -> list[PolicyRetrievalResult]:
+        allowed_chunk_ids = self._allowed_chunk_ids()
+        return self._retriever.search_reranked(
             query,
             top_k=top_k,
             candidate_k=candidate_k,

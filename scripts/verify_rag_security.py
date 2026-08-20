@@ -60,7 +60,7 @@ class _NoCallRetriever:
     def __init__(self) -> None:
         self.calls = 0
 
-    def search_hybrid(
+    def search_reranked(
         self,
         query: str,
         *,
