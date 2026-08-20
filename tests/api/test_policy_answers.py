@@ -27,9 +27,7 @@ class FakePolicyAnswerService:
         return SimpleNamespace(
             question=question,
             answer="普通员工住宿标准为500元。[S1]",
-            citations=(
-                SimpleNamespace(source_id="S1"),
-            ),
+            citations=(SimpleNamespace(source_id="S1"),),
         )
 
 
@@ -46,9 +44,7 @@ def _use_fake_service(
     def provide_service() -> FakePolicyAnswerService:
         return service
 
-    app.dependency_overrides[
-        get_policy_answer_service
-    ] = provide_service
+    app.dependency_overrides[get_policy_answer_service] = provide_service
 
 
 def test_answers_policy_question() -> None:
@@ -58,11 +54,7 @@ def test_answers_policy_question() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/policy-answers",
-            json={
-                "question": (
-                    "  出差住宿标准是多少？  "
-                )
-            },
+            json={"question": ("  出差住宿标准是多少？  ")},
         )
 
     assert response.status_code == 200
@@ -71,9 +63,7 @@ def test_answers_policy_question() -> None:
         "answer": "普通员工住宿标准为500元。[S1]",
         "citations": ["S1"],
     }
-    assert service.calls == [
-        "出差住宿标准是多少？"
-    ]
+    assert service.calls == ["出差住宿标准是多少？"]
 
 
 def test_rejects_blank_question() -> None:

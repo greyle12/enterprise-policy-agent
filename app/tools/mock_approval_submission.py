@@ -178,15 +178,17 @@ class MockApprovalSubmitter:
         submitted_at: datetime,
     ) -> str:
         prefix = _SUBMISSION_PREFIXES[draft.application_type.value]
-        digest = sha256(
-            (
-                f"{draft.draft_id}\0{idempotency_key}\0"
-                f"{submitted_at.isoformat()}\0{self._token()}"
-            ).encode()
-        ).hexdigest()[:12].upper()
-        return (
-            f"MOCK-{prefix}-{submitted_at:%Y%m%d}-{digest}"
+        digest = (
+            sha256(
+                (
+                    f"{draft.draft_id}\0{idempotency_key}\0"
+                    f"{submitted_at.isoformat()}\0{self._token()}"
+                ).encode()
+            )
+            .hexdigest()[:12]
+            .upper()
         )
+        return f"MOCK-{prefix}-{submitted_at:%Y%m%d}-{digest}"
 
     def _audit_record(
         self,
@@ -200,13 +202,17 @@ class MockApprovalSubmitter:
         recorded_at: datetime,
         duplicate_submission: bool,
     ) -> SubmissionAuditRecord:
-        audit_digest = sha256(
-            (
-                f"{request_id}\0{submission.idempotency_key}\0"
-                f"{event.value}\0{recorded_at.isoformat()}\0"
-                f"{self._token()}"
-            ).encode()
-        ).hexdigest()[:16].upper()
+        audit_digest = (
+            sha256(
+                (
+                    f"{request_id}\0{submission.idempotency_key}\0"
+                    f"{event.value}\0{recorded_at.isoformat()}\0"
+                    f"{self._token()}"
+                ).encode()
+            )
+            .hexdigest()[:16]
+            .upper()
+        )
         return SubmissionAuditRecord(
             audit_id=f"AUDIT-{audit_digest}",
             event=event,
@@ -215,15 +221,11 @@ class MockApprovalSubmitter:
             draft_id=draft.draft_id,
             draft_revision=draft.revision,
             submission_id=submission.submission_id,
-            submission_idempotency_key=(
-                submission.idempotency_key
-            ),
+            submission_idempotency_key=(submission.idempotency_key),
             actor_employee_id=submission.submitted_by,
             recorded_at=recorded_at,
             confirmation_text_recorded=True,
-            confirmation_text_sha256=sha256(
-                confirmation_text.encode()
-            ).hexdigest(),
+            confirmation_text_sha256=sha256(confirmation_text.encode()).hexdigest(),
             duplicate_submission=duplicate_submission,
             sensitive_fields_recorded=False,
         )
@@ -242,9 +244,7 @@ class MockApprovalSubmitter:
             confirmation_text,
             name="confirmation_text",
         )
-        normalized_command = normalized_confirmation.strip(
-            "。.!！?？ ，,"
-        )
+        normalized_command = normalized_confirmation.strip("。.!！?？ ，,")
         if normalized_command not in _EXPLICIT_SUBMISSION_COMMANDS:
             raise SubmissionPreconditionError(
                 "explicit_submission_required",
@@ -263,9 +263,7 @@ class MockApprovalSubmitter:
             name="submission_idempotency_key",
         )
         if len(normalized_key) < 8:
-            raise ValueError(
-                "submission_idempotency_key must contain at least 8 characters"
-            )
+            raise ValueError("submission_idempotency_key must contain at least 8 characters")
 
         self._validate_identity(
             draft,
@@ -345,9 +343,7 @@ class MockApprovalSubmitter:
                         else ApprovalWorkflowStepStatus.WAITING
                     ),
                 )
-                for index, step in enumerate(
-                    draft.approval_check.steps
-                )
+                for index, step in enumerate(draft.approval_check.steps)
             ),
         )
         audit = self._audit_record(
@@ -391,19 +387,15 @@ class MockApprovalSubmitter:
             user_context=user_context,
             session_id=session_id,
             request_id=request_id,
-            submission_idempotency_key=(
-                submission_idempotency_key
-            ),
+            submission_idempotency_key=(submission_idempotency_key),
         )
 
         async with self._lock:
             existing = self._by_idempotency_key.get(normalized_key)
             if existing is not None:
                 if (
-                    existing.result.submission_result.draft_id
-                    != draft.draft_id
-                    or existing.employee_id
-                    != user_context.employee_id
+                    existing.result.submission_result.draft_id != draft.draft_id
+                    or existing.employee_id != user_context.employee_id
                     or existing.session_id != normalized_session_id
                 ):
                     raise SubmissionConflictError(
@@ -419,13 +411,9 @@ class MockApprovalSubmitter:
                 self._audit_records.append(replay.audit_record)
                 return replay
 
-            previous_key = self._idempotency_key_by_draft.get(
-                draft.draft_id
-            )
+            previous_key = self._idempotency_key_by_draft.get(draft.draft_id)
             if previous_key is not None:
-                raise SubmissionConflictError(
-                    "draft is already bound to another submission"
-                )
+                raise SubmissionConflictError("draft is already bound to another submission")
 
             result = self._first_submission_result(
                 draft,
@@ -435,16 +423,12 @@ class MockApprovalSubmitter:
                 confirmation_text=normalized_confirmation,
                 idempotency_key=normalized_key,
             )
-            self._by_idempotency_key[normalized_key] = (
-                _StoredSubmission(
-                    result=result,
-                    session_id=normalized_session_id,
-                    employee_id=user_context.employee_id,
-                )
+            self._by_idempotency_key[normalized_key] = _StoredSubmission(
+                result=result,
+                session_id=normalized_session_id,
+                employee_id=user_context.employee_id,
             )
-            self._idempotency_key_by_draft[draft.draft_id] = (
-                normalized_key
-            )
+            self._idempotency_key_by_draft[draft.draft_id] = normalized_key
             self._audit_records.append(result.audit_record)
             return result
 
@@ -458,8 +442,4 @@ class MockApprovalSubmitter:
         async with self._lock:
             if draft_id is None:
                 return tuple(self._audit_records)
-            return tuple(
-                record
-                for record in self._audit_records
-                if record.draft_id == draft_id
-            )
+            return tuple(record for record in self._audit_records if record.draft_id == draft_id)

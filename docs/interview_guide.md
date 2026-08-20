@@ -86,6 +86,8 @@
 
 - 运行时使用固定可信演示身份，未接 JWT/OIDC、员工目录和集中策略服务；
 - 制度索引是内存向量索引，未接 PostgreSQL/pgvector、BM25 和正式 Hybrid Search；
+- 文档加载已抽象为 Registry/Protocol，支持 Markdown 与 PDF 原生文本、可信 sidecar 和页码；
+- 尚未实现 DOCX、OCR、复杂 PDF layout/table parser 和真实企业 PDF 评测集；
 - Reranker 已有批量契约，但尚未接入正式检索主链路；
 - 指标和 single-flight 是单进程状态，未做跨实例聚合与协调；
 - 尚无 OpenTelemetry、集中日志、Grafana 告警和真实流量 SLO；

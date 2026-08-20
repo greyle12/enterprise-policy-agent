@@ -20,9 +20,7 @@ _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
 
 @pytest.fixture
 def checker() -> RequiredMaterialsChecker:
-    return RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    return RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
 
 
 def _check(
@@ -33,17 +31,11 @@ def _check(
 
 
 def _requirements_by_type(answer) -> dict[str, object]:
-    return {
-        item.material_type: item
-        for item in answer.result.required_materials
-    }
+    return {item.material_type: item for item in answer.result.required_materials}
 
 
 def _missing_types(answer) -> set[str]:
-    return {
-        item.material_type
-        for item in answer.result.missing_materials
-    }
+    return {item.material_type for item in answer.result.missing_materials}
 
 
 def test_lists_travel_reimbursement_requirements(
@@ -54,17 +46,11 @@ def test_lists_travel_reimbursement_requirements(
         "出差报销需要准备哪些材料？",
     )
 
-    assert (
-        answer.result.application_type
-        is ApplicationType.TRAVEL_REIMBURSEMENT
-    )
+    assert answer.result.application_type is ApplicationType.TRAVEL_REIMBURSEMENT
     assert answer.result.mode is MaterialCheckMode.REQUIREMENTS
     assert answer.result.materials_complete is None
     assert len(answer.result.required_materials) == 7
-    assert {
-        item.material_type
-        for item in answer.result.required_materials
-    } == {
+    assert {item.material_type for item in answer.result.required_materials} == {
         "approved_travel_application",
         "travel_itinerary",
         "transportation_receipts",
@@ -73,10 +59,7 @@ def test_lists_travel_reimbursement_requirements(
         "payment_records",
         "business_trip_result",
     }
-    assert [
-        citation.article_label
-        for citation in answer.result.citations
-    ] == ["第十六条"]
+    assert [citation.article_label for citation in answer.result.citations] == ["第十六条"]
     assert "[S1]" in answer.reply
 
 
@@ -85,8 +68,7 @@ def test_compares_travel_materials_and_lists_missing_items(
 ) -> None:
     answer = _check(
         checker,
-        "我准备了出差申请单、行程单和交通票据，"
-        "帮我检查还缺什么。",
+        "我准备了出差申请单、行程单和交通票据，帮我检查还缺什么。",
     )
 
     assert answer.result.mode is MaterialCheckMode.COMPARISON
@@ -194,9 +176,7 @@ def test_purchase_comparison_counts_multiple_supplier_quotes(
 
     assert answer.result.materials_complete is True
     quotation = next(
-        item
-        for item in answer.result.provided_materials
-        if item.material_type == "quotation"
+        item for item in answer.result.provided_materials if item.material_type == "quotation"
     )
     assert quotation.provided_count == 2
 
@@ -206,13 +186,10 @@ def test_purchase_comparison_reports_missing_quote_count(
 ) -> None:
     answer = _check(
         checker,
-        "6000元电脑采购，我有一家报价、技术需求说明、"
-        "产品规格说明和IT评审意见，还缺什么？",
+        "6000元电脑采购，我有一家报价、技术需求说明、产品规格说明和IT评审意见，还缺什么？",
     )
     quotation_gap = next(
-        item
-        for item in answer.result.missing_materials
-        if item.material_type == "quotation"
+        item for item in answer.result.missing_materials if item.material_type == "quotation"
     )
 
     assert answer.result.materials_complete is False
@@ -228,18 +205,15 @@ def test_training_expense_adds_category_specific_materials(
     )
     requirements = _requirements_by_type(answer)
 
-    assert (
-        answer.result.application_type
-        is ApplicationType.EXPENSE_REIMBURSEMENT
-    )
+    assert answer.result.application_type is ApplicationType.EXPENSE_REIMBURSEMENT
     assert "expense_reimbursement_form" in requirements
     assert "training_notice" in requirements
     assert "registration_record" in requirements
     assert "completion_proof" in requirements
-    assert {
-        citation.article_label
-        for citation in answer.result.citations
-    } == {"第十三条", "第十五条"}
+    assert {citation.article_label for citation in answer.result.citations} == {
+        "第十三条",
+        "第十五条",
+    }
 
 
 def test_one_day_sick_leave_does_not_require_medical_proof(
@@ -289,10 +263,9 @@ def test_marriage_leave_requires_registration_certificate(
 ) -> None:
     answer = _check(checker, "申请婚假需要什么材料？")
 
-    assert [
-        item.material_type
-        for item in answer.result.required_materials
-    ] == ["marriage_registration_certificate"]
+    assert [item.material_type for item in answer.result.required_materials] == [
+        "marriage_registration_certificate"
+    ]
     assert answer.result.required_materials[0].sensitive is True
 
 
@@ -319,9 +292,7 @@ def test_requirement_query_does_not_treat_mentioned_invoice_as_provided(
 
 
 def test_fails_closed_when_rule_references_missing_policy_article() -> None:
-    checker = RequiredMaterialsChecker(
-        catalog=PolicyArticleCatalog([])
-    )
+    checker = RequiredMaterialsChecker(catalog=PolicyArticleCatalog([]))
 
     with pytest.raises(
         RuntimeError,
@@ -340,4 +311,3 @@ def test_rejects_blank_input(
         match="user_input must not be blank",
     ):
         _check(checker, user_input)
-

@@ -32,9 +32,7 @@ def test_initializes_schema_idempotently(tmp_path: Path) -> None:
 
     assert first == second == database_path
     with sqlite3.connect(database_path) as connection:
-        assert connection.execute(
-            "PRAGMA user_version"
-        ).fetchone()[0] == SQLITE_SCHEMA_VERSION
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == SQLITE_SCHEMA_VERSION
         tables = {
             row[0]
             for row in connection.execute(
@@ -62,9 +60,7 @@ def test_rejects_database_from_newer_schema_version(
 ) -> None:
     database_path = initialize_database(tmp_path / "future.db")
     with sqlite3.connect(database_path) as connection:
-        connection.execute(
-            f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION + 1}"
-        )
+        connection.execute(f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION + 1}")
 
     with pytest.raises(RuntimeError, match="newer"):
         initialize_database(database_path)
@@ -87,9 +83,7 @@ def test_round_trips_checkpoint_writes_and_delete(
             "checkpoint_ns": "",
         }
     }
-    checkpoint = _checkpoint(
-        "00000000-0000-6000-8000-000000000001"
-    )
+    checkpoint = _checkpoint("00000000-0000-6000-8000-000000000001")
 
     stored_config = saver.put(
         config,
@@ -103,21 +97,11 @@ def test_round_trips_checkpoint_writes_and_delete(
         "task-001",
     )
 
-    restored = saver.get_tuple(
-        {
-            "configurable": {
-                "thread_id": "sqlite-checkpoint-roundtrip"
-            }
-        }
-    )
+    restored = saver.get_tuple({"configurable": {"thread_id": "sqlite-checkpoint-roundtrip"}})
     assert restored is not None
-    assert restored.checkpoint["channel_values"] == {
-        "value": {"count": 1}
-    }
+    assert restored.checkpoint["channel_values"] == {"value": {"count": 1}}
     assert restored.metadata["step"] == 1
-    assert restored.pending_writes == [
-        ("task-001", "result", {"ok": True})
-    ]
+    assert restored.pending_writes == [("task-001", "result", {"ok": True})]
     assert len(list(saver.list(config))) == 1
 
     saver.delete_thread("sqlite-checkpoint-roundtrip")

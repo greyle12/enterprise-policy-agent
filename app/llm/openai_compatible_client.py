@@ -26,29 +26,19 @@ class OpenAICompatibleLLMClient:
         normalized_model = model.strip()
 
         if not normalized_api_key:
-            raise ValueError(
-                "api_key must not be blank"
-            )
+            raise ValueError("api_key must not be blank")
 
         if not normalized_base_url:
-            raise ValueError(
-                "base_url must not be blank"
-            )
+            raise ValueError("base_url must not be blank")
 
         if not normalized_model:
-            raise ValueError(
-                "model must not be blank"
-            )
+            raise ValueError("model must not be blank")
 
         if timeout_seconds <= 0:
-            raise ValueError(
-                "timeout_seconds must be greater than zero"
-            )
+            raise ValueError("timeout_seconds must be greater than zero")
 
         if max_retries < 0:
-            raise ValueError(
-                "max_retries must not be negative"
-            )
+            raise ValueError("max_retries must not be negative")
 
         self._model = normalized_model
         self._client = AsyncOpenAI(
@@ -66,14 +56,10 @@ class OpenAICompatibleLLMClient:
         """根据应用配置创建客户端。"""
 
         return cls(
-            api_key=(
-                settings.llm_api_key.get_secret_value()
-            ),
+            api_key=(settings.llm_api_key.get_secret_value()),
             base_url=settings.llm_base_url,
             model=settings.llm_model,
-            timeout_seconds=(
-                settings.llm_timeout_seconds
-            ),
+            timeout_seconds=(settings.llm_timeout_seconds),
             max_retries=settings.llm_max_retries,
         )
 
@@ -91,24 +77,18 @@ class OpenAICompatibleLLMClient:
             for message in messages
         ]
 
-        response = (
-            await self._client.chat.completions.create(
-                model=self._model,
-                messages=request_messages,
-            )
+        response = await self._client.chat.completions.create(
+            model=self._model,
+            messages=request_messages,
         )
 
         if not response.choices:
-            raise RuntimeError(
-                "LLM response contains no choices"
-            )
+            raise RuntimeError("LLM response contains no choices")
 
         content = response.choices[0].message.content
 
         if content is None:
-            raise RuntimeError(
-                "LLM response contains no text content"
-            )
+            raise RuntimeError("LLM response contains no text content")
 
         return content
 

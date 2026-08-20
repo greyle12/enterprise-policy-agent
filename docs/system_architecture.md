@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Day 30 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 23 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -14,7 +14,7 @@ flowchart TD
     Agent --> Rules["确定性业务规则"]
     Agent --> State["SQLite 状态与审计"]
     Agent --> Research["Research Assistant"]
-    RAG --> Policies["制度文档与向量索引"]
+    RAG --> Policies["Loader / 制度文档 / 向量索引"]
     Research --> External["外部系统边界"]
     Services --> Observe["日志 / 指标 / Request ID"]
 ```
@@ -52,7 +52,7 @@ sequenceDiagram
 | FastAPI | Schema 校验、依赖注入、错误映射、Request ID | 业务规则计算 |
 | Prompt Guard | 高信号输入攻击阻断、污染证据隔离 | 完整开放世界攻击识别 |
 | Policy Access | 状态、日期、等级、部门、角色、区域授权 | 登录和员工目录 |
-| Policy RAG | 解析、Chunk、Embedding、检索、上下文、引用 | 决定审批路线 |
+| Policy RAG | Loader 路由、解析、Chunk、Embedding、检索、上下文、引用 | 决定审批路线 |
 | LangGraph | 意图分支、多轮状态、确认节点、工具编排 | 自行创造业务规则 |
 | Rule Tools | 材料检查、审批路线、草稿字段计算 | 生成开放式自然语言 |
 | Persistence | SQLite checkpoint、会话、提交和审计 | 多节点分布式一致性 |
@@ -88,7 +88,8 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Policies["5 份制度"] --> Chunks["结构化 Chunk"]
+    Policies["Markdown / PDF + sidecar"] --> Loader["Document Loader"]
+    Loader --> Chunks["结构化 Chunk"]
     Chunks --> Index["内存向量索引"]
     AgentState["Agent 状态"] --> SQLite["SQLite"]
     Audit["提交审计"] --> SQLite
@@ -96,6 +97,8 @@ flowchart LR
 ```
 
 - 制度索引目前为单进程内存结构，正式 BGE 默认维度为 512；
+- Loader Registry 当前注册 Markdown 和 PyMuPDF 原生文本 Loader；DOCX 和 OCR 尚未实现；
+- PDF 权限元数据来自受控 sidecar，Chunk 和 Citation 保留页码来源；
 - 会话、checkpoint、提交和审计可以使用 SQLite 跨重启恢复；
 - Redis 只用于可选 LLM 精确请求缓存，不是当前会话主存储；
 - HTTP 指标、Provider 指标和安全计数是进程内状态。

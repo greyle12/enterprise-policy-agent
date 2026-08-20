@@ -196,7 +196,8 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 21：项目收尾与作品集发布（Day 30 已完成）
+Advanced RAG Phase 23：PDF 文档解析（已完成）
+基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
 ### 已完成
@@ -289,10 +290,18 @@ Phase 21：项目收尾与作品集发布（Day 30 已完成）
 - [x] 真实解析、检索、LangGraph、业务规则和安全边界的集成演示；
 - [x] Day 30 发布契约、CI 自动运行和证据 Artifact；
 - [x] 已实现架构图、可重复演示手册、简历描述和面试讲解材料。
+- [x] 统一 Document Loader Protocol、不可变格式注册表与 Markdown Loader；
+- [x] Parser、Chunker、Retriever 复用同一加载入口且保持原有 5 文档/199 Chunk 契约；
+- [x] Phase 22 完全离线 Loader 专项验证与 CI 门禁。
+- [x] PyMuPDF 原生 PDF 文本提取与确定性阅读顺序；
+- [x] PDF 可信 sidecar 元数据、页码 provenance 与 Citation 传递；
+- [x] 加密/损坏/缺少 sidecar 拒绝及扫描件 `OCRRequiredError`；
+- [x] Phase 23 完全离线真实 PDF 专项验证与 CI 门禁。
 
 ### 尚未实现
 
-- [ ] PDF 文档解析；
+- [ ] DOCX 文档解析；
+- [ ] OCR fallback；
 - [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
@@ -1364,13 +1373,17 @@ Application Services
   └── submit_mock_approval
        │
        ├── RAG Service
-       │   ├── Document Parser
+       │   ├── Document Loader Registry
+       │   │   ├── Markdown Loader
+       │   │   ├── PDF Native-text Loader
+       │   │   └── DOCX / OCR（planned）
+       │   ├── Policy Parser
        │   ├── Metadata Extractor
        │   ├── Chunker
        │   ├── Embedding
        │   ├── Vector Search
-       │   ├── BM25 Search
-       │   └── Reranker
+       │   ├── BM25 Search（planned）
+       │   └── Reranker（contract only）
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1441,6 +1454,8 @@ demo1/
 │   ├── provider_backpressure.md
 │   ├── runtime_observability.md
 │   ├── rag_security_guardrails.md
+│   ├── document_loader.md
+│   ├── pdf_document_parsing.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1472,6 +1487,7 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+PDF Parser：PyMuPDF 1.26.x
 Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
@@ -1624,6 +1640,18 @@ python -X utf8 -m scripts.verify_runtime_observability
 python -X utf8 -m scripts.verify_rag_security
 ```
 
+### 验证 Phase 22 Document Loader
+
+```powershell
+python -X utf8 -m scripts.verify_document_loader
+```
+
+### 验证 Phase 23 PDF 文档解析
+
+```powershell
+python -X utf8 -m scripts.verify_pdf_document_parsing
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1770,6 +1798,30 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [ ] 项目截图；
 - [x] 简历项目描述；
 - [x] 面试讲解材料。
+
+### Advanced RAG Phase 22：Document Loader 抽象
+
+- [x] 格式无关的 `LoadedDocument` 输出契约；
+- [x] 最小 `DocumentLoader` Protocol；
+- [x] 不可变扩展名 Registry 和冲突拒绝；
+- [x] UTF-8/BOM Markdown Loader；
+- [x] Parser、Chunker、Retriever 增量接入；
+- [x] 原有安全边界和 5 文档/199 Chunk 回归验证；
+- [x] PDF Loader（Phase 23）；
+- [ ] DOCX Loader（Phase 24）；
+- [ ] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 23：PDF 文档解析
+
+- [x] PyMuPDF 原生文本层与 `sort=True` 阅读顺序；
+- [x] `policy.pdf` + `policy.metadata.yaml` 可信 ingestion 契约；
+- [x] 纯文本章/条标题规范化并复用现有 Chunker；
+- [x] Loader 行到 PDF 页码的稳定映射；
+- [x] `PolicyChunk`、Context、Citation 和 Research API 页码传递；
+- [x] 加密、损坏、缺元数据和 OCR-required 错误边界；
+- [x] 完全离线真实 PDF 生成与 CI 验收；
+- [ ] DOCX Loader（Phase 24）；
+- [ ] OCR fallback（Phase 25）。
 
 ---
 

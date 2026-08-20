@@ -26,12 +26,7 @@ class FakeEmbeddingProvider:
     ) -> list[list[float]]:
         self.document_inputs = list(texts)
 
-        return [
-            [1.0, 0.0]
-            if index == 0
-            else [0.0, 1.0]
-            for index, _ in enumerate(texts)
-        ]
+        return [[1.0, 0.0] if index == 0 else [0.0, 1.0] for index, _ in enumerate(texts)]
 
     def embed_query(
         self,
@@ -45,9 +40,7 @@ class FakeEmbeddingProvider:
         return [0.0, 1.0]
 
 
-class IncompleteEmbeddingProvider(
-    FakeEmbeddingProvider
-):
+class IncompleteEmbeddingProvider(FakeEmbeddingProvider):
     def embed_documents(
         self,
         texts: list[str],
@@ -58,9 +51,7 @@ class IncompleteEmbeddingProvider(
 
 @pytest.fixture
 def sample_chunks() -> list[PolicyChunk]:
-    chunks = chunk_policy_directory(
-        POLICY_DIRECTORY
-    )
+    chunks = chunk_policy_directory(POLICY_DIRECTORY)
     return chunks[:2]
 
 
@@ -76,10 +67,7 @@ def test_builds_index_from_retrieval_text(
 
     assert retriever.size == 2
     assert retriever.dimension == 2
-    assert provider.document_inputs == [
-        chunk.retrieval_text
-        for chunk in sample_chunks
-    ]
+    assert provider.document_inputs == [chunk.retrieval_text for chunk in sample_chunks]
 
 
 def test_search_returns_matching_policy_chunk(
@@ -96,9 +84,7 @@ def test_search_returns_matching_policy_chunk(
         top_k=2,
     )
 
-    assert results[0].chunk.chunk_id == (
-        sample_chunks[1].chunk_id
-    )
+    assert results[0].chunk.chunk_id == (sample_chunks[1].chunk_id)
     assert results[0].score == pytest.approx(1.0)
     assert provider.query_inputs == ["second"]
 
@@ -117,9 +103,7 @@ def test_search_respects_top_k(
     )
 
     assert len(results) == 1
-    assert results[0].chunk.chunk_id == (
-        sample_chunks[0].chunk_id
-    )
+    assert results[0].chunk.chunk_id == (sample_chunks[0].chunk_id)
 
 
 @pytest.mark.parametrize(
@@ -170,9 +154,7 @@ def test_rejects_duplicate_chunk_ids(
         match="chunk_id",
     ):
         PolicyRetriever(
-            embedding_provider=(
-                FakeEmbeddingProvider()
-            ),
+            embedding_provider=(FakeEmbeddingProvider()),
             chunks=duplicate_chunks,
         )
 
@@ -185,8 +167,6 @@ def test_rejects_mismatched_embedding_count(
         match="Embedding count",
     ):
         PolicyRetriever(
-            embedding_provider=(
-                IncompleteEmbeddingProvider()
-            ),
+            embedding_provider=(IncompleteEmbeddingProvider()),
             chunks=sample_chunks,
         )

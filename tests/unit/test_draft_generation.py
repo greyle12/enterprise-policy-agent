@@ -69,12 +69,8 @@ def _user_context() -> DraftUserContext:
 
 
 def _generator() -> ApplicationDraftGenerator:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     return ApplicationDraftGenerator.from_policy_directory(
         _POLICY_DIRECTORY,
         material_checker=material_checker,
@@ -150,11 +146,7 @@ def test_purchase_total_mismatch_blocks_confirmation() -> None:
     assert draft is not None
     assert draft.status is DraftStatus.WAITING_FOR_INFORMATION
     assert draft.ready_for_confirmation is False
-    issue = next(
-        item
-        for item in draft.validation_issues
-        if item.code == "PURCHASE_TOTAL_MISMATCH"
-    )
+    issue = next(item for item in draft.validation_issues if item.code == "PURCHASE_TOTAL_MISMATCH")
     assert issue.severity is ValidationSeverity.ERROR
     assert issue.blocking is True
     assert "不一致" in (answer.result.clarification_question or "")
@@ -177,11 +169,7 @@ def test_sensitive_emergency_contact_is_not_in_summary_or_reply() -> None:
     draft = answer.result.draft
 
     assert draft is not None
-    contact = next(
-        item
-        for item in draft.fields
-        if item.field_name == "emergency_contact"
-    )
+    contact = next(item for item in draft.fields if item.field_name == "emergency_contact")
     assert contact.sensitive is True
     assert all("王芳" not in line for line in draft.summary_lines)
     assert "王芳" not in answer.reply
@@ -238,9 +226,7 @@ def test_travel_reimbursement_needs_expense_details() -> None:
     draft = asyncio.run(_generator().generate(user_input)).result.draft
 
     assert draft is not None
-    assert "expense_details" in {
-        item.field_name for item in draft.missing_fields
-    }
+    assert "expense_details" in {item.field_name for item in draft.missing_fields}
     assert draft.ready_for_confirmation is False
 
 
@@ -251,10 +237,7 @@ def test_expense_text_with_negated_procurement_stays_expense() -> None:
     assert draft is not None
     assert answer.result.application_type is ApplicationType.EXPENSE_REIMBURSEMENT
     assert draft.material_check.application_type is ApplicationType.EXPENSE_REIMBURSEMENT
-    assert (
-        draft.approval_check.application_type
-        is ApprovalApplicationType.EXPENSE_REIMBURSEMENT
-    )
+    assert draft.approval_check.application_type is ApprovalApplicationType.EXPENSE_REIMBURSEMENT
     assert _field_values(draft)["involves_purchase"] is False
 
 
@@ -299,10 +282,7 @@ def test_same_request_has_stable_draft_id_and_idempotency_key() -> None:
     assert first is not None
     assert second is not None
     assert first.draft_id == second.draft_id
-    assert (
-        first.audit_metadata.idempotency_key
-        == second.audit_metadata.idempotency_key
-    )
+    assert first.audit_metadata.idempotency_key == second.audit_metadata.idempotency_key
 
 
 def test_audit_metadata_marks_draft_as_not_persisted() -> None:
@@ -329,9 +309,7 @@ def test_policy_snapshot_records_active_document_version() -> None:
 
 
 def test_citation_ids_are_unique_and_sequential() -> None:
-    citations = asyncio.run(
-        _generator().generate(_PURCHASE_COMPLETE)
-    ).result.citations
+    citations = asyncio.run(_generator().generate(_PURCHASE_COMPLETE)).result.citations
 
     assert [item.source_id for item in citations] == [
         f"S{index}" for index in range(1, len(citations) + 1)
@@ -362,12 +340,8 @@ def test_trims_request_before_hashing_and_returning() -> None:
 def test_rejects_incomplete_trusted_context(context: DraftUserContext) -> None:
     with pytest.raises(ValueError, match="trusted user_context"):
         ApplicationDraftGenerator(
-            material_checker=RequiredMaterialsChecker.from_policy_directory(
-                _POLICY_DIRECTORY
-            ),
-            approval_checker=ApprovalRuleChecker.from_policy_directory(
-                _POLICY_DIRECTORY
-            ),
+            material_checker=RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY),
+            approval_checker=ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY),
             catalog=DraftPolicyCatalog.from_directory(_POLICY_DIRECTORY),
             user_context=context,
         )

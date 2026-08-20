@@ -86,12 +86,8 @@ _CASES = (
 
 
 async def _main() -> None:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     generator = ApplicationDraftGenerator.from_policy_directory(
         _POLICY_DIRECTORY,
         material_checker=material_checker,
@@ -114,8 +110,7 @@ async def _main() -> None:
             answer.result.application_type is case["application_type"]
             and draft is not None
             and draft.status is case["draft_status"]
-            and draft.ready_for_confirmation
-            is case["ready_for_confirmation"]
+            and draft.ready_for_confirmation is case["ready_for_confirmation"]
             and draft.user_confirmed is False
             and draft.submitted is False
             and draft.audit_metadata.persisted is False
@@ -137,13 +132,9 @@ async def _main() -> None:
                     "ready_for_confirmation": (
                         draft.ready_for_confirmation if draft is not None else False
                     ),
-                    "user_confirmed": (
-                        draft.user_confirmed if draft is not None else None
-                    ),
+                    "user_confirmed": (draft.user_confirmed if draft is not None else None),
                     "submitted": draft.submitted if draft is not None else None,
-                    "citations": [
-                        citation.source_id for citation in answer.result.citations
-                    ],
+                    "citations": [citation.source_id for citation in answer.result.citations],
                     "passed": passed,
                 },
                 ensure_ascii=False,
@@ -165,9 +156,7 @@ async def _main() -> None:
             {
                 "name": "idempotent_draft_id",
                 "draft_id": (
-                    first.result.draft.draft_id
-                    if first.result.draft is not None
-                    else None
+                    first.result.draft.draft_id if first.result.draft is not None else None
                 ),
                 "passed": stable_id,
             },
@@ -178,9 +167,7 @@ async def _main() -> None:
         failures.append("idempotent_draft_id")
 
     if failures:
-        raise RuntimeError(
-            "Draft generation verification failed:\n" + "\n".join(failures)
-        )
+        raise RuntimeError("Draft generation verification failed:\n" + "\n".join(failures))
 
 
 if __name__ == "__main__":

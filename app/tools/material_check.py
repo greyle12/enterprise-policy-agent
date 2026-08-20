@@ -409,18 +409,11 @@ _ALL_RULE_MATERIALS = (
     *_TRAVEL_MATERIALS,
     *_PURCHASE_MATERIALS,
     *_EXPENSE_GENERAL_MATERIALS,
-    *(
-        material
-        for materials in _EXPENSE_CATEGORY_MATERIALS.values()
-        for material in materials
-    ),
+    *(material for materials in _EXPENSE_CATEGORY_MATERIALS.values() for material in materials),
     *_LEAVE_MATERIALS,
 )
 
-_MATERIALS_BY_TYPE = {
-    material.material_type: material
-    for material in _ALL_RULE_MATERIALS
-}
+_MATERIALS_BY_TYPE = {material.material_type: material for material in _ALL_RULE_MATERIALS}
 
 _COMPARISON_CUES = (
     "齐全",
@@ -464,10 +457,7 @@ class PolicyArticleCatalog:
     """把确定性业务规则绑定到真实制度条款。"""
 
     def __init__(self, chunks: Iterable[PolicyChunk]) -> None:
-        self._chunks = {
-            (chunk.document_id, chunk.article_label): chunk
-            for chunk in chunks
-        }
+        self._chunks = {(chunk.document_id, chunk.article_label): chunk for chunk in chunks}
 
     @classmethod
     def from_directory(
@@ -503,20 +493,17 @@ class PolicyArticleCatalog:
 
 
 def _detect_application_type(text: str) -> ApplicationType | None:
-    if (
-        any(word in text for word in ("差旅", "出差"))
-        and (
-            "报销" in text
-            or any(
-                material_word in text
-                for material_word in (
-                    "申请单",
-                    "行程单",
-                    "交通票据",
-                    "住宿发票",
-                    "住宿明细",
-                    "出差成果",
-                )
+    if any(word in text for word in ("差旅", "出差")) and (
+        "报销" in text
+        or any(
+            material_word in text
+            for material_word in (
+                "申请单",
+                "行程单",
+                "交通票据",
+                "住宿发票",
+                "住宿明细",
+                "出差成果",
             )
         )
     ):
@@ -666,12 +653,8 @@ def _detect_purchase_amount(text: str) -> Decimal | None:
     )
 
     if quantity_price_match is not None:
-        quantity = _parse_small_number(
-            quantity_price_match.group("quantity")
-        )
-        unit_price = _extract_decimal(
-            quantity_price_match.group("unit_price")
-        )
+        quantity = _parse_small_number(quantity_price_match.group("quantity"))
+        unit_price = _extract_decimal(quantity_price_match.group("unit_price"))
         if quantity is not None and unit_price is not None:
             return quantity * unit_price
 
@@ -709,7 +692,7 @@ def _detect_leave_days(text: str) -> Decimal | None:
 
 
 def _is_negated(text: str, alias_start: int) -> bool:
-    prefix = text[max(0, alias_start - 8):alias_start]
+    prefix = text[max(0, alias_start - 8) : alias_start]
     return any(cue in prefix for cue in _NEGATIVE_CUES)
 
 
@@ -770,11 +753,7 @@ def _extract_provided_counts(
 
 
 def _has_material_reference(text: str) -> bool:
-    return any(
-        alias in text
-        for material in _ALL_RULE_MATERIALS
-        for alias in material.aliases
-    )
+    return any(alias in text for material in _ALL_RULE_MATERIALS for alias in material.aliases)
 
 
 def _resolve_request(text: str) -> _ResolvedRequest:
@@ -784,9 +763,7 @@ def _resolve_request(text: str) -> _ResolvedRequest:
         else MaterialCheckMode.REQUIREMENTS
     )
 
-    explicitly_no_materials = any(
-        cue in text for cue in _NO_MATERIALS_CUES
-    )
+    explicitly_no_materials = any(cue in text for cue in _NO_MATERIALS_CUES)
 
     return _ResolvedRequest(
         application_type=_detect_application_type(text),
@@ -852,9 +829,7 @@ def _purchase_requirements(
     request: _ResolvedRequest,
 ) -> tuple[list[_RuleMaterial], list[str], str | None]:
     requirements: list[_RuleMaterial] = []
-    notes = [
-        "采购申请附件应根据采购事项选择，制度并未要求所有附件一律提交。"
-    ]
+    notes = ["采购申请附件应根据采购事项选择，制度并未要求所有附件一律提交。"]
 
     if request.is_it_purchase:
         requirements.extend(
@@ -865,16 +840,12 @@ def _purchase_requirements(
         )
 
     if request.is_goods_purchase:
-        requirements.append(
-            _material_by_type("product_specification")
-        )
+        requirements.append(_material_by_type("product_specification"))
     elif request.is_service_purchase:
         requirements.append(_material_by_type("service_scope"))
 
     if request.is_emergency_purchase:
-        requirements.append(
-            _material_by_type("emergency_purchase_explanation")
-        )
+        requirements.append(_material_by_type("emergency_purchase_explanation"))
 
     amount = request.purchase_amount
     if amount is None:
@@ -899,16 +870,13 @@ def _purchase_requirements(
                 display_name=quotation.display_name,
                 aliases=quotation.aliases,
                 reason=(
-                    "超过五万元、不超过二十万元的采购，"
-                    "原则上需要不少于三家合格供应商有效报价。"
+                    "超过五万元、不超过二十万元的采购，原则上需要不少于三家合格供应商有效报价。"
                 ),
                 source=_PURCHASE_COMPARISON_SOURCE,
                 required_count=3,
             )
         )
-        requirements.append(
-            _material_by_type("comparison_record")
-        )
+        requirements.append(_material_by_type("comparison_record"))
     elif amount > Decimal(5000):
         quotation = _material_by_type("quotation")
         requirements.append(
@@ -916,18 +884,13 @@ def _purchase_requirements(
                 material_type=quotation.material_type,
                 display_name=quotation.display_name,
                 aliases=quotation.aliases,
-                reason=(
-                    "超过五千元、不超过五万元的采购，"
-                    "原则上需要不少于两家合格供应商有效报价。"
-                ),
+                reason=("超过五千元、不超过五万元的采购，原则上需要不少于两家合格供应商有效报价。"),
                 source=_PURCHASE_INQUIRY_SOURCE,
                 required_count=2,
             )
         )
     else:
-        notes.append(
-            "预计总金额不超过5,000元时，制度未规定必须取得多家供应商报价。"
-        )
+        notes.append("预计总金额不超过5,000元时，制度未规定必须取得多家供应商报价。")
 
     return requirements, notes, None
 
@@ -1000,12 +963,7 @@ def _leave_requirements(
 
     return (
         [],
-        [
-            (
-                "现有制度未要求该假期类型提交固定证明附件，"
-                "但请假申请字段和工作交接信息仍需完整填写。"
-            )
-        ],
+        [("现有制度未要求该假期类型提交固定证明附件，但请假申请字段和工作交接信息仍需完整填写。")],
         None,
     )
 
@@ -1024,11 +982,7 @@ def _requirements_for(
     if application_type is ApplicationType.EXPENSE_REIMBURSEMENT:
         requirements = list(_EXPENSE_GENERAL_MATERIALS)
         if request.expense_category is not None:
-            requirements.extend(
-                _EXPENSE_CATEGORY_MATERIALS[
-                    request.expense_category
-                ]
-            )
+            requirements.extend(_EXPENSE_CATEGORY_MATERIALS[request.expense_category])
         return requirements, [], None
 
     if application_type is ApplicationType.LEAVE:
@@ -1163,9 +1117,7 @@ def _provided_materials(
 def _source_suffix(citations: Sequence[PolicyCitation]) -> str:
     if not citations:
         return ""
-    return " " + " ".join(
-        f"[{citation.source_id}]" for citation in citations
-    )
+    return " " + " ".join(f"[{citation.source_id}]" for citation in citations)
 
 
 def _format_reply(result: MaterialCheckResult) -> str:
@@ -1182,17 +1134,9 @@ def _format_reply(result: MaterialCheckResult) -> str:
                 result.required_materials,
                 start=1,
             ):
-                count_text = (
-                    f"（至少{item.required_count}份）"
-                    if item.required_count > 1
-                    else ""
-                )
-                sensitive_text = (
-                    "（敏感材料）" if item.sensitive else ""
-                )
-                lines.append(
-                    f"{index}. {item.display_name}{count_text}{sensitive_text}"
-                )
+                count_text = f"（至少{item.required_count}份）" if item.required_count > 1 else ""
+                sensitive_text = "（敏感材料）" if item.sensitive else ""
+                lines.append(f"{index}. {item.display_name}{count_text}{sensitive_text}")
         else:
             lines.append("现有制度没有列出固定的必交证明附件。")
     elif result.materials_complete is None:
@@ -1205,17 +1149,9 @@ def _format_reply(result: MaterialCheckResult) -> str:
             result.missing_materials,
             start=1,
         ):
-            count_text = (
-                f"（还缺{item.missing_count}份）"
-                if item.missing_count > 1
-                else ""
-            )
-            sensitive_text = (
-                "（敏感材料）" if item.sensitive else ""
-            )
-            lines.append(
-                f"{index}. {item.display_name}{count_text}{sensitive_text}"
-            )
+            count_text = f"（还缺{item.missing_count}份）" if item.missing_count > 1 else ""
+            sensitive_text = "（敏感材料）" if item.sensitive else ""
+            lines.append(f"{index}. {item.display_name}{count_text}{sensitive_text}")
 
     lines.extend(f"提示：{note}" for note in result.notes)
 
@@ -1239,9 +1175,7 @@ class RequiredMaterialsChecker:
         cls,
         directory: str | Path,
     ) -> RequiredMaterialsChecker:
-        return cls(
-            catalog=PolicyArticleCatalog.from_directory(directory)
-        )
+        return cls(catalog=PolicyArticleCatalog.from_directory(directory))
 
     async def check(self, user_input: str) -> MaterialCheckAnswer:
         normalized_input = user_input.strip()
@@ -1249,9 +1183,7 @@ class RequiredMaterialsChecker:
             raise ValueError("user_input must not be blank")
 
         request = _resolve_request(normalized_input)
-        raw_requirements, notes, clarification = _requirements_for(
-            request
-        )
+        raw_requirements, notes, clarification = _requirements_for(request)
         requirements = _deduplicate_requirements(raw_requirements)
         citations = _build_citations(
             requirements,
@@ -1263,20 +1195,14 @@ class RequiredMaterialsChecker:
         missing: tuple[MissingMaterial, ...] = ()
         materials_complete: bool | None = None
 
-        if (
-            request.mode is MaterialCheckMode.COMPARISON
-            and request.application_type is not None
-        ):
+        if request.mode is MaterialCheckMode.COMPARISON and request.application_type is not None:
             if (
                 not request.provided_counts
                 and not request.explicitly_no_materials
                 and not request.has_material_reference
                 and clarification is None
             ):
-                clarification = (
-                    "请列出你已经准备的材料，"
-                    "我才能逐项检查缺失内容。"
-                )
+                clarification = "请列出你已经准备的材料，我才能逐项检查缺失内容。"
             elif clarification is None:
                 missing = _missing_materials(
                     requirements,

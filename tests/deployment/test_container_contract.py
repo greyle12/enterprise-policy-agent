@@ -13,9 +13,7 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 def test_dockerfile_uses_pinned_python_and_non_root_runtime() -> None:
-    dockerfile = (_PROJECT_ROOT / "Dockerfile").read_text(
-        encoding="utf-8"
-    )
+    dockerfile = (_PROJECT_ROOT / "Dockerfile").read_text(encoding="utf-8")
 
     assert "FROM python:3.12.10-slim AS builder" in dockerfile
     assert "FROM python:3.12.10-slim AS runtime" in dockerfile
@@ -28,14 +26,9 @@ def test_dockerfile_uses_pinned_python_and_non_root_runtime() -> None:
 
 
 def test_compose_mounts_runtime_and_model_cache_volumes() -> None:
-    compose = yaml.safe_load(
-        (_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8")
-    )
+    compose = yaml.safe_load((_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8"))
     service = compose["services"]["agent"]
-    volume_targets = {
-        item["target"]: item["source"]
-        for item in service["volumes"]
-    }
+    volume_targets = {item["target"]: item["source"] for item in service["volumes"]}
 
     assert service["environment"]["SQLITE_DATABASE_PATH"] == (
         "/app/data/runtime/enterprise_policy_agent.db"
@@ -50,23 +43,16 @@ def test_compose_mounts_runtime_and_model_cache_volumes() -> None:
 
 
 def test_compose_healthcheck_targets_readiness_endpoint() -> None:
-    compose = yaml.safe_load(
-        (_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8")
-    )
+    compose = yaml.safe_load((_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8"))
     healthcheck = compose["services"]["agent"]["healthcheck"]
 
     assert "scripts.check_container_health" in healthcheck["test"]
-    assert (
-        "http://127.0.0.1:8000/health/ready"
-        in healthcheck["test"]
-    )
+    assert "http://127.0.0.1:8000/health/ready" in healthcheck["test"]
     assert healthcheck["start_period"] == "10m"
 
 
 def test_compose_provides_ephemeral_hardened_redis_cache() -> None:
-    compose = yaml.safe_load(
-        (_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8")
-    )
+    compose = yaml.safe_load((_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8"))
     redis_service = compose["services"]["redis"]
     agent_environment = compose["services"]["agent"]["environment"]
 
@@ -87,9 +73,7 @@ def test_compose_provides_ephemeral_hardened_redis_cache() -> None:
 def test_docker_build_context_excludes_secrets_and_runtime_data() -> None:
     patterns = {
         line.strip()
-        for line in (_PROJECT_ROOT / ".dockerignore")
-        .read_text(encoding="utf-8")
-        .splitlines()
+        for line in (_PROJECT_ROOT / ".dockerignore").read_text(encoding="utf-8").splitlines()
         if line.strip()
     }
 

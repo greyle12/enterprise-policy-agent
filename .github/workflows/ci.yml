@@ -53,6 +53,9 @@ jobs:
       - name: Lint source and tests
         run: python -m ruff check .
 
+      - name: Verify Ruff formatting
+        run: python -m ruff format --check .
+
       - name: Run the complete pytest suite
         run: python -m pytest --junitxml=artifacts/test-results/pytest.xml
 
@@ -76,6 +79,12 @@ jobs:
 
       - name: Verify policy authorization and prompt-injection defenses
         run: python -X utf8 -m scripts.verify_rag_security
+
+      - name: Verify the Phase 22 document-loader boundary
+        run: python -X utf8 -m scripts.verify_document_loader
+
+      - name: Verify Phase 23 native PDF parsing and provenance
+        run: python -X utf8 -m scripts.verify_pdf_document_parsing
 
       - name: Generate the offline portfolio demonstration evidence
         run: >-

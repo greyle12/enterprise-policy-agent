@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 
@@ -15,9 +15,7 @@ POLICY_DIR = Path("data/policies")
 
 
 def test_parse_single_policy_file() -> None:
-    document = parse_policy_file(
-        POLICY_DIR / "travel_reimbursement_policy_v1.md"
-    )
+    document = parse_policy_file(POLICY_DIR / "travel_reimbursement_policy_v1.md")
 
     assert document.metadata.document_id == "TRAVEL_POLICY_001"
     assert document.metadata.title == "差旅报销管理制度"
@@ -34,10 +32,7 @@ def test_parse_all_policy_files() -> None:
 
     assert len(documents) == 5
 
-    document_ids = {
-        document.metadata.document_id
-        for document in documents
-    }
+    document_ids = {document.metadata.document_id for document in documents}
 
     assert document_ids == {
         "TRAVEL_POLICY_001",
@@ -49,9 +44,7 @@ def test_parse_all_policy_files() -> None:
 
 
 def test_front_matter_is_removed_from_content() -> None:
-    document = parse_policy_file(
-        POLICY_DIR / "procurement_management_policy_v1.md"
-    )
+    document = parse_policy_file(POLICY_DIR / "procurement_management_policy_v1.md")
 
     assert not document.content.startswith("---")
     assert "document_id:" not in document.content
@@ -135,7 +128,7 @@ def test_reject_non_markdown_file(tmp_path: Path) -> None:
 
     with pytest.raises(
         PolicyParseError,
-        match=r"必须是 \.md 文件",
+        match="不支持的制度文件格式",
     ):
         parse_policy_file(file_path)
 
@@ -145,9 +138,7 @@ def test_reject_missing_policy_directory() -> None:
         PolicyParseError,
         match="制度目录不存在",
     ):
-        parse_policy_directory(
-            "data/not_existing_policies"
-        )
+        parse_policy_directory("data/not_existing_policies")
 
 
 def test_reject_duplicate_document_ids(

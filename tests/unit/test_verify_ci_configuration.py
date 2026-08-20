@@ -106,6 +106,18 @@ def test_rejects_missing_quality_gate_command(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_format_gate_command(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -m ruff format --check .",
+        "python -m ruff format --check app",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_runtime_observability_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(
@@ -124,6 +136,30 @@ def test_rejects_missing_rag_security_gate(tmp_path: Path) -> None:
         workflow,
         "python -X utf8 -m scripts.verify_rag_security",
         "python -X utf8 -c \"print('security gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_document_loader_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_document_loader",
+        "python -X utf8 -c \"print('document loader gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_pdf_document_parsing_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_pdf_document_parsing",
+        "python -X utf8 -c \"print('PDF parsing gate removed')\"",
     )
 
     with pytest.raises(CIConfigurationError, match="quality job is missing command"):

@@ -75,4 +75,3 @@ class MaterialCheckAnswer:
     request: str
     result: MaterialCheckResult
     reply: str
-

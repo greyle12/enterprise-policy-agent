@@ -82,9 +82,7 @@ def test_provider_status_requires_initialized_lifespan() -> None:
         response = client.get("/api/v1/provider/status")
 
     assert response.status_code == 503
-    assert response.json() == {
-        "detail": "LLM provider capacity manager is not initialized"
-    }
+    assert response.json() == {"detail": "LLM provider capacity manager is not initialized"}
 
 
 def test_openapi_exposes_provider_status_contract() -> None:

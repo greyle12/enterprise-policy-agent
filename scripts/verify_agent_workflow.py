@@ -114,12 +114,8 @@ class StubPolicyAnswerService:
 
 
 def _build_router() -> AgentRouter:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     draft_generator = ApplicationDraftGenerator.from_policy_directory(
         _POLICY_DIRECTORY,
         material_checker=material_checker,
@@ -146,25 +142,16 @@ def _build_router() -> AgentRouter:
 async def _main() -> None:
     router = _build_router()
     mermaid = router.draw_workflow_mermaid()
-    missing_nodes = [
-        node.value
-        for node in AgentWorkflowNode
-        if node.value not in mermaid
-    ]
+    missing_nodes = [node.value for node in AgentWorkflowNode if node.value not in mermaid]
     if missing_nodes:
-        raise RuntimeError(
-            "compiled workflow is missing nodes: "
-            + ", ".join(missing_nodes)
-        )
+        raise RuntimeError("compiled workflow is missing nodes: " + ", ".join(missing_nodes))
 
     failures: list[str] = []
     for user_input, expected_intent, expected_status in _CASES:
         result = await router.route(user_input)
         expected_action_node = _ACTION_NODE_BY_INTENT[expected_intent]
         actual_nodes = (
-            [step.node for step in result.workflow.steps]
-            if result.workflow is not None
-            else []
+            [step.node for step in result.workflow.steps] if result.workflow is not None else []
         )
         expected_nodes = [
             AgentWorkflowNode.RESOLVE_TURN,
@@ -172,12 +159,8 @@ async def _main() -> None:
             expected_action_node,
         ]
         if expected_status is AgentResponseStatus.AWAITING_CONFIRMATION:
-            expected_nodes.append(
-                AgentWorkflowNode.AWAIT_CONFIRMATION
-            )
-            expected_terminal_node = (
-                AgentWorkflowNode.AWAIT_CONFIRMATION
-            )
+            expected_nodes.append(AgentWorkflowNode.AWAIT_CONFIRMATION)
+            expected_terminal_node = AgentWorkflowNode.AWAIT_CONFIRMATION
         else:
             expected_terminal_node = expected_action_node
         passed = (
@@ -185,8 +168,7 @@ async def _main() -> None:
             and result.status is expected_status
             and actual_nodes == expected_nodes
             and result.workflow is not None
-            and result.workflow.terminal_node
-            is expected_terminal_node
+            and result.workflow.terminal_node is expected_terminal_node
         )
 
         print(
@@ -199,9 +181,7 @@ async def _main() -> None:
                     "status": result.status,
                     "workflow_nodes": actual_nodes,
                     "terminal_node": (
-                        result.workflow.terminal_node
-                        if result.workflow is not None
-                        else None
+                        result.workflow.terminal_node if result.workflow is not None else None
                     ),
                     "passed": passed,
                 },
@@ -213,10 +193,7 @@ async def _main() -> None:
             failures.append(user_input)
 
     if failures:
-        raise RuntimeError(
-            "Agent workflow verification failed: "
-            + " | ".join(failures)
-        )
+        raise RuntimeError("Agent workflow verification failed: " + " | ".join(failures))
 
 
 if __name__ == "__main__":

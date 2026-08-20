@@ -22,9 +22,7 @@ from app.tools.draft_models import (
 )
 from app.tools.material_check import RequiredMaterialsChecker
 
-_POLICY_DIRECTORY = (
-    Path(__file__).resolve().parents[2] / "data" / "policies"
-)
+_POLICY_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "policies"
 
 _COMPLETE_PURCHASE = (
     "帮我生成采购申请草稿，采购3台27英寸办公显示器，每台2000元，"
@@ -70,31 +68,21 @@ def _build_router() -> tuple[
     AgentRouter,
     DeterministicIntentClassifier,
 ]:
-    material_checker = (
-        RequiredMaterialsChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
-    approval_checker = (
-        ApprovalRuleChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     classifier = DeterministicIntentClassifier()
-    draft_generator = (
-        ApplicationDraftGenerator.from_policy_directory(
-            _POLICY_DIRECTORY,
-            material_checker=material_checker,
-            approval_checker=approval_checker,
-            user_context=DraftUserContext(
-                employee_id="TEST-EMP-001",
-                employee_name="测试用户",
-                department="测试部门",
-                roles=("EMPLOYEE",),
-                region="中国大陆",
-                identity_source="trusted_test_context",
-            ),
-        )
+    draft_generator = ApplicationDraftGenerator.from_policy_directory(
+        _POLICY_DIRECTORY,
+        material_checker=material_checker,
+        approval_checker=approval_checker,
+        user_context=DraftUserContext(
+            employee_id="TEST-EMP-001",
+            employee_name="测试用户",
+            department="测试部门",
+            roles=("EMPLOYEE",),
+            region="中国大陆",
+            identity_source="trusted_test_context",
+        ),
     )
     return (
         AgentRouter(
@@ -118,11 +106,7 @@ def _field_value(
     draft: ApplicationDraft,
     field_name: str,
 ):
-    return next(
-        field.value
-        for field in draft.fields
-        if field.field_name == field_name
-    )
+    return next(field.value for field in draft.fields if field.field_name == field_name)
 
 
 @pytest.mark.asyncio
@@ -142,10 +126,7 @@ async def test_completes_and_confirms_draft_across_turns() -> None:
     assert first_draft.audit_metadata.session_id == session_id
     assert first.session is not None
     assert first.session.turn_number == 1
-    assert (
-        first.session.phase
-        is AgentSessionPhase.COLLECTING_INFORMATION
-    )
+    assert first.session.phase is AgentSessionPhase.COLLECTING_INFORMATION
 
     second = await router.route(
         _COMPLETE_PURCHASE.replace(
@@ -156,10 +137,7 @@ async def test_completes_and_confirms_draft_across_turns() -> None:
     )
     second_draft = _draft_from(second)
 
-    assert (
-        second.status
-        is AgentResponseStatus.AWAITING_CONFIRMATION
-    )
+    assert second.status is AgentResponseStatus.AWAITING_CONFIRMATION
     assert second.classification.intent is IntentType.DRAFT_UPDATE
     assert second_draft.draft_id == first_draft.draft_id
     assert second_draft.revision == 2
@@ -168,9 +146,7 @@ async def test_completes_and_confirms_draft_across_turns() -> None:
     assert second.session.pending_confirmation is True
     assert second.workflow is not None
     assert second.workflow.interrupted is True
-    assert second.workflow.terminal_node is (
-        AgentWorkflowNode.AWAIT_CONFIRMATION
-    )
+    assert second.workflow.terminal_node is (AgentWorkflowNode.AWAIT_CONFIRMATION)
 
     confirmed = await router.route(
         "确认草稿",
@@ -179,10 +155,7 @@ async def test_completes_and_confirms_draft_across_turns() -> None:
     confirmed_draft = _draft_from(confirmed)
 
     assert confirmed.status is AgentResponseStatus.CONFIRMED
-    assert (
-        confirmed.classification.intent
-        is IntentType.DRAFT_CONFIRMATION
-    )
+    assert confirmed.classification.intent is IntentType.DRAFT_CONFIRMATION
     assert confirmed_draft.draft_id == first_draft.draft_id
     assert confirmed_draft.status is DraftStatus.CONFIRMED
     assert confirmed_draft.user_confirmed is True
@@ -228,9 +201,7 @@ async def test_modification_resumes_and_reinterrupts_workflow() -> None:
     assert revised.session is not None
     assert revised.session.pending_confirmation is True
     assert revised.workflow is not None
-    assert [
-        step.node for step in revised.workflow.steps
-    ] == [
+    assert [step.node for step in revised.workflow.steps] == [
         AgentWorkflowNode.RESOLVE_TURN,
         AgentWorkflowNode.HUMAN_CONFIRMATION_GATE,
         AgentWorkflowNode.UPDATE_DRAFT,
@@ -279,10 +250,7 @@ async def test_ambiguous_reply_does_not_resume_confirmation() -> None:
         session_id=session_id,
     )
 
-    assert (
-        ambiguous.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert ambiguous.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert ambiguous.classification.intent is IntentType.UNKNOWN
     assert _draft_from(ambiguous).draft_id == draft_id
     assert ambiguous.session is not None
@@ -337,18 +305,12 @@ async def test_rejects_confirmation_for_incomplete_draft() -> None:
     )
     draft = _draft_from(result)
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert draft.status is DraftStatus.WAITING_FOR_INFORMATION
     assert draft.user_confirmed is False
     assert draft.submitted is False
     assert result.session is not None
-    assert (
-        result.session.phase
-        is AgentSessionPhase.COLLECTING_INFORMATION
-    )
+    assert result.session.phase is AgentSessionPhase.COLLECTING_INFORMATION
 
 
 @pytest.mark.asyncio
@@ -399,10 +361,7 @@ async def test_clear_session_removes_memory_checkpoint() -> None:
         session_id=session_id,
     )
 
-    assert (
-        result.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-    )
+    assert result.status is AgentResponseStatus.NEEDS_CLARIFICATION
     assert result.application_draft is not None
     assert result.application_draft.draft is None
     assert result.session is not None

@@ -11,9 +11,7 @@ from pathlib import Path
 from app.agent.workflow_models import AgentSessionInfo, AgentSessionPhase
 from app.persistence import SQLiteAgentStateStore
 
-_DEFAULT_DATABASE_PATH = Path(
-    "/app/data/runtime/enterprise_policy_agent.db"
-)
+_DEFAULT_DATABASE_PATH = Path("/app/data/runtime/enterprise_policy_agent.db")
 _DEFAULT_PROBE_ID = "DAY17-CONTAINER-PROBE"
 _PROBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$")
 
@@ -30,9 +28,7 @@ def _database_path() -> Path:
 def _validate_probe_id(probe_id: str) -> str:
     normalized = probe_id.strip()
     if not _PROBE_ID_PATTERN.fullmatch(normalized):
-        raise ValueError(
-            "probe_id must be 1-64 safe session identifier characters"
-        )
+        raise ValueError("probe_id must be 1-64 safe session identifier characters")
     return normalized
 
 
@@ -68,14 +64,10 @@ async def read_probe(
     store = SQLiteAgentStateStore(database_path)
     session = await store.get_session(probe_id)
     persisted = (
-        session is not None
-        and session.turn_number == 17
-        and session.checkpoint_backend == "sqlite"
+        session is not None and session.turn_number == 17 and session.checkpoint_backend == "sqlite"
     )
     if not persisted:
-        raise RuntimeError(
-            "persistence probe was not found after container recreation"
-        )
+        raise RuntimeError("persistence probe was not found after container recreation")
     return {
         "operation": "read",
         "probe_id": probe_id,

@@ -1,10 +1,10 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class PolicyStatus(StrEnum):
@@ -81,11 +81,7 @@ class PolicyMetadata(BaseModel):
             return [value.strip()]
 
         if isinstance(value, list):
-            normalized = [
-                str(item).strip()
-                for item in value
-                if str(item).strip()
-            ]
+            normalized = [str(item).strip() for item in value if str(item).strip()]
             return normalized
 
         raise ValueError("必须是字符串或字符串列表")
@@ -97,13 +93,41 @@ class PolicyDocument(BaseModel):
     metadata: PolicyMetadata
     content: str = Field(
         min_length=1,
-        description="删除 YAML 头后的 Markdown 正文",
+        description="移除元数据后的规范化制度正文",
     )
     source_path: Path
+    source_media_type: str = Field(
+        default="text/markdown",
+        min_length=1,
+    )
+    source_loader_name: str = Field(
+        default="markdown",
+        min_length=1,
+    )
+    metadata_source_path: Path | None = None
+    source_page_count: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    content_page_numbers: tuple[int, ...] = ()
     raw_text: str = Field(
         min_length=1,
-        description="原始制度全文",
+        description="Document Loader 输出的规范化全文",
     )
+
+    @model_validator(mode="after")
+    def validate_page_mapping(self) -> PolicyDocument:
+        if self.content_page_numbers:
+            if self.source_page_count is None:
+                raise ValueError("content_page_numbers 需要 source_page_count")
+            if len(self.content_page_numbers) != len(self.content.splitlines()):
+                raise ValueError("content_page_numbers 必须与 content 行数一致")
+            if any(
+                page_number < 1 or page_number > self.source_page_count
+                for page_number in self.content_page_numbers
+            ):
+                raise ValueError("content_page_numbers 必须位于 PDF 页码范围内")
+        return self
 
     @property
     def document_id(self) -> str:

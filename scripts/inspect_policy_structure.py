@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import re
 import sys
@@ -15,9 +15,7 @@ from app.rag.policy_parser import parse_policy_directory  # noqa: E402
 
 POLICY_DIRECTORY = PROJECT_ROOT / "data" / "policies"
 
-MARKDOWN_HEADING_PATTERN = re.compile(
-    r"^(?P<marks>#{1,6})\s+(?P<title>.+?)\s*$"
-)
+MARKDOWN_HEADING_PATTERN = re.compile(r"^(?P<marks>#{1,6})\s+(?P<title>.+?)\s*$")
 
 ARTICLE_PATTERN = re.compile(
     r"^\s*"
@@ -76,11 +74,7 @@ def inspect_document(content: str) -> dict[str, object]:
         article_match = ARTICLE_PATTERN.match(stripped)
 
         if article_match:
-            style = (
-                "markdown_heading"
-                if article_match.group("heading")
-                else "plain_text"
-            )
+            style = "markdown_heading" if article_match.group("heading") else "plain_text"
 
             article_styles[style] += 1
 
@@ -103,10 +97,7 @@ def inspect_document(content: str) -> dict[str, object]:
         "heading_count": len(headings),
         "article_count": len(articles),
         "chapter_count": len(chapters),
-        "heading_levels": Counter(
-            level
-            for level, _ in headings
-        ),
+        "heading_levels": Counter(level for level, _ in headings),
         "article_styles": article_styles,
         "articles": articles,
         "chapters": chapters,
@@ -132,9 +123,7 @@ def main() -> int:
         total_articles += article_count
 
         if article_count == 0:
-            documents_without_articles.append(
-                document.metadata.document_id
-            )
+            documents_without_articles.append(document.metadata.document_id)
 
         print()
         print("-" * 72)
@@ -145,14 +134,8 @@ def main() -> int:
         print(f"Markdown 标题数：{result['heading_count']}")
         print(f"章节标记数：{result['chapter_count']}")
         print(f"条款标记数：{article_count}")
-        print(
-            "标题级别分布："
-            f"{dict(result['heading_levels'])}"
-        )
-        print(
-            "条款格式分布："
-            f"{dict(result['article_styles'])}"
-        )
+        print(f"标题级别分布：{dict(result['heading_levels'])}")
+        print(f"条款格式分布：{dict(result['article_styles'])}")
 
         chapters = result["chapters"]
 
@@ -181,10 +164,7 @@ def main() -> int:
     print(f"识别到的条款总数：{total_articles}")
 
     if documents_without_articles:
-        print(
-            "未识别到条款的制度："
-            + ", ".join(documents_without_articles)
-        )
+        print("未识别到条款的制度：" + ", ".join(documents_without_articles))
         print("结构检查未通过。")
         return 1
 

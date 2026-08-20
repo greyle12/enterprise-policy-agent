@@ -40,9 +40,7 @@ def test_check_health_accepts_expected_ready_payload(
         ),
     )
 
-    payload = health_module.check_health(
-        "http://127.0.0.1:8000/health/ready"
-    )
+    payload = health_module.check_health("http://127.0.0.1:8000/health/ready")
 
     assert payload["status"] == "ready"
 
@@ -53,18 +51,14 @@ def test_check_health_rejects_unexpected_status(
     monkeypatch.setattr(
         health_module,
         "urlopen",
-        lambda request, timeout: FakeResponse(
-            {"status": "not_ready"}
-        ),
+        lambda request, timeout: FakeResponse({"status": "not_ready"}),
     )
 
     with pytest.raises(
         health_module.HealthProbeError,
         match="expected status",
     ):
-        health_module.check_health(
-            "http://127.0.0.1:8000/health/ready"
-        )
+        health_module.check_health("http://127.0.0.1:8000/health/ready")
 
 
 def test_check_health_normalizes_connection_errors(
@@ -79,9 +73,7 @@ def test_check_health_normalizes_connection_errors(
         health_module.HealthProbeError,
         match="URLError",
     ) as error:
-        health_module.check_health(
-            "http://127.0.0.1:8000/health/ready"
-        )
+        health_module.check_health("http://127.0.0.1:8000/health/ready")
 
     assert "sensitive host" not in str(error.value)
 

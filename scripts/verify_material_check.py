@@ -22,10 +22,7 @@ _CASES = (
         "materials_complete": None,
     },
     {
-        "input": (
-            "我准备了出差申请单、行程单和交通票据，"
-            "帮我检查还缺什么。"
-        ),
+        "input": ("我准备了出差申请单、行程单和交通票据，帮我检查还缺什么。"),
         "application_type": ApplicationType.TRAVEL_REIMBURSEMENT,
         "mode": MaterialCheckMode.COMPARISON,
         "missing_count": 4,
@@ -56,51 +53,40 @@ _CASES = (
 
 
 async def _main() -> None:
-    checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
     failures: list[str] = []
 
     for case in _CASES:
         answer = await checker.check(case["input"])
         result = answer.result
         quotation_requirement = next(
-            (
-                item
-                for item in result.required_materials
-                if item.material_type == "quotation"
-            ),
+            (item for item in result.required_materials if item.material_type == "quotation"),
             None,
         )
         passed = (
             result.application_type is case["application_type"]
             and result.mode is case["mode"]
-            and result.materials_complete
-            is case["materials_complete"]
+            and result.materials_complete is case["materials_complete"]
             and len(result.citations) > 0
             and (
                 "required_count" not in case
-                or len(result.required_materials)
-                == case["required_count"]
+                or len(result.required_materials) == case["required_count"]
             )
             and (
                 "missing_count" not in case
-                or len(result.missing_materials)
-                == case["missing_count"]
+                or len(result.missing_materials) == case["missing_count"]
             )
             and (
                 "quotation_count" not in case
                 or (
                     quotation_requirement is not None
-                    and quotation_requirement.required_count
-                    == case["quotation_count"]
+                    and quotation_requirement.required_count == case["quotation_count"]
                 )
             )
             and (
                 "missing_type" not in case
                 or any(
-                    item.material_type == case["missing_type"]
-                    for item in result.missing_materials
+                    item.material_type == case["missing_type"] for item in result.missing_materials
                 )
             )
         )
@@ -115,10 +101,7 @@ async def _main() -> None:
                     "provided_count": len(result.provided_materials),
                     "missing_count": len(result.missing_materials),
                     "materials_complete": result.materials_complete,
-                    "citations": [
-                        citation.source_id
-                        for citation in result.citations
-                    ],
+                    "citations": [citation.source_id for citation in result.citations],
                     "passed": passed,
                 },
                 ensure_ascii=False,
@@ -129,12 +112,8 @@ async def _main() -> None:
             failures.append(case["input"])
 
     if failures:
-        raise RuntimeError(
-            "Material check verification failed:\n"
-            + "\n".join(failures)
-        )
+        raise RuntimeError("Material check verification failed:\n" + "\n".join(failures))
 
 
 if __name__ == "__main__":
     asyncio.run(_main())
-

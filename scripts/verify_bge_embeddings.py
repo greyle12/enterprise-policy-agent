@@ -14,8 +14,7 @@ def calculate_dot_product(
 ) -> float:
     """计算两个已归一化向量的点积，即余弦相似度。"""
     return sum(
-        left_value * right_value
-        for left_value, right_value in zip(left, right, strict=True)
+        left_value * right_value for left_value, right_value in zip(left, right, strict=True)
     )
 
 
@@ -42,8 +41,7 @@ def main() -> None:
     norms = [calculate_norm(vector) for vector in all_vectors]
 
     scores = [
-        calculate_dot_product(query_vector, document_vector)
-        for document_vector in document_vectors
+        calculate_dot_product(query_vector, document_vector) for document_vector in document_vectors
     ]
 
     ranking = sorted(
@@ -62,17 +60,11 @@ def main() -> None:
     print("语义相似度排序：")
 
     for rank, (document_index, score) in enumerate(ranking, start=1):
-        print(
-            f"{rank}. score={score:.6f} "
-            f"document={documents[document_index]}"
-        )
+        print(f"{rank}. score={score:.6f} document={documents[document_index]}")
 
     assert provider.dimension == 512
     assert len(query_vector) == provider.dimension
-    assert all(
-        len(vector) == provider.dimension
-        for vector in document_vectors
-    )
+    assert all(len(vector) == provider.dimension for vector in document_vectors)
     assert all(abs(norm - 1.0) < 1e-4 for norm in norms)
     assert ranking[0][0] == 0
 

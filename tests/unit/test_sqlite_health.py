@@ -25,9 +25,7 @@ async def test_sqlite_state_store_ping_rejects_schema_drift(
     store = SQLiteAgentStateStore(tmp_path / "wrong-schema.db")
     connection = connect_database(store.database_path)
     try:
-        connection.execute(
-            f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION - 1}"
-        )
+        connection.execute(f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION - 1}")
     finally:
         connection.close()
 

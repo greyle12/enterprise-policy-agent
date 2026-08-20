@@ -30,16 +30,12 @@ def load_golden_dataset(path: str | Path) -> GoldenDataset:
     try:
         raw_bytes = dataset_path.read_bytes()
     except OSError as exc:
-        raise GoldenDatasetError(
-            f"cannot read golden dataset: {dataset_path}"
-        ) from exc
+        raise GoldenDatasetError(f"cannot read golden dataset: {dataset_path}") from exc
 
     try:
         text = raw_bytes.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
-        raise GoldenDatasetError(
-            "golden dataset must be UTF-8 encoded"
-        ) from exc
+        raise GoldenDatasetError("golden dataset must be UTF-8 encoded") from exc
 
     cases: list[GoldenCase] = []
     seen_case_ids: set[str] = set()
@@ -53,22 +49,17 @@ def load_golden_dataset(path: str | Path) -> GoldenDataset:
             payload = json.loads(line)
         except json.JSONDecodeError as exc:
             raise GoldenDatasetError(
-                "invalid JSON in golden dataset at "
-                f"line {line_number}: {exc.msg}"
+                f"invalid JSON in golden dataset at line {line_number}: {exc.msg}"
             ) from exc
 
         try:
             case = GOLDEN_CASE_ADAPTER.validate_python(payload)
         except ValidationError as exc:
-            raise GoldenDatasetError(
-                "invalid golden case at "
-                f"line {line_number}: {exc}"
-            ) from exc
+            raise GoldenDatasetError(f"invalid golden case at line {line_number}: {exc}") from exc
 
         if case.case_id in seen_case_ids:
             raise GoldenDatasetError(
-                "duplicate golden case_id at "
-                f"line {line_number}: {case.case_id}"
+                f"duplicate golden case_id at line {line_number}: {case.case_id}"
             )
 
         seen_case_ids.add(case.case_id)

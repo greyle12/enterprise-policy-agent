@@ -47,6 +47,7 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     workflow = (_PROJECT_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 
     assert "artifacts/test-results/pytest.xml" in workflow
+    assert "python -m ruff format --check ." in workflow
     assert "golden-evaluation-report.json" in workflow
     assert "agent-performance-report.json" in workflow
     assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow
@@ -54,6 +55,8 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_provider_backpressure" in workflow
     assert "scripts.verify_runtime_observability" in workflow
     assert "scripts.verify_rag_security" in workflow
+    assert "scripts.verify_document_loader" in workflow
+    assert "scripts.verify_pdf_document_parsing" in workflow
     assert "scripts.run_portfolio_demo" in workflow
     assert "--output-dir artifacts/portfolio" in workflow
     assert "scripts.verify_portfolio_release" in workflow

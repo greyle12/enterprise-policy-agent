@@ -6,6 +6,10 @@ from datetime import date
 from pathlib import Path
 from typing import Protocol, Self
 
+from app.rag.document_loader import (
+    DEFAULT_DOCUMENT_LOADER_REGISTRY,
+    DocumentLoaderRegistry,
+)
 from app.rag.policy_chunker import chunk_policy_directory
 from app.rag.vector_index import (
     InMemoryVectorIndex,
@@ -48,7 +52,7 @@ def _build_record_metadata(
 ) -> dict[str, str]:
     """将引用所需字段保存到向量记录元数据。"""
 
-    return {
+    metadata = {
         "document_id": chunk.document_id,
         "document_title": chunk.document_title,
         "document_version": chunk.document_version,
@@ -58,11 +62,18 @@ def _build_record_metadata(
         "article_label": chunk.article_label,
         "article_title": chunk.article_title,
         "source_path": str(chunk.source_path),
+        "source_media_type": chunk.source_media_type,
         "source_line_start": str(chunk.source_line_start),
         "source_line_end": str(chunk.source_line_end),
         "security_level": chunk.security_level.value,
         "content_hash": chunk.content_hash,
     }
+    if chunk.metadata_source_path is not None:
+        metadata["metadata_source_path"] = str(chunk.metadata_source_path)
+    if chunk.source_page_start is not None and chunk.source_page_end is not None:
+        metadata["source_page_start"] = str(chunk.source_page_start)
+        metadata["source_page_end"] = str(chunk.source_page_end)
+    return metadata
 
 
 class PolicyRetriever:
@@ -120,10 +131,14 @@ class PolicyRetriever:
         policy_directory: Path,
         *,
         embedding_provider: EmbeddingProvider,
+        loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
     ) -> Self:
         """解析指定目录并建立制度检索器。"""
 
-        chunks = chunk_policy_directory(policy_directory)
+        chunks = chunk_policy_directory(
+            policy_directory,
+            loader_registry=loader_registry,
+        )
 
         return cls(
             embedding_provider=embedding_provider,

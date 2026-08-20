@@ -124,9 +124,7 @@ def verify_deployment(
         "compose_config_valid": True,
         "container_ready": True,
         "health_url": health_url,
-        "sqlite_volume_survived_recreation": bool(
-            probe_payload.get("persisted")
-        ),
+        "sqlite_volume_survived_recreation": bool(probe_payload.get("persisted")),
     }
 
 

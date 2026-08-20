@@ -19,6 +19,8 @@ class PolicyCitation:
     article_label: str
     article_title: str
     score: float
+    source_page_start: int | None = None
+    source_page_end: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,7 +48,7 @@ def _context_record(
         if part
     )
 
-    return {
+    record = {
         "source_id": source_id,
         "document_title": chunk.document_title,
         "document_version": chunk.document_version,
@@ -55,6 +57,10 @@ def _context_record(
         "chunk_id": chunk.chunk_id,
         "content": chunk.content,
     }
+    if chunk.source_page_start is not None and chunk.source_page_end is not None:
+        record["source_page_start"] = str(chunk.source_page_start)
+        record["source_page_end"] = str(chunk.source_page_end)
+    return record
 
 
 def build_policy_context(
@@ -109,6 +115,8 @@ def build_policy_context(
             article_label=result.chunk.article_label,
             article_title=result.chunk.article_title,
             score=result.score,
+            source_page_start=result.chunk.source_page_start,
+            source_page_end=result.chunk.source_page_end,
         )
         for index, result in enumerate(
             selected_results,

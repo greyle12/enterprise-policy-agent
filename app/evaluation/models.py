@@ -200,9 +200,7 @@ class EvaluationReport(_StrictModel):
     """可写入 JSON 和 Markdown 的结构化评测报告。"""
 
     schema_version: Literal["1.0"] = "1.0"
-    suite_name: Literal["enterprise_policy_agent_golden_set"] = (
-        "enterprise_policy_agent_golden_set"
-    )
+    suite_name: Literal["enterprise_policy_agent_golden_set"] = "enterprise_policy_agent_golden_set"
     evaluation_mode: EvaluationMode
     intent_provider: str = Field(min_length=1, max_length=100)
     live_intent_llm_calls: bool

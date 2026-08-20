@@ -8,7 +8,9 @@ Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用�
 LLM Provider 有界并发、FIFO 排队、超时和取消清理的完全离线背压契约；Day 28 增加请求
 关联、脱敏日志、低基数 HTTP 指标、安全 500 和 Prometheus 格式的进程内可观测性契约；
 Day 29 增加检索前权限过滤、提示注入拒绝、污染证据隔离和零 Provider 调用断言；Day 30
-增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据。
+增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据；Advanced RAG
+Phase 22 增加统一 Document Loader、原有 Parser/Chunker 兼容性和 5 文档/199 Chunk 契约。
+Advanced RAG Phase 23 增加真实 PDF 动态生成、原生文本、sidecar、页码和 OCR handoff 契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -78,6 +80,7 @@ timeout 30 分钟
 → pip 依赖一致性检查
 → CI 配置契约检查
 → Ruff 静态检查
+→ Ruff 格式检查
 → 全量 pytest
 → 30 条离线黄金评测
 → 五场景离线性能预算
@@ -86,6 +89,8 @@ timeout 30 分钟
 → LLM Provider 并发与背压离线契约
 → 请求关联与运行时可观测性离线契约
 → RAG 权限与提示注入防护离线契约
+→ Phase 22 Document Loader 离线契约
+→ Phase 23 PDF 原生文本与页码离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -95,10 +100,11 @@ timeout 30 分钟
 任意一步返回非零退出码，Job 即失败。
 
 离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
-作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，也不会发送外部模型请求。缓存与负载
-专项使用内存协议替身，不连接真实 Redis。可观测性专项使用进程内 TestClient；安全专项使用
-固定身份、制度和攻击夹具，不调用 Provider。因此来自 Fork 的 Pull Request 可以在没有密钥、
-不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
+Document Loader、PDF 解析、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
+也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。Loader 专项读取
+仓库中的 Markdown；PDF 专项在临时目录动态生成两页 PDF 和 sidecar，不保存用户文档。可观测性
+专项使用进程内 TestClient；安全专项使用固定身份、制度和攻击夹具，不调用 Provider。因此来自
+Fork 的 Pull Request 可以在没有密钥、不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
 
 ### 3.1 构建证据
 
@@ -202,6 +208,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -m pip check
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_ci_configuration
 & .\.venv\Scripts\python.exe -m ruff check .
+& .\.venv\Scripts\python.exe -m ruff format --check .
 & .\.venv\Scripts\python.exe -m pytest
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_golden_evaluation `
@@ -215,6 +222,8 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_loader
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_pdf_document_parsing
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -253,6 +262,8 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Provider 背压契约失败 | 单独运行 `scripts.verify_provider_backpressure`，检查执行峰值、FIFO、溢出、超时和取消清理 |
 | 运行时可观测性契约失败 | 单独运行 `scripts.verify_runtime_observability`，检查请求 ID、路由模板、500 脱敏、指标和 Prometheus 格式 |
 | RAG 安全契约失败 | 单独运行 `scripts.verify_rag_security`，检查可信身份、7 类权限边界、攻击/正常用例、证据隔离和 Provider 调用数 |
+| Document Loader 契约失败 | 单独运行 `scripts.verify_document_loader`，检查扩展名注册、5 份制度、199 个 Chunk 和稳定来源路径 |
+| PDF 解析契约失败 | 单独运行 `scripts.verify_pdf_document_parsing`，检查 PyMuPDF、sidecar、页码、OCR handoff 和加密/损坏拒绝 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |

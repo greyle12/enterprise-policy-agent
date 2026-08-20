@@ -160,9 +160,7 @@ _DATE_PATTERN = re.compile(
     r"|(?P<zh>20\d{2}年(?:1[0-2]|0?[1-9])月(?:3[01]|[12]\d|0?[1-9])日)"
 )
 
-_REVISION_WORD_PATTERN = re.compile(
-    r"(?:修改|更改|调整|变更|改)(?:成|为|到)"
-)
+_REVISION_WORD_PATTERN = re.compile(r"(?:修改|更改|调整|变更|改)(?:成|为|到)")
 
 _APPLICATION_TYPE_CUES = {
     ApplicationType.PURCHASE: "采购",
@@ -533,7 +531,9 @@ def _extract_purchase(text: str, approval: ApprovalCheckResult) -> _ExtractionRe
         value=category,
         source=DraftFieldSource.DETERMINISTIC_RULE,
     ):
-        missing_fields.append(_missing("category", "采购类别", "这是货物、服务还是信息技术类采购？"))
+        missing_fields.append(
+            _missing("category", "采购类别", "这是货物、服务还是信息技术类采购？")
+        )
 
     specification = _extract_labeled_value(
         text,
@@ -567,15 +567,9 @@ def _extract_purchase(text: str, approval: ApprovalCheckResult) -> _ExtractionRe
     calculated_total = (
         unit_price * quantity if unit_price is not None and quantity is not None else None
     )
-    total_amount = (
-        explicit_total
-        if explicit_total is not None
-        else calculated_total
-    )
+    total_amount = explicit_total if explicit_total is not None else calculated_total
     total_source = (
-        DraftFieldSource.USER_INPUT
-        if explicit_total is not None
-        else DraftFieldSource.CALCULATED
+        DraftFieldSource.USER_INPUT if explicit_total is not None else DraftFieldSource.CALCULATED
     )
     if not _add_field(
         fields,
@@ -640,12 +634,20 @@ def _extract_purchase(text: str, approval: ApprovalCheckResult) -> _ExtractionRe
         )
 
     location = _extract_labeled_value(text, ("使用地点", "交付地点", "使用位置"))
-    if not _add_field(fields, field_name="delivery_location", display_name="使用地点", value=location):
-        missing_fields.append(_missing("delivery_location", "使用地点", "采购物品或服务的使用地点是哪里？"))
+    if not _add_field(
+        fields, field_name="delivery_location", display_name="使用地点", value=location
+    ):
+        missing_fields.append(
+            _missing("delivery_location", "使用地点", "采购物品或服务的使用地点是哪里？")
+        )
 
     supplier = _extract_labeled_value(text, ("推荐供应商", "供应商名称", "供应商"))
-    if not _add_field(fields, field_name="supplier_name", display_name="推荐供应商", value=supplier):
-        missing_fields.append(_missing("supplier_name", "推荐供应商", "推荐供应商是谁？如未确定请明确说明。"))
+    if not _add_field(
+        fields, field_name="supplier_name", display_name="推荐供应商", value=supplier
+    ):
+        missing_fields.append(
+            _missing("supplier_name", "推荐供应商", "推荐供应商是谁？如未确定请明确说明。")
+        )
 
     supplier_reason = _extract_labeled_value(text, ("推荐理由", "供应商理由"))
     if not _add_field(
@@ -654,9 +656,7 @@ def _extract_purchase(text: str, approval: ApprovalCheckResult) -> _ExtractionRe
         display_name="供应商推荐理由",
         value=supplier_reason,
     ):
-        missing_fields.append(
-            _missing("supplier_reason", "供应商推荐理由", "为什么推荐该供应商？")
-        )
+        missing_fields.append(_missing("supplier_reason", "供应商推荐理由", "为什么推荐该供应商？"))
 
     it_flag = _purchase_it_flag(text)
     if not _add_field(
@@ -734,7 +734,9 @@ def _extract_travel(text: str, approval: ApprovalCheckResult) -> _ExtractionResu
     departure, destination = _extract_city_pair(text)
     if not _add_field(fields, field_name="departure_city", display_name="出发地", value=departure):
         missing_fields.append(_missing("departure_city", "出发地", "本次出差从哪里出发？"))
-    if not _add_field(fields, field_name="destination_city", display_name="目的地", value=destination):
+    if not _add_field(
+        fields, field_name="destination_city", display_name="目的地", value=destination
+    ):
         missing_fields.append(_missing("destination_city", "目的地", "本次出差目的地是哪里？"))
 
     dates = _extract_dates(text)
@@ -770,12 +772,18 @@ def _extract_travel(text: str, approval: ApprovalCheckResult) -> _ExtractionResu
         )
 
     purpose = _extract_labeled_value(text, ("出差事由", "出差目的", "业务目的", "事由"))
-    if not _add_field(fields, field_name="business_purpose", display_name="出差事由", value=purpose):
-        missing_fields.append(_missing("business_purpose", "出差事由", "本次出差的业务事由是什么？"))
+    if not _add_field(
+        fields, field_name="business_purpose", display_name="出差事由", value=purpose
+    ):
+        missing_fields.append(
+            _missing("business_purpose", "出差事由", "本次出差的业务事由是什么？")
+        )
 
     project = _extract_labeled_value(text, ("项目名称", "所属项目"))
     cost_center = _extract_code(text, ("成本中心",))
-    has_project = _add_field(fields, field_name="project_name", display_name="项目名称", value=project)
+    has_project = _add_field(
+        fields, field_name="project_name", display_name="项目名称", value=project
+    )
     has_cost_center = _add_field(
         fields,
         field_name="cost_center",
@@ -856,7 +864,9 @@ def _extract_leave(text: str, approval: ApprovalCheckResult) -> _ExtractionResul
         value=leave_type,
         source=DraftFieldSource.DETERMINISTIC_RULE,
     ):
-        missing_fields.append(_missing("leave_type", "请假类型", "请说明年假、病假、事假等具体类型。"))
+        missing_fields.append(
+            _missing("leave_type", "请假类型", "请说明年假、病假、事假等具体类型。")
+        )
 
     dates = _extract_dates(text)
     start_date = _extract_labeled_date(text, ("请假开始日期", "开始日期"))
@@ -897,7 +907,9 @@ def _extract_leave(text: str, approval: ApprovalCheckResult) -> _ExtractionResul
         display_name="开始时段",
         value=start_period,
     ):
-        missing_fields.append(_missing("start_period", "开始时段", "开始时段是上午、下午还是全天？"))
+        missing_fields.append(
+            _missing("start_period", "开始时段", "开始时段是上午、下午还是全天？")
+        )
     if not _add_field(
         fields,
         field_name="end_period",
@@ -920,8 +932,12 @@ def _extract_leave(text: str, approval: ApprovalCheckResult) -> _ExtractionResul
         missing_fields.append(_missing("reason", "请假原因", "请填写请假原因。"))
 
     handover = _extract_labeled_value(text, ("工作交接人", "交接人", "代办人"))
-    if not _add_field(fields, field_name="handover_person", display_name="工作交接人", value=handover):
-        missing_fields.append(_missing("handover_person", "工作交接人", "休假期间由谁进行工作交接？"))
+    if not _add_field(
+        fields, field_name="handover_person", display_name="工作交接人", value=handover
+    ):
+        missing_fields.append(
+            _missing("handover_person", "工作交接人", "休假期间由谁进行工作交接？")
+        )
 
     emergency_contact = _extract_labeled_value(text, ("紧急联系人",))
     if not _add_field(
@@ -994,8 +1010,12 @@ def _extract_expense(text: str, approval: ApprovalCheckResult) -> _ExtractionRes
         missing_fields.append(_missing("amount", "报销金额", "本张报销单的总金额是多少？"))
 
     purpose = _extract_labeled_value(text, ("业务目的", "业务事由", "费用用途", "用途"))
-    if not _add_field(fields, field_name="business_purpose", display_name="业务目的", value=purpose):
-        missing_fields.append(_missing("business_purpose", "业务目的", "发生这笔费用的业务目的是什么？"))
+    if not _add_field(
+        fields, field_name="business_purpose", display_name="业务目的", value=purpose
+    ):
+        missing_fields.append(
+            _missing("business_purpose", "业务目的", "发生这笔费用的业务目的是什么？")
+        )
 
     expense_date = _extract_labeled_date(text, ("费用发生日期", "发生日期", "消费日期"))
     if not _add_field(
@@ -1008,7 +1028,9 @@ def _extract_expense(text: str, approval: ApprovalCheckResult) -> _ExtractionRes
 
     budget_code = _extract_code(text, ("预算编号", "预算代码"))
     cost_center = _extract_code(text, ("成本中心",))
-    has_budget = _add_field(fields, field_name="budget_code", display_name="预算编号", value=budget_code)
+    has_budget = _add_field(
+        fields, field_name="budget_code", display_name="预算编号", value=budget_code
+    )
     has_cost_center = _add_field(
         fields,
         field_name="cost_center",
@@ -1032,7 +1054,9 @@ def _extract_expense(text: str, approval: ApprovalCheckResult) -> _ExtractionRes
         value=contract_flag,
         source=DraftFieldSource.DETERMINISTIC_RULE,
     ):
-        missing_fields.append(_missing("involves_contract", "是否涉及合同", "这笔费用是否涉及合同？"))
+        missing_fields.append(
+            _missing("involves_contract", "是否涉及合同", "这笔费用是否涉及合同？")
+        )
 
     purchase_flag = _explicit_boolean(text, "采购")
     if not _add_field(
@@ -1042,7 +1066,9 @@ def _extract_expense(text: str, approval: ApprovalCheckResult) -> _ExtractionRes
         value=purchase_flag,
         source=DraftFieldSource.DETERMINISTIC_RULE,
     ):
-        missing_fields.append(_missing("involves_purchase", "是否涉及采购", "这笔费用是否涉及采购？"))
+        missing_fields.append(
+            _missing("involves_purchase", "是否涉及采购", "这笔费用是否涉及采购？")
+        )
 
     return _ExtractionResult(tuple(fields), tuple(missing_fields), ())
 
@@ -1244,10 +1270,7 @@ def _render_purchase_request(
     _append_labeled(parts, fields, "purpose", "采购目的")
     category = _field_text(fields, "category")
     if category is not None:
-        parts.append(
-            "采购类别为"
-            + _PURCHASE_CATEGORY_TEXT.get(category, category)
-        )
+        parts.append("采购类别为" + _PURCHASE_CATEGORY_TEXT.get(category, category))
     _append_labeled(parts, fields, "specification", "规格")
     _append_labeled(parts, fields, "budget_code", "预算编号")
     _append_labeled(parts, fields, "cost_center", "成本中心")
@@ -1264,17 +1287,11 @@ def _render_purchase_request(
     it_field = fields.get("involves_it_or_data")
     if it_field is not None:
         parts.append(
-            "涉及信息系统或数据处理"
-            if it_field.value is True
-            else "不涉及信息系统，不涉及数据处理"
+            "涉及信息系统或数据处理" if it_field.value is True else "不涉及信息系统，不涉及数据处理"
         )
     emergency_field = fields.get("is_emergency")
     if emergency_field is not None:
-        parts.append(
-            "紧急采购"
-            if emergency_field.value is True
-            else "普通采购"
-        )
+        parts.append("紧急采购" if emergency_field.value is True else "普通采购")
     return "，".join(parts) + "。"
 
 
@@ -1330,11 +1347,7 @@ def _render_leave_request(
     _append_labeled(parts, fields, "emergency_contact", "紧急联系人")
     emergency_field = fields.get("is_emergency")
     if emergency_field is not None:
-        parts.append(
-            "紧急请假"
-            if emergency_field.value is True
-            else "普通请假"
-        )
+        parts.append("紧急请假" if emergency_field.value is True else "普通请假")
     return "，".join(parts) + "。"
 
 
@@ -1344,10 +1357,7 @@ def _render_expense_request(
     parts = ["帮我生成费用报销草稿"]
     category = _field_text(fields, "expense_category")
     if category is not None:
-        parts.append(
-            "费用类别为"
-            + _EXPENSE_CATEGORY_TEXT.get(category, category)
-        )
+        parts.append("费用类别为" + _EXPENSE_CATEGORY_TEXT.get(category, category))
     amount = _field_text(fields, "amount")
     if amount is not None:
         parts.append(f"报销金额为{amount}元")
@@ -1359,18 +1369,10 @@ def _render_expense_request(
 
     contract_field = fields.get("involves_contract")
     if contract_field is not None:
-        parts.append(
-            "涉及合同"
-            if contract_field.value is True
-            else "不涉及合同"
-        )
+        parts.append("涉及合同" if contract_field.value is True else "不涉及合同")
     purchase_field = fields.get("involves_purchase")
     if purchase_field is not None:
-        parts.append(
-            "涉及采购"
-            if purchase_field.value is True
-            else "不涉及采购"
-        )
+        parts.append("涉及采购" if purchase_field.value is True else "不涉及采购")
     return "，".join(parts) + "。"
 
 
@@ -1388,11 +1390,7 @@ def _render_revision_request(
     else:
         canonical = _render_expense_request(fields)
 
-    context = "\n".join(
-        message.strip()
-        for message in context_messages
-        if message.strip()
-    )
+    context = "\n".join(message.strip() for message in context_messages if message.strip())
     if not context:
         return canonical
     return f"{canonical}\n历史补充记录：\n{context}"
@@ -1532,11 +1530,7 @@ class ApplicationDraftGenerator:
         normalized_input = user_input.strip()
         if not normalized_input:
             raise ValueError("user_input must not be blank")
-        active_session_id = (
-            session_id.strip()
-            if session_id is not None
-            else self._session_id
-        )
+        active_session_id = session_id.strip() if session_id is not None else self._session_id
         if not active_session_id:
             raise ValueError("session_id must not be blank")
 
@@ -1573,7 +1567,9 @@ class ApplicationDraftGenerator:
         )
         policy_snapshots = tuple(
             self._catalog.snapshot(document_id)
-            for document_id in dict.fromkeys(ref.document_id for ref in _POLICY_REFS[application_type])
+            for document_id in dict.fromkeys(
+                ref.document_id for ref in _POLICY_REFS[application_type]
+            )
         )
 
         materials_ready = _materials_ready(material_answer.result)
@@ -1599,13 +1595,17 @@ class ApplicationDraftGenerator:
             material_answer.result,
             approval_answer.result,
         )
-        digest = sha256(
-            (
-                f"{application_type.value}\0{self._user_context.employee_id}\0"
-                f"{active_session_id}\0"
-                f"{normalized_input}"
-            ).encode()
-        ).hexdigest().upper()
+        digest = (
+            sha256(
+                (
+                    f"{application_type.value}\0{self._user_context.employee_id}\0"
+                    f"{active_session_id}\0"
+                    f"{normalized_input}"
+                ).encode()
+            )
+            .hexdigest()
+            .upper()
+        )
         created_at = self._clock()
         if created_at.tzinfo is None:
             created_at = created_at.replace(tzinfo=UTC)
@@ -1642,8 +1642,7 @@ class ApplicationDraftGenerator:
                 session_id=active_session_id,
                 request_id=f"REQUEST-{digest[:16]}",
                 idempotency_key=(
-                    f"draft:{application_type.value}:"
-                    f"{self._user_context.employee_id}:{digest[:20]}"
+                    f"draft:{application_type.value}:{self._user_context.employee_id}:{digest[:20]}"
                 ),
                 created_at=created_at,
                 created_by=self._user_context.employee_id,
@@ -1677,22 +1676,15 @@ class ApplicationDraftGenerator:
         if not normalized_input:
             raise ValueError("user_input must not be blank")
 
-        normalized_revision = _normalize_revision_text(
-            normalized_input
-        )
+        normalized_revision = _normalize_revision_text(normalized_input)
         previous_fields = _field_map(previous_draft)
-        cue = _APPLICATION_TYPE_CUES[
-            previous_draft.application_type
-        ]
+        cue = _APPLICATION_TYPE_CUES[previous_draft.application_type]
         probe_parts = [cue]
         if previous_draft.application_type is ApplicationType.PURCHASE:
             direct_overrides = _purchase_revision_overrides(
                 normalized_revision,
             )
-            direct_map = {
-                field.field_name: field
-                for field in direct_overrides
-            }
+            direct_map = {field.field_name: field for field in direct_overrides}
             item = _field_text(
                 {**previous_fields, **direct_map},
                 "item_name",
@@ -1701,14 +1693,15 @@ class ApplicationDraftGenerator:
                 {**previous_fields, **direct_map},
                 "quantity",
             )
-            unit = _field_text(
-                {**previous_fields, **direct_map},
-                "unit",
-            ) or "件"
-            if item is not None and quantity is not None:
-                probe_parts.append(
-                    f"采购{quantity}{unit}{item}"
+            unit = (
+                _field_text(
+                    {**previous_fields, **direct_map},
+                    "unit",
                 )
+                or "件"
+            )
+            if item is not None and quantity is not None:
+                probe_parts.append(f"采购{quantity}{unit}{item}")
         else:
             direct_overrides = ()
         probe_parts.append(normalized_revision)
@@ -1737,9 +1730,7 @@ class ApplicationDraftGenerator:
         )
         revised_draft = revised_answer.result.draft
         if revised_draft is None:
-            raise RuntimeError(
-                "draft revision unexpectedly lost application type"
-            )
+            raise RuntimeError("draft revision unexpectedly lost application type")
 
         revised_audit = replace(
             revised_draft.audit_metadata,
@@ -1748,14 +1739,10 @@ class ApplicationDraftGenerator:
                 if session_id is not None
                 else previous_draft.audit_metadata.session_id
             ),
-            idempotency_key=(
-                previous_draft.audit_metadata.idempotency_key
-            ),
+            idempotency_key=(previous_draft.audit_metadata.idempotency_key),
             created_at=previous_draft.audit_metadata.created_at,
             created_by=previous_draft.audit_metadata.created_by,
-            identity_source=(
-                previous_draft.audit_metadata.identity_source
-            ),
+            identity_source=(previous_draft.audit_metadata.identity_source),
             persisted=False,
         )
         revised_draft = replace(

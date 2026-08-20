@@ -38,6 +38,8 @@ class InternalPolicySourceResponse(BaseModel):
     article_label: str
     article_title: str
     score: float = Field(ge=-1.0, le=1.0)
+    source_page_start: int | None = Field(default=None, ge=1)
+    source_page_end: int | None = Field(default=None, ge=1)
 
 
 class ExternalWebSourceResponse(BaseModel):

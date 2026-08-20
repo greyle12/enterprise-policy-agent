@@ -50,8 +50,7 @@ async def test_full_offline_suite_passes_all_quality_gates() -> None:
     assert report.failed_case_ids == ()
     assert report.quality_gate_passed is True
     assert {
-        item.metric: (item.passed_cases, item.total_cases, item.accuracy)
-        for item in report.metrics
+        item.metric: (item.passed_cases, item.total_cases, item.accuracy) for item in report.metrics
     } == {
         EvaluationMetric.INTENT_ACCURACY: (10, 10, 1.0),
         EvaluationMetric.TOOL_SELECTION_ACCURACY: (10, 10, 1.0),
@@ -67,15 +66,11 @@ async def test_quality_gate_fails_below_intent_threshold() -> None:
     for index in (0, 1):
         case = cases[index]
         assert isinstance(case, GoldenRoutingCase)
-        cases[index] = case.model_copy(
-            update={"expected_intent": IntentType.UNKNOWN}
-        )
+        cases[index] = case.model_copy(update={"expected_intent": IntentType.UNKNOWN})
 
     report = await _runner(dataset.sha256).run(cases)
     intent_metric = next(
-        item
-        for item in report.metrics
-        if item.metric is EvaluationMetric.INTENT_ACCURACY
+        item for item in report.metrics if item.metric is EvaluationMetric.INTENT_ACCURACY
     )
 
     assert intent_metric.accuracy == 0.8
@@ -92,9 +87,7 @@ async def test_writes_json_and_markdown_reports(tmp_path: Path) -> None:
 
     assert paths.json_path.is_file()
     assert paths.markdown_path.is_file()
-    assert '"quality_gate_passed": true' in paths.json_path.read_text(
-        encoding="utf-8"
-    )
+    assert '"quality_gate_passed": true' in paths.json_path.read_text(encoding="utf-8")
     markdown = paths.markdown_path.read_text(encoding="utf-8")
     assert "意图识别准确率" in markdown
     assert "30 / 0" in markdown

@@ -26,9 +26,7 @@ from app.tools.submission_models import (
     SubmissionStatus,
 )
 
-_POLICY_DIRECTORY = (
-    Path(__file__).resolve().parents[2] / "data" / "policies"
-)
+_POLICY_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "policies"
 _SESSION_ID = "mock-submission-unit"
 _CONFIRMED_AT = datetime(2026, 8, 8, 9, 0, tzinfo=UTC)
 _SUBMITTED_AT = datetime(2026, 8, 8, 9, 30, tzinfo=UTC)
@@ -54,12 +52,8 @@ async def _draft(
     confirmed: bool = True,
     session_id: str = _SESSION_ID,
 ) -> ApplicationDraft:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     generator = ApplicationDraftGenerator.from_policy_directory(
         _POLICY_DIRECTORY,
         material_checker=material_checker,
@@ -124,16 +118,12 @@ async def test_submits_confirmed_draft_and_freezes_approval_route() -> None:
     assert submission.status is SubmissionStatus.APPROVAL_IN_PROGRESS
     assert submission.submitted_at == _SUBMITTED_AT
     assert submission.submitted_by == _USER_CONTEXT.employee_id
-    assert result.approval_workflow.workflow_id == (
-        f"WF-{submission.submission_id}"
-    )
+    assert result.approval_workflow.workflow_id == (f"WF-{submission.submission_id}")
     assert result.approval_workflow.current_step == 1
     assert [step.approver for step in result.approval_workflow.steps] == [
         step.approver for step in draft.approval_check.steps
     ]
-    assert result.approval_workflow.steps[0].status is (
-        ApprovalWorkflowStepStatus.PENDING
-    )
+    assert result.approval_workflow.steps[0].status is (ApprovalWorkflowStepStatus.PENDING)
     assert all(
         step.status is ApprovalWorkflowStepStatus.WAITING
         for step in result.approval_workflow.steps[1:]
@@ -164,9 +154,7 @@ async def test_direct_tool_rejects_ambiguous_submission_text() -> None:
             user_context=_USER_CONTEXT,
             session_id=_SESSION_ID,
             request_id="AMBIGUOUS-REQUEST",
-            submission_idempotency_key=(
-                "submission-idempotency-ambiguous"
-            ),
+            submission_idempotency_key=("submission-idempotency-ambiguous"),
         )
 
     assert exc_info.value.code == "explicit_submission_required"
@@ -254,20 +242,12 @@ async def test_concurrent_retries_create_exactly_one_submission() -> None:
         )
     )
 
-    assert len(
-        {
-            result.submission_result.submission_id
-            for result in results
-        }
-    ) == 1
+    assert len({result.submission_result.submission_id for result in results}) == 1
     assert sum(not result.duplicate_submission for result in results) == 1
     assert sum(result.duplicate_submission for result in results) == 7
     records = await service.list_audit_records()
     assert len(records) == 8
-    assert sum(
-        record.event is SubmissionAuditEvent.SUBMITTED
-        for record in records
-    ) == 1
+    assert sum(record.event is SubmissionAuditEvent.SUBMITTED for record in records) == 1
 
 
 @pytest.mark.asyncio

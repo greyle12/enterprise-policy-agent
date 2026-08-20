@@ -69,19 +69,9 @@ async def _main() -> None:
         _POLICY_DIRECTORY,
         embedding_provider=embedding_provider,
     )
-    client = OpenAICompatibleLLMClient.from_settings(
-        get_settings()
-    )
-    material_checker = (
-        RequiredMaterialsChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
-    approval_checker = (
-        ApprovalRuleChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
+    client = OpenAICompatibleLLMClient.from_settings(get_settings())
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     router = AgentRouter(
         intent_classifier=IntentClassifier(
             llm_client=client,
@@ -111,9 +101,7 @@ async def _main() -> None:
     failures: list[str] = []
 
     try:
-        for user_input, expected_intent, expected_status in (
-            _SMOKE_CASES
-        ):
+        for user_input, expected_intent, expected_status in _SMOKE_CASES:
             result = await router.route(user_input)
             has_expected_citations = (
                 bool(result.citations)
@@ -125,21 +113,15 @@ async def _main() -> None:
                 else not result.citations
             )
             expected_step_count = (
-                4
-                if expected_status
-                is AgentResponseStatus.AWAITING_CONFIRMATION
-                else 3
+                4 if expected_status is AgentResponseStatus.AWAITING_CONFIRMATION else 3
             )
             passed = (
                 result.classification.intent is expected_intent
                 and result.status is expected_status
                 and result.workflow is not None
-                and len(result.workflow.steps)
-                == expected_step_count
-                and result.workflow.steps[0].node
-                is AgentWorkflowNode.RESOLVE_TURN
-                and result.workflow.steps[1].node
-                is AgentWorkflowNode.CLASSIFY_INTENT
+                and len(result.workflow.steps) == expected_step_count
+                and result.workflow.steps[0].node is AgentWorkflowNode.RESOLVE_TURN
+                and result.workflow.steps[1].node is AgentWorkflowNode.CLASSIFY_INTENT
                 and has_expected_citations
                 and (
                     result.material_check is not None
@@ -165,63 +147,38 @@ async def _main() -> None:
                         "expected_intent": expected_intent,
                         "expected_status": expected_status,
                         "intent": result.classification.intent,
-                        "confidence": (
-                            result.classification.confidence
-                        ),
+                        "confidence": (result.classification.confidence),
                         "status": result.status,
                         "workflow": (
                             {
                                 "name": result.workflow.name,
                                 "version": result.workflow.version,
-                                "nodes": [
-                                    step.node
-                                    for step in result.workflow.steps
-                                ],
-                                "terminal_node": (
-                                    result.workflow.terminal_node
-                                ),
+                                "nodes": [step.node for step in result.workflow.steps],
+                                "terminal_node": (result.workflow.terminal_node),
                             }
                             if result.workflow is not None
                             else None
                         ),
                         "reply": result.reply,
-                        "citations": [
-                            citation.source_id
-                            for citation in result.citations
-                        ],
+                        "citations": [citation.source_id for citation in result.citations],
                         "material_check": (
                             {
-                                "application_type": (
-                                    result.material_check.application_type
-                                ),
+                                "application_type": (result.material_check.application_type),
                                 "mode": result.material_check.mode,
-                                "required_count": len(
-                                    result.material_check.required_materials
-                                ),
-                                "missing_count": len(
-                                    result.material_check.missing_materials
-                                ),
-                                "materials_complete": (
-                                    result.material_check.materials_complete
-                                ),
+                                "required_count": len(result.material_check.required_materials),
+                                "missing_count": len(result.material_check.missing_materials),
+                                "materials_complete": (result.material_check.materials_complete),
                             }
                             if result.material_check is not None
                             else None
                         ),
                         "approval_check": (
                             {
-                                "application_type": (
-                                    result.approval_check.application_type
-                                ),
-                                "approval_level": (
-                                    result.approval_check.approval_level
-                                ),
-                                "amount": str(
-                                    result.approval_check.amount
-                                ),
+                                "application_type": (result.approval_check.application_type),
+                                "approval_level": (result.approval_check.approval_level),
+                                "amount": str(result.approval_check.amount),
                                 "approvers": [
-                                    step.approver
-                                    for step in result.approval_check.steps
+                                    step.approver for step in result.approval_check.steps
                                 ],
                             }
                             if result.approval_check is not None
@@ -229,9 +186,7 @@ async def _main() -> None:
                         ),
                         "application_draft": (
                             {
-                                "application_type": (
-                                    result.application_draft.application_type
-                                ),
+                                "application_type": (result.application_draft.application_type),
                                 "draft_status": (
                                     result.application_draft.draft.status
                                     if result.application_draft.draft is not None
@@ -264,10 +219,7 @@ async def _main() -> None:
 
     if failures:
         failure_text = "\n".join(failures)
-        raise RuntimeError(
-            "Agent router smoke test failed:\n"
-            f"{failure_text}"
-        )
+        raise RuntimeError(f"Agent router smoke test failed:\n{failure_text}")
 
 
 if __name__ == "__main__":

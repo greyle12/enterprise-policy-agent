@@ -62,10 +62,7 @@ async def readiness(
         "agent_router",
         "agent_state_store",
     )
-    components_ready = all(
-        hasattr(application.state, name)
-        for name in required_components
-    )
+    components_ready = all(hasattr(application.state, name) for name in required_components)
 
     if not components_ready:
         response = ReadinessResponse(
@@ -80,9 +77,7 @@ async def readiness(
             content=response.model_dump(mode="json"),
         )
 
-    database_probe: _DatabaseReadinessProbe = (
-        application.state.agent_state_store
-    )
+    database_probe: _DatabaseReadinessProbe = application.state.agent_state_store
     try:
         await database_probe.ping()
     except Exception:

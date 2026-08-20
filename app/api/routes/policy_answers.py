@@ -39,8 +39,5 @@ async def answer_policy_question(
     return PolicyAnswerResponse(
         question=result.question,
         answer=result.answer,
-        citations=[
-            citation.source_id
-            for citation in result.citations
-        ],
+        citations=[citation.source_id for citation in result.citations],
     )

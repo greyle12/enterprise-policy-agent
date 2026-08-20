@@ -81,24 +81,15 @@ def main() -> None:
             print(f"   内容：{_preview(chunk.content)}")
             print(f"   Chunk：{chunk.chunk_id}")
 
-        matched_titles = {
-            result.chunk.document_title
-            for result in results
-        }
+        matched_titles = {result.chunk.document_title for result in results}
 
         if expected_title not in matched_titles:
             actual_titles = ", ".join(sorted(matched_titles))
-            failures.append(
-                f"{question}：期望 {expected_title}，"
-                f"实际 Top-3 为 {actual_titles}"
-            )
+            failures.append(f"{question}：期望 {expected_title}，实际 Top-3 为 {actual_titles}")
 
     if failures:
         failure_details = "\n".join(failures)
-        raise AssertionError(
-            "以下问题未在 Top-3 命中正确制度：\n"
-            f"{failure_details}"
-        )
+        raise AssertionError(f"以下问题未在 Top-3 命中正确制度：\n{failure_details}")
 
     total_elapsed = time.perf_counter() - total_started_at
 

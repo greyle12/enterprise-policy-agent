@@ -70,6 +70,29 @@ def test_builds_structured_citations(
     assert citation.score == pytest.approx(1.0)
 
 
+def test_preserves_pdf_page_range_in_context_and_citation(
+    sample_results: list[PolicyRetrievalResult],
+) -> None:
+    pdf_result = PolicyRetrievalResult(
+        chunk=sample_results[0].chunk.model_copy(
+            update={
+                "source_media_type": "application/pdf",
+                "source_page_start": 2,
+                "source_page_end": 3,
+            }
+        ),
+        score=sample_results[0].score,
+    )
+
+    context = build_policy_context([pdf_result])
+
+    record = json.loads(context.text)[0]
+    assert record["source_page_start"] == "2"
+    assert record["source_page_end"] == "3"
+    assert context.citations[0].source_page_start == 2
+    assert context.citations[0].source_page_end == 3
+
+
 def test_preserves_retrieval_order(
     sample_results: list[PolicyRetrievalResult],
 ) -> None:
