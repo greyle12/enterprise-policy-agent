@@ -1,7 +1,14 @@
 # Day 18 持续集成与质量门禁
 
 Day 18 使用 GitHub Actions 将项目已有的测试、代码规范、黄金评测、Python
-构建和 Docker 构建检查连接成自动化持续集成流程。
+构建和 Docker 构建检查连接成自动化持续集成流程。Day 22 在同一只读质量 Job 中
+增加完全离线的性能预算检查和结构化性能证据；Day 23 增加 Redis LLM 缓存契约验收，
+Day 24 增加异步 single-flight 并发契约，Day 25 增加三种请求分布的离线并发负载报告，
+Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用次数报告；Day 27 增加
+LLM Provider 有界并发、FIFO 排队、超时和取消清理的完全离线背压契约；Day 28 增加请求
+关联、脱敏日志、低基数 HTTP 指标、安全 500 和 Prometheus 格式的进程内可观测性契约；
+Day 29 增加检索前权限过滤、提示注入拒绝、污染证据隔离和零 Provider 调用断言；Day 30
+增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -73,13 +80,25 @@ timeout 30 分钟
 → Ruff 静态检查
 → 全量 pytest
 → 30 条离线黄金评测
+→ 五场景离线性能预算
+→ Redis LLM 缓存离线契约
+→ 异步 LLM single-flight 离线并发契约
+→ LLM Provider 并发与背压离线契约
+→ 请求关联与运行时可观测性离线契约
+→ RAG 权限与提示注入防护离线契约
+→ 六场景离线作品集演示与 Day 30 发布契约
+→ 三种 load shape 的离线并发吞吐报告
+→ Embedding/Reranker 离线批处理对照报告
 → 构建 Python Wheel
 ```
 
 任意一步返回非零退出码，Job 即失败。
 
-离线黄金评测不使用 `.env` 中的模型配置，也不会发送外部模型请求。因此来自 Fork
-的 Pull Request 可以在没有密钥的情况下执行相同质量门禁。
+离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
+作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，也不会发送外部模型请求。缓存与负载
+专项使用内存协议替身，不连接真实 Redis。可观测性专项使用进程内 TestClient；安全专项使用
+固定身份、制度和攻击夹具，不调用 Provider。因此来自 Fork 的 Pull Request 可以在没有密钥、
+不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
 
 ### 3.1 构建证据
 
@@ -87,11 +106,16 @@ CI 保存两组 14 天构建证据：
 
 | Artifact | 内容 | 失败时行为 |
 |---|---|---|
-| `quality-evidence-<run_id>` | pytest JUnit XML、黄金评测 JSON 和 Markdown | 尽可能保存已生成文件 |
+| `quality-evidence-<run_id>` | pytest JUnit XML、黄金评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
 | `python-wheel-<run_id>` | 可安装 `.whl` | 仅全部质量门禁通过后保存 |
 
-JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；Wheel 证明
-Python 包能够从干净环境构建。
+JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；性能报告
+记录 p50、p95、错误率和预算结果；并发报告另外记录吞吐、调用放大率和 Provider 峰值；
+批处理报告记录调用减少、内部批次、结果等价性和吞吐；作品集报告记录六个集成场景的可展示
+证据；Wheel 证明 Python 包能够从干净环境构建。
+
+CI 不上传 `.cprofile`、py-spy SVG 或 Scalene 原始结果，避免把 Runner 绝对路径和大量
+采样细节当作长期构建证据。
 
 ## 4. Dependency risk review
 
@@ -113,13 +137,16 @@ GitHub 仓库；私有仓库需要相应的 GitHub Advanced Security 权限。
 ```text
 Python 质量门禁通过
 → 使用 .env.example 生成非密钥 Compose 配置
+→ 若 Dockerfile 使用本地 CPU PyTorch wheel，则下载并校验固定 SHA-256
 → docker compose config --quiet
 → 构建完整 runtime 镜像
 → 检查镜像以 agent 非 root 用户运行
 → 检查镜像内可以导入 app 包
 ```
 
-CI 不启动 FastAPI，因此不会在 Runner 中下载 BGE 模型。Day 17 的本地部署验收脚本
+本地 wheel 文件被 `.gitignore` 排除，不提交 192 MB 二进制；container Job 只在 Dockerfile
+确实引用该路径时下载官方文件，并在构建前校验固定 SHA-256。CI 不启动 FastAPI，因此不会
+在 Runner 中下载 BGE 模型。Day 17 的本地部署验收脚本
 仍负责 readiness 和 SQLite 跨容器重建验证。
 
 容器 Job 不推送镜像到任何 Registry，也没有 Docker Registry 凭据。
@@ -179,6 +206,30 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_golden_evaluation `
   --mode offline
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_performance_benchmark `
+  --warmups 1 `
+  --iterations 5
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_llm_cache
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_async_singleflight
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_portfolio_demo `
+  --output-dir artifacts/portfolio
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_portfolio_release
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_concurrency_load_test `
+  --requests 24 `
+  --concurrency 12 `
+  --provider-latency-ms 15
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_batch_optimization `
+  --items 32 `
+  --batch-size 8 `
+  --call-overhead-ms 1.5 `
+  --batch-latency-ms 0.25
 & .\.venv\Scripts\python.exe -m pip wheel . --no-deps --wheel-dir dist
 ```
 
@@ -196,6 +247,15 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | `quality` 安装耗时长 | 首次需要下载 PyTorch 等依赖；后续会复用 pip 缓存 |
 | Ruff 失败 | 本地运行 `ruff format` 和 `ruff check --fix`，再人工检查差异 |
 | 黄金评测失败 | 下载 `quality-evidence`，查看 Markdown 错例和 JSON 原子断言 |
+| 性能预算失败 | 在同环境重复基准，再用 cProfile 定位最慢场景；不要直接抬高预算 |
+| 缓存契约失败 | 单独运行 `scripts.verify_llm_cache`，检查键、TTL、绕过和降级断言 |
+| single-flight 契约失败 | 单独运行 `scripts.verify_async_singleflight`，检查去重、取消隔离和并发断言 |
+| Provider 背压契约失败 | 单独运行 `scripts.verify_provider_backpressure`，检查执行峰值、FIFO、溢出、超时和取消清理 |
+| 运行时可观测性契约失败 | 单独运行 `scripts.verify_runtime_observability`，检查请求 ID、路由模板、500 脱敏、指标和 Prometheus 格式 |
+| RAG 安全契约失败 | 单独运行 `scripts.verify_rag_security`，检查可信身份、7 类权限边界、攻击/正常用例、证据隔离和 Provider 调用数 |
+| 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
+| 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
+| 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
 | Dependency Review 不可用 | 检查仓库是否公开，或私有仓库是否具备所需安全功能 |
 | Container build 超时 | 检查 Docker Hub 可达性和 Python 依赖下载日志 |
 | 修改 Action 后契约失败 | 使用该 Action 官方仓库发布版本对应的完整 40 位提交 SHA |
@@ -207,6 +267,13 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不部署到云服务器；
 - 不推送容器镜像；
 - 不运行真实 LLM 评测；
+- 不把离线性能预算解释为真实模型或公网 SLA；
+- 不运行生产级持续压测、py-spy 或 Scalene；Day 25 只执行短时、确定性的离线 load shape；
+- 不运行真实 BGE Reranker；Day 26 只执行固定离线模型替身；
+- 不调用真实 LLM 验证容量；Day 27 只执行固定离线 Provider 替身；
+- 不启动 Prometheus、Grafana 或日志采集器；Day 28 只验证进程内指标、格式和脱敏契约；
+- 不连接真实身份系统或调用模型执行红队；Day 29 只使用固定离线身份、制度和攻击夹具；
+- 不用作品集 6/6 代替真实模型评测；Day 30 使用确定性词法向量、LLM 和 Web 夹具；
 - 不验证 BGE 首次模型下载；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。

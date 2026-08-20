@@ -12,6 +12,7 @@ def clear_server_environment(
 ) -> None:
     monkeypatch.delenv("APP_HOST", raising=False)
     monkeypatch.delenv("APP_PORT", raising=False)
+    monkeypatch.delenv("LOG_LEVEL", raising=False)
 
 
 def test_server_settings_use_safe_local_defaults() -> None:
@@ -22,6 +23,7 @@ def test_server_settings_use_safe_local_defaults() -> None:
 
     assert settings.app_host == "127.0.0.1"
     assert settings.app_port == 8000
+    assert settings.log_level == "INFO"
 
 
 def test_server_settings_load_container_bind_address(
@@ -45,5 +47,24 @@ def test_server_settings_reject_invalid_ports(port: int) -> None:
         Settings(
             llm_api_key="test-key",
             app_port=port,
+            _env_file=None,
+        )
+
+
+def test_server_settings_normalize_log_level() -> None:
+    settings = Settings(
+        llm_api_key="test-key",
+        log_level="warning",
+        _env_file=None,
+    )
+
+    assert settings.log_level == "WARNING"
+
+
+def test_server_settings_reject_unknown_log_level() -> None:
+    with pytest.raises(ValidationError):
+        Settings(
+            llm_api_key="test-key",
+            log_level="verbose",
             _env_file=None,
         )

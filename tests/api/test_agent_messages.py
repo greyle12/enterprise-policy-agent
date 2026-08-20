@@ -21,6 +21,16 @@ from app.api.dependencies import get_agent_router
 from app.main import create_app
 from app.memory import ConversationMemoryInfo
 from app.rag.policy_context import PolicyCitation
+from app.resilience import (
+    AgentResilienceInfo,
+    ToolCallOutcome,
+    ToolCallRecord,
+    ToolErrorInfo,
+    ToolFailureCategory,
+    ToolName,
+    ToolOperationKind,
+    ToolRecoveryAction,
+)
 from app.tools.approval_models import (
     ApprovalAction,
     ApprovalApplicationType,
@@ -455,9 +465,7 @@ def test_serializes_structured_approval_check_result() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/agent/messages",
-            json={
-                "message": "预计总金额6000元的采购需要谁审批？"
-            },
+            json={"message": "预计总金额6000元的采购需要谁审批？"},
         )
 
     assert response.status_code == 200
@@ -500,9 +508,7 @@ def test_serializes_structured_material_check_result() -> None:
         score=1.0,
     )
     material_check = MaterialCheckResult(
-        application_type=(
-            ApplicationType.TRAVEL_REIMBURSEMENT
-        ),
+        application_type=(ApplicationType.TRAVEL_REIMBURSEMENT),
         mode=MaterialCheckMode.COMPARISON,
         required_materials=(
             MaterialRequirement(
@@ -571,9 +577,7 @@ def test_serializes_structured_material_check_result() -> None:
         ],
         "provided_materials": [
             {
-                "material_type": (
-                    "approved_travel_application"
-                ),
+                "material_type": ("approved_travel_application"),
                 "display_name": "已审批的出差申请单",
                 "provided_count": 1,
             }
@@ -746,6 +750,96 @@ def test_serializes_mock_approval_submission_result() -> None:
     }
     assert payload["session"]["phase"] == "submitted"
     assert payload["workflow"]["terminal_node"] == "submit_approval"
+
+
+def test_serializes_safe_resilience_metadata() -> None:
+    safe_error = ToolErrorInfo(
+        error_id="ERR-ABC123DEF456",
+        code="tool_upstream_unavailable",
+        category=ToolFailureCategory.UPSTREAM_UNAVAILABLE,
+        retryable=True,
+        recovery_action=ToolRecoveryAction.RETRY_LATER,
+        user_message="制度问答服务暂时不可用，本轮已安全停止。请稍后重试。",
+    )
+    resilience = AgentResilienceInfo(
+        degraded=True,
+        recovered=False,
+        tool_calls=(
+            ToolCallRecord(
+                tool=ToolName.INTENT_CLASSIFIER,
+                operation=ToolOperationKind.READ_ONLY,
+                outcome=ToolCallOutcome.SUCCESS,
+                attempts=1,
+                max_attempts=3,
+                timeout_seconds=65.0,
+                retry_safe=True,
+            ),
+            ToolCallRecord(
+                tool=ToolName.POLICY_ANSWER,
+                operation=ToolOperationKind.READ_ONLY,
+                outcome=ToolCallOutcome.FAILED,
+                attempts=3,
+                max_attempts=3,
+                timeout_seconds=65.0,
+                retry_safe=True,
+                error=safe_error,
+            ),
+        ),
+    )
+    router = FakeAgentRouter(
+        AgentRouteResult(
+            request="差旅住宿标准是多少？",
+            classification=IntentClassification(
+                intent=IntentType.POLICY_QUERY,
+                confidence=1.0,
+                reason="制度查询",
+            ),
+            status=AgentResponseStatus.UNAVAILABLE,
+            reply=safe_error.user_message,
+            resilience=resilience,
+        )
+    )
+    _use_fake_router(router)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/v1/agent/messages",
+            json={"message": "差旅住宿标准是多少？"},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["resilience"] == {
+        "degraded": True,
+        "recovered": False,
+        "tool_calls": [
+            {
+                "tool": "intent_classifier",
+                "operation": "read_only",
+                "outcome": "success",
+                "attempts": 1,
+                "max_attempts": 3,
+                "timeout_seconds": 65.0,
+                "retry_safe": True,
+            },
+            {
+                "tool": "policy_answer",
+                "operation": "read_only",
+                "outcome": "failed",
+                "attempts": 3,
+                "max_attempts": 3,
+                "timeout_seconds": 65.0,
+                "retry_safe": True,
+                "error": {
+                    "error_id": "ERR-ABC123DEF456",
+                    "code": "tool_upstream_unavailable",
+                    "category": "upstream_unavailable",
+                    "retryable": True,
+                    "recovery_action": "retry_later",
+                    "message": safe_error.user_message,
+                },
+            },
+        ],
+    }
 
 
 def test_rejects_blank_agent_message() -> None:

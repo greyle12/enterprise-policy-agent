@@ -3,6 +3,7 @@ from __future__ import annotations
 import uvicorn
 
 from app.core.config import get_settings
+from app.observability import build_json_logging_config
 
 
 def main() -> None:
@@ -15,6 +16,9 @@ def main() -> None:
         port=settings.app_port,
         proxy_headers=True,
         server_header=False,
+        access_log=False,
+        log_level=settings.log_level.lower(),
+        log_config=build_json_logging_config(settings.log_level),
     )
 
 

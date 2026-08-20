@@ -13,6 +13,7 @@ from app.agent.router import (
     AgentWorkflowNode,
 )
 from app.api.schemas.conversation_memory import AgentMemoryResponse
+from app.api.schemas.resilience import AgentResilienceResponse
 from app.tools.approval_models import (
     ApprovalAction,
     ApprovalApplicationType,
@@ -334,3 +335,4 @@ class AgentMessageResponse(BaseModel):
     workflow: AgentWorkflowTraceResponse | None = None
     session: AgentSessionResponse | None = None
     memory: AgentMemoryResponse | None = None
+    resilience: AgentResilienceResponse | None = None

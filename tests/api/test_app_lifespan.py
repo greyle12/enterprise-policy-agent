@@ -17,18 +17,32 @@ class FakeLLMClient:
         self.closed = True
 
 
+class FakeWebSearchProvider:
+    def __init__(self) -> None:
+        self.closed = False
+
+    async def aclose(self) -> None:
+        self.closed = True
+
+
 def test_lifespan_configures_and_closes_service(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
     service = object()
     llm_client = FakeLLMClient()
+    provider_limiter = object()
+    web_search_provider = FakeWebSearchProvider()
 
-    def build_fake_service() -> tuple[
+    def build_fake_service(
+        *, prompt_guard=None
+    ) -> tuple[
         object,
         FakeLLMClient,
+        object,
     ]:
-        return service, llm_client
+        assert prompt_guard is application.state.prompt_security_guard
+        return service, llm_client, provider_limiter
 
     monkeypatch.setattr(
         main_module,
@@ -37,23 +51,35 @@ def test_lifespan_configures_and_closes_service(
     )
     monkeypatch.setattr(
         main_module,
+        "_build_web_search_provider",
+        lambda settings: web_search_provider,
+    )
+    monkeypatch.setattr(
+        main_module,
         "get_settings",
         lambda: SimpleNamespace(
-            sqlite_database_path=tmp_path / "agent.db"
+            sqlite_database_path=tmp_path / "agent.db",
+            agent_safe_tool_timeout_seconds=65.0,
+            agent_mutation_tool_timeout_seconds=10.0,
+            agent_tool_max_attempts=3,
+            agent_retry_min_wait_seconds=0.1,
+            agent_retry_max_wait_seconds=1.0,
         ),
     )
 
     application = main_module.create_app()
 
     with TestClient(application):
-        assert (
-            application.state.policy_answer_service
-            is service
-        )
+        assert application.state.policy_answer_service is service
+        assert application.state.policy_research_assistant is not None
+        assert application.state.llm_cache is llm_client
+        assert application.state.llm_provider_limiter is provider_limiter
         assert llm_client.closed is False
+        assert web_search_provider.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
 
     assert llm_client.closed is True
+    assert web_search_provider.closed is True
     assert not hasattr(
         application.state,
         "policy_answer_service",
@@ -61,4 +87,16 @@ def test_lifespan_configures_and_closes_service(
     assert not hasattr(
         application.state,
         "agent_state_store",
+    )
+    assert not hasattr(
+        application.state,
+        "policy_research_assistant",
+    )
+    assert not hasattr(
+        application.state,
+        "llm_cache",
+    )
+    assert not hasattr(
+        application.state,
+        "llm_provider_limiter",
     )

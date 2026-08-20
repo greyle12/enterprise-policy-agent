@@ -1,0 +1,124 @@
+{
+  "schema_version": "1.0",
+  "suite_name": "enterprise_policy_agent_portfolio_demo",
+  "release_label": "day30",
+  "execution_mode": "offline",
+  "generated_at": "2026-08-20T08:31:04.992185Z",
+  "duration_ms": 104.2289,
+  "network_calls": false,
+  "live_llm_calls": false,
+  "policy_documents": 5,
+  "total_scenarios": 6,
+  "passed_scenarios": 6,
+  "failed_scenarios": 0,
+  "quality_gate_passed": true,
+  "scenarios": [
+    {
+      "scenario": "rag_citation",
+      "title": "制度问答与引用",
+      "capability": "授权检索、上下文构造和 S 编号引用校验",
+      "passed": true,
+      "duration_ms": 15.14,
+      "observations": {
+        "answer_has_valid_citation": true,
+        "citation_source_ids": [
+          "S1"
+        ],
+        "document_title": "差旅报销管理制度",
+        "authorized_chunk_count": 199,
+        "embedding_fixture": "deterministic_lexical_hash_v1"
+      },
+      "error_type": null
+    },
+    {
+      "scenario": "material_rules",
+      "title": "材料完整性规则",
+      "capability": "LangGraph 路由到确定性材料规则并返回制度条款",
+      "passed": true,
+      "duration_ms": 12.5712,
+      "observations": {
+        "status": "completed",
+        "required_material_count": 7,
+        "citation_articles": [
+          "第十六条"
+        ],
+        "workflow_terminal_node": "check_materials"
+      },
+      "error_type": null
+    },
+    {
+      "scenario": "approval_route",
+      "title": "审批路线计算",
+      "capability": "金额与业务条件由确定性代码生成审批链",
+      "passed": true,
+      "duration_ms": 6.6518,
+      "observations": {
+        "status": "completed",
+        "approval_level": "general_purchase",
+        "approvers": [
+          "DIRECT_MANAGER",
+          "DEPARTMENT_HEAD",
+          "IT_DEPARTMENT",
+          "PROCUREMENT_DEPARTMENT"
+        ],
+        "citation_articles": [
+          "第十二条",
+          "第七条"
+        ]
+      },
+      "error_type": null
+    },
+    {
+      "scenario": "human_in_loop",
+      "title": "草稿、确认与幂等提交",
+      "capability": "副作用操作必须经过人工确认且重复提交复用结果",
+      "passed": true,
+      "duration_ms": 54.5335,
+      "observations": {
+        "created_status": "awaiting_confirmation",
+        "confirmed_status": "confirmed",
+        "submitted_status": "submitted",
+        "approval_step_count": 4,
+        "idempotent_replay": true,
+        "same_submission_reused": true,
+        "storage_backend": "in_memory"
+      },
+      "error_type": null
+    },
+    {
+      "scenario": "research_boundary",
+      "title": "内外资料研究边界",
+      "capability": "内部 S 引用优先、显式 Web 授权和外部 W 引用分区",
+      "passed": true,
+      "duration_ms": 15.0105,
+      "observations": {
+        "status": "completed",
+        "internal_sources": [
+          "S1"
+        ],
+        "external_sources": [
+          "W1"
+        ],
+        "external_source_is_advisory": true,
+        "offline_web_fixture_calls": 1,
+        "network_calls": 0
+      },
+      "error_type": null
+    },
+    {
+      "scenario": "security_boundary",
+      "title": "提示注入执行前拒绝",
+      "capability": "攻击输入在检索和 Provider 调用前阻止且不记录原文",
+      "passed": true,
+      "duration_ms": 0.069,
+      "observations": {
+        "attack_blocked": true,
+        "provider_call_delta": 0,
+        "blocked_input_delta": 1,
+        "llm_calls_avoided_delta": 1,
+        "raw_attack_recorded": false
+      },
+      "error_type": null
+    }
+  ]
+}

@@ -12,9 +12,18 @@ RUN python -m venv /opt/venv
 COPY pyproject.toml README.md ./
 COPY app ./app
 
-RUN /opt/venv/bin/pip install --index-url https://download.pytorch.org/whl/cpu torch \
-    && /opt/venv/bin/python -m pip install .
+COPY vendor/wheels/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl /tmp/
 
+RUN /opt/venv/bin/python -m pip install \
+      --retries 5 \
+      --timeout 120 \
+      /tmp/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl \
+    && /opt/venv/bin/python -m pip install \
+      --retries 5 \
+      --timeout 120 \
+      . \
+    && /opt/venv/bin/python -m pip check \
+    && rm -f /tmp/torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl
 
 FROM python:3.12.10-slim AS runtime
 

@@ -48,6 +48,27 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
 
     assert "artifacts/test-results/pytest.xml" in workflow
     assert "golden-evaluation-report.json" in workflow
+    assert "agent-performance-report.json" in workflow
+    assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow
+    assert "scripts.verify_async_singleflight" in workflow
+    assert "scripts.verify_provider_backpressure" in workflow
+    assert "scripts.verify_runtime_observability" in workflow
+    assert "scripts.verify_rag_security" in workflow
+    assert "scripts.run_portfolio_demo" in workflow
+    assert "--output-dir artifacts/portfolio" in workflow
+    assert "scripts.verify_portfolio_release" in workflow
+    assert "portfolio-demo-report.json" in workflow
+    assert "portfolio-demo-report.md" in workflow
+    assert "scripts.run_concurrency_load_test" in workflow
+    assert "agent-concurrency-load-report.json" in workflow
+    assert "agent-concurrency-load-report.md" in workflow
+    assert "scripts.run_batch_optimization" in workflow
+    assert "--items 32 --batch-size 8" in workflow
+    assert "agent-batch-optimization-report.json" in workflow
+    assert "agent-batch-optimization-report.md" in workflow
+    assert "torch-2.12.1+cpu-cp312-cp312-manylinux_2_28_x86_64.whl" in workflow
+    assert "ae4bb28409f5370852bd71af221066236c38d647f780d9b0a7240c330a9c12df" in workflow
+    assert "sha256sum --check" in workflow
     assert "dist/*.whl" in workflow
     assert "docker compose config --quiet" in workflow
     assert "docker build --pull --tag enterprise-policy-agent:ci ." in workflow

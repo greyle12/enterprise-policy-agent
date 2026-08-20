@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Sequence
 from dataclasses import dataclass
 
 from app.rag.policy_retriever import PolicyRetrievalResult
+from app.security import PromptInjectionGuard
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,13 +27,14 @@ class PolicyContext:
 
     text: str
     citations: tuple[PolicyCitation, ...]
+    quarantined_chunk_count: int = 0
 
 
-def _format_context_block(
+def _context_record(
     result: PolicyRetrievalResult,
     *,
     source_id: str,
-) -> str:
+) -> dict[str, str]:
     chunk = result.chunk
 
     article_reference = " ".join(
@@ -43,36 +46,32 @@ def _format_context_block(
         if part
     )
 
-    return "\n".join(
-        (
-            f"[{source_id}]",
-            (
-                f"制度：{chunk.document_title}"
-                f"（版本 {chunk.document_version}）"
-            ),
-            f"章节：{chunk.chapter_title}",
-            f"条款：{article_reference}",
-            f"Chunk：{chunk.chunk_id}",
-            "内容：",
-            chunk.content,
-        )
-    )
+    return {
+        "source_id": source_id,
+        "document_title": chunk.document_title,
+        "document_version": chunk.document_version,
+        "chapter_title": chunk.chapter_title,
+        "article": article_reference,
+        "chunk_id": chunk.chunk_id,
+        "content": chunk.content,
+    }
 
 
 def build_policy_context(
     results: Sequence[PolicyRetrievalResult],
     *,
     max_chunks: int = 5,
+    prompt_guard: PromptInjectionGuard | None = None,
 ) -> PolicyContext:
-    """将检索结果转换为带编号引用的制度上下文。"""
+    """Quarantine poisoned chunks and serialize evidence as an explicit data payload."""
 
     if max_chunks < 1:
-        raise ValueError(
-            "max_chunks must be greater than zero"
-        )
+        raise ValueError("max_chunks must be greater than zero")
 
     selected_results: list[PolicyRetrievalResult] = []
     seen_chunk_ids: set[str] = set()
+    quarantined_chunk_count = 0
+    guard = prompt_guard or PromptInjectionGuard()
 
     for result in results:
         chunk_id = result.chunk.chunk_id
@@ -81,6 +80,21 @@ def build_policy_context(
             continue
 
         seen_chunk_ids.add(chunk_id)
+        chunk = result.chunk
+        assessment = guard.assess_evidence(
+            "\n".join(
+                (
+                    chunk.document_title,
+                    chunk.chapter_title,
+                    chunk.article_label,
+                    chunk.article_title,
+                    chunk.content,
+                )
+            )
+        )
+        if assessment.blocked:
+            quarantined_chunk_count += 1
+            continue
         selected_results.append(result)
 
         if len(selected_results) == max_chunks:
@@ -102,8 +116,8 @@ def build_policy_context(
         )
     )
 
-    context_blocks = [
-        _format_context_block(
+    context_records = [
+        _context_record(
             result,
             source_id=citation.source_id,
         )
@@ -115,6 +129,11 @@ def build_policy_context(
     ]
 
     return PolicyContext(
-        text="\n\n".join(context_blocks),
+        text=json.dumps(
+            context_records,
+            ensure_ascii=False,
+            separators=(",", ":"),
+        ),
         citations=citations,
+        quarantined_chunk_count=quarantined_chunk_count,
     )

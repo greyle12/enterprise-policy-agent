@@ -7,6 +7,7 @@ from typing import TypedDict
 from app.agent.intent import IntentClassification
 from app.memory.conversation import ConversationMemoryInfo
 from app.rag.policy_context import PolicyCitation
+from app.resilience import AgentResilienceInfo, ToolCallRecord
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
 from app.tools.material_models import MaterialCheckResult
@@ -114,6 +115,7 @@ class AgentRouteResult:
     workflow: AgentWorkflowTrace | None = None
     session: AgentSessionInfo | None = None
     memory: ConversationMemoryInfo | None = None
+    resilience: AgentResilienceInfo | None = None
 
 
 class AgentWorkflowState(TypedDict, total=False):
@@ -136,3 +138,4 @@ class AgentWorkflowState(TypedDict, total=False):
     active_draft: DraftGenerationResult | None
     draft_messages: tuple[str, ...]
     trace_steps: tuple[AgentWorkflowStep, ...]
+    tool_calls: tuple[ToolCallRecord, ...]

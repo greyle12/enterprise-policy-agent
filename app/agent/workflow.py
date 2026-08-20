@@ -37,6 +37,15 @@ from app.memory.conversation import (
     InMemoryConversationMemoryStore,
 )
 from app.rag.policy_answer_service import PolicyAnswer
+from app.resilience import (
+    AgentResilienceInfo,
+    ResilientToolExecutor,
+    ToolCallOutcome,
+    ToolCallRecord,
+    ToolExecutionError,
+    ToolName,
+    ToolOperationKind,
+)
 from app.tools.approval_models import ApprovalCheckAnswer
 from app.tools.draft_models import (
     ApplicationDraft,
@@ -53,10 +62,8 @@ from app.tools.mock_approval_submission import (
 from app.tools.submission_models import MockApprovalSubmissionResult
 
 _WORKFLOW_NAME = "enterprise_policy_workflow"
-_WORKFLOW_VERSION = "1.4"
-_SESSION_ID_PATTERN = re.compile(
-    r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}"
-)
+_WORKFLOW_VERSION = "1.5"
+_SESSION_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}")
 
 _CHECKPOINT_ALLOWED_TYPES = (
     ("app.agent.intent", "IntentClassification"),
@@ -66,6 +73,13 @@ _CHECKPOINT_ALLOWED_TYPES = (
     ("app.agent.workflow_models", "AgentTurnAction"),
     ("app.agent.workflow_models", "AgentWorkflowNode"),
     ("app.agent.workflow_models", "AgentWorkflowStep"),
+    ("app.resilience.models", "ToolCallOutcome"),
+    ("app.resilience.models", "ToolCallRecord"),
+    ("app.resilience.models", "ToolErrorInfo"),
+    ("app.resilience.models", "ToolFailureCategory"),
+    ("app.resilience.models", "ToolName"),
+    ("app.resilience.models", "ToolOperationKind"),
+    ("app.resilience.models", "ToolRecoveryAction"),
     ("app.rag.policy_context", "PolicyCitation"),
     ("app.tools.approval_models", "ApprovalAction"),
     ("app.tools.approval_models", "ApprovalApplicationType"),
@@ -102,12 +116,10 @@ _CHECKPOINT_ALLOWED_TYPES = (
 _DRAFT_RESULT_ADAPTER = TypeAdapter(DraftGenerationResult)
 
 _UNKNOWN_REPLY = (
-    "我还不能确定你希望查询制度、检查材料、判断审批流程，"
-    "还是生成申请草稿。请补充具体事项和目标。"
+    "我还不能确定你希望查询制度、检查材料、判断审批流程，还是生成申请草稿。请补充具体事项和目标。"
 )
 _PENDING_CONFIRMATION_REPLY = (
-    "当前草稿正在等待人工确认。请回复“确认草稿”、"
-    "“取消草稿”，或明确说明要修改的字段和值。"
+    "当前草稿正在等待人工确认。请回复“确认草稿”、“取消草稿”，或明确说明要修改的字段和值。"
 )
 
 _ACTION_NODE_BY_INTENT = {
@@ -319,6 +331,32 @@ def _trace_step(
     )
 
 
+def _tool_calls_from(
+    state: AgentWorkflowState,
+) -> tuple[ToolCallRecord, ...]:
+    return state.get("tool_calls", ())
+
+
+def _append_tool_call(
+    state: AgentWorkflowState,
+    record: ToolCallRecord,
+) -> tuple[ToolCallRecord, ...]:
+    return (*_tool_calls_from(state), record)
+
+
+def _resilience_from(
+    state: AgentWorkflowState,
+) -> AgentResilienceInfo | None:
+    tool_calls = _tool_calls_from(state)
+    if not tool_calls:
+        return None
+    return AgentResilienceInfo(
+        degraded=any(record.outcome is ToolCallOutcome.FAILED for record in tool_calls),
+        recovered=any(record.outcome is ToolCallOutcome.RECOVERED for record in tool_calls),
+        tool_calls=tool_calls,
+    )
+
+
 def _synthetic_classification(
     intent: IntentType,
     reason: str,
@@ -450,28 +488,29 @@ def _can_await_confirmation(
         and result.draft is not None
         and result.draft.ready_for_confirmation
         and not result.draft.user_confirmed
-        and result.draft.status
-        is DraftStatus.WAITING_FOR_CONFIRMATION
+        and result.draft.status is DraftStatus.WAITING_FOR_CONFIRMATION
     )
 
 
 def _submission_idempotency_key(draft: ApplicationDraft) -> str:
     digest = sha256(
         (
-            f"{draft.audit_metadata.idempotency_key}\0"
-            f"{draft.draft_id}\0{draft.revision}\0submit"
+            f"{draft.audit_metadata.idempotency_key}\0{draft.draft_id}\0{draft.revision}\0submit"
         ).encode()
     ).hexdigest()[:24]
     return f"submission:{draft.draft_id}:r{draft.revision}:{digest}"
 
 
 def _submission_request_id(state: AgentWorkflowState) -> str:
-    digest = sha256(
-        (
-            f"{_session_id_from(state)}\0"
-            f"{state.get('turn_number', 0)}\0{_request_from(state)}"
-        ).encode()
-    ).hexdigest()[:16].upper()
+    digest = (
+        sha256(
+            (
+                f"{_session_id_from(state)}\0{state.get('turn_number', 0)}\0{_request_from(state)}"
+            ).encode()
+        )
+        .hexdigest()[:16]
+        .upper()
+    )
     return f"SUBMIT-REQUEST-{digest}"
 
 
@@ -491,6 +530,7 @@ class AgentWorkflow:
         state_persister: AgentStatePersister | None = None,
         memory_store: ConversationMemoryStore | None = None,
         context_builder: ConversationContextBuilder | None = None,
+        tool_executor: ResilientToolExecutor | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         self._intent_classifier = intent_classifier
@@ -501,23 +541,14 @@ class AgentWorkflow:
         self._submission_service = submission_service
         if checkpointer is None:
             self._checkpointer = InMemorySaver(
-                serde=JsonPlusSerializer(
-                    allowed_msgpack_modules=(
-                        _CHECKPOINT_ALLOWED_TYPES
-                    )
-                )
+                serde=JsonPlusSerializer(allowed_msgpack_modules=(_CHECKPOINT_ALLOWED_TYPES))
             )
         else:
-            self._checkpointer = checkpointer.with_allowlist(
-                _CHECKPOINT_ALLOWED_TYPES
-            )
+            self._checkpointer = checkpointer.with_allowlist(_CHECKPOINT_ALLOWED_TYPES)
         self._state_persister = state_persister
-        self._memory_store = (
-            memory_store or InMemoryConversationMemoryStore()
-        )
-        self._context_builder = (
-            context_builder or ConversationContextBuilder()
-        )
+        self._memory_store = memory_store or InMemoryConversationMemoryStore()
+        self._context_builder = context_builder or ConversationContextBuilder()
+        self._tool_executor = tool_executor or ResilientToolExecutor()
         self._checkpoint_backend = str(
             getattr(
                 self._checkpointer,
@@ -599,30 +630,17 @@ class AgentWorkflow:
             AgentWorkflowNode.RESOLVE_TURN.value,
             self._select_turn_node,
             {
-                AgentTurnAction.NEW_REQUEST.value: (
-                    AgentWorkflowNode.CLASSIFY_INTENT.value
-                ),
-                AgentTurnAction.UPDATE_DRAFT.value: (
-                    AgentWorkflowNode.UPDATE_DRAFT.value
-                ),
-                AgentTurnAction.CONFIRM_DRAFT.value: (
-                    AgentWorkflowNode.CONFIRM_DRAFT.value
-                ),
-                AgentTurnAction.SUBMIT_DRAFT.value: (
-                    AgentWorkflowNode.SUBMIT_APPROVAL.value
-                ),
-                AgentTurnAction.CANCEL_DRAFT.value: (
-                    AgentWorkflowNode.CANCEL_DRAFT.value
-                ),
+                AgentTurnAction.NEW_REQUEST.value: (AgentWorkflowNode.CLASSIFY_INTENT.value),
+                AgentTurnAction.UPDATE_DRAFT.value: (AgentWorkflowNode.UPDATE_DRAFT.value),
+                AgentTurnAction.CONFIRM_DRAFT.value: (AgentWorkflowNode.CONFIRM_DRAFT.value),
+                AgentTurnAction.SUBMIT_DRAFT.value: (AgentWorkflowNode.SUBMIT_APPROVAL.value),
+                AgentTurnAction.CANCEL_DRAFT.value: (AgentWorkflowNode.CANCEL_DRAFT.value),
             },
         )
         builder.add_conditional_edges(
             AgentWorkflowNode.CLASSIFY_INTENT.value,
             self._select_action_node,
-            {
-                node.value: node.value
-                for node in _ACTION_NODE_BY_INTENT.values()
-            },
+            {node.value: node.value for node in _ACTION_NODE_BY_INTENT.values()} | {END: END},
         )
 
         for node in (
@@ -669,18 +687,10 @@ class AgentWorkflow:
             AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value,
             self._select_turn_node,
             {
-                AgentTurnAction.UPDATE_DRAFT.value: (
-                    AgentWorkflowNode.UPDATE_DRAFT.value
-                ),
-                AgentTurnAction.CONFIRM_DRAFT.value: (
-                    AgentWorkflowNode.CONFIRM_DRAFT.value
-                ),
-                AgentTurnAction.SUBMIT_DRAFT.value: (
-                    AgentWorkflowNode.SUBMIT_APPROVAL.value
-                ),
-                AgentTurnAction.CANCEL_DRAFT.value: (
-                    AgentWorkflowNode.CANCEL_DRAFT.value
-                ),
+                AgentTurnAction.UPDATE_DRAFT.value: (AgentWorkflowNode.UPDATE_DRAFT.value),
+                AgentTurnAction.CONFIRM_DRAFT.value: (AgentWorkflowNode.CONFIRM_DRAFT.value),
+                AgentTurnAction.SUBMIT_DRAFT.value: (AgentWorkflowNode.SUBMIT_APPROVAL.value),
+                AgentTurnAction.CANCEL_DRAFT.value: (AgentWorkflowNode.CANCEL_DRAFT.value),
             },
         )
 
@@ -693,11 +703,7 @@ class AgentWorkflow:
         """Mark drafts durable before they are written into a checkpoint."""
 
         draft = result.draft
-        if (
-            draft is None
-            or not self._survives_process_restart
-            or draft.audit_metadata.persisted
-        ):
+        if draft is None or not self._survives_process_restart or draft.audit_metadata.persisted:
             return result
         return replace(
             result,
@@ -726,6 +732,45 @@ class AgentWorkflow:
                 _active_draft_from(state),
             )
         return session
+
+    @staticmethod
+    def _tool_failure_state(
+        state: AgentWorkflowState,
+        *,
+        node: AgentWorkflowNode,
+        error: ToolExecutionError,
+        classification: IntentClassification | None = None,
+        active_draft: DraftGenerationResult | None = None,
+        session_phase: AgentSessionPhase | None = None,
+    ) -> AgentWorkflowState:
+        """把底层异常转换为不泄露细节的可恢复工作流结果。"""
+
+        safe_error = error.record.error
+        if safe_error is None:
+            raise RuntimeError("failed tool record is missing safe error")
+        update: AgentWorkflowState = {
+            "status": AgentResponseStatus.UNAVAILABLE,
+            "reply": safe_error.user_message,
+            "citations": (),
+            "tool_calls": _append_tool_call(state, error.record),
+            "trace_steps": _trace_step(
+                state,
+                node=node,
+                outcome=safe_error.code,
+            ),
+        }
+        if classification is not None:
+            update["classification"] = classification
+        if active_draft is not None:
+            update.update(
+                {
+                    "application_draft": active_draft,
+                    "active_draft": active_draft,
+                }
+            )
+        if session_phase is not None:
+            update["session_phase"] = session_phase
+        return update
 
     async def _resolve_turn(
         self,
@@ -758,6 +803,7 @@ class AgentWorkflow:
             "application_draft": None,
             "submission": None,
             "trace_steps": (step,),
+            "tool_calls": (),
         }
 
     @staticmethod
@@ -771,11 +817,29 @@ class AgentWorkflow:
         self,
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
-        classification = await self._intent_classifier.classify(
-            _contextual_request_from(state)
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.INTENT_CLASSIFIER,
+                operation=ToolOperationKind.READ_ONLY,
+                call=lambda: self._intent_classifier.classify(_contextual_request_from(state)),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.CLASSIFY_INTENT,
+                error=exc,
+                classification=_synthetic_classification(
+                    IntentType.UNKNOWN,
+                    "意图识别工具不可用，本轮没有执行下游业务工具。",
+                ),
+            )
+        classification = execution.value
         return {
             "classification": classification,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.CLASSIFY_INTENT,
@@ -785,29 +849,27 @@ class AgentWorkflow:
 
     @staticmethod
     def _select_action_node(state: AgentWorkflowState) -> str:
+        if state.get("status") is AgentResponseStatus.UNAVAILABLE:
+            return END
         classification = _classification_from(state)
         try:
-            return _ACTION_NODE_BY_INTENT[
-                classification.intent
-            ].value
+            return _ACTION_NODE_BY_INTENT[classification.intent].value
         except KeyError as exc:
             raise RuntimeError(
-                "unsupported intent returned by classifier: "
-                f"{classification.intent}"
+                f"unsupported intent returned by classifier: {classification.intent}"
             ) from exc
 
     @staticmethod
     def _select_after_draft(state: AgentWorkflowState) -> str:
+        if state.get("status") is AgentResponseStatus.UNAVAILABLE:
+            return END
         if _can_await_confirmation(state):
             return AgentWorkflowNode.AWAIT_CONFIRMATION.value
         return END
 
     @staticmethod
     def _select_after_submission(state: AgentWorkflowState) -> str:
-        if (
-            state.get("session_phase")
-            is AgentSessionPhase.AWAITING_CONFIRMATION
-        ):
+        if state.get("session_phase") is AgentSessionPhase.AWAITING_CONFIRMATION:
             return AgentWorkflowNode.AWAIT_CONFIRMATION.value
         return END
 
@@ -815,14 +877,28 @@ class AgentWorkflow:
         self,
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
-        answer = await self._policy_answer_service.answer(
-            _contextual_request_from(state)
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.POLICY_ANSWER,
+                operation=ToolOperationKind.READ_ONLY,
+                call=lambda: self._policy_answer_service.answer(_contextual_request_from(state)),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.ANSWER_POLICY,
+                error=exc,
+            )
+        answer = execution.value
         status = AgentResponseStatus.COMPLETED
         return {
             "status": status,
             "reply": answer.answer,
             "citations": answer.citations,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.ANSWER_POLICY,
@@ -834,9 +910,19 @@ class AgentWorkflow:
         self,
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
-        answer = await self._material_checker.check(
-            _contextual_request_from(state)
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.MATERIAL_CHECK,
+                operation=ToolOperationKind.READ_ONLY,
+                call=lambda: self._material_checker.check(_contextual_request_from(state)),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.CHECK_MATERIALS,
+                error=exc,
+            )
+        answer = execution.value
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
             if answer.result.clarification_question is not None
@@ -847,6 +933,10 @@ class AgentWorkflow:
             "reply": answer.reply,
             "citations": answer.result.citations,
             "material_check": answer.result,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.CHECK_MATERIALS,
@@ -858,9 +948,19 @@ class AgentWorkflow:
         self,
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
-        answer = await self._approval_checker.check(
-            _contextual_request_from(state)
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.APPROVAL_CHECK,
+                operation=ToolOperationKind.READ_ONLY,
+                call=lambda: self._approval_checker.check(_contextual_request_from(state)),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.CHECK_APPROVAL,
+                error=exc,
+            )
+        answer = execution.value
         status = (
             AgentResponseStatus.NEEDS_CLARIFICATION
             if answer.result.clarification_question is not None
@@ -871,6 +971,10 @@ class AgentWorkflow:
             "reply": answer.reply,
             "citations": answer.result.citations,
             "approval_check": answer.result,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.CHECK_APPROVAL,
@@ -883,10 +987,23 @@ class AgentWorkflow:
         state: AgentWorkflowState,
     ) -> AgentWorkflowState:
         request = _request_from(state)
-        answer = await self._draft_generator.generate(
-            _contextual_request_from(state),
-            session_id=_session_id_from(state),
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.DRAFT_GENERATION,
+                operation=ToolOperationKind.PURE_COMPUTATION,
+                call=lambda: self._draft_generator.generate(
+                    _contextual_request_from(state),
+                    session_id=_session_id_from(state),
+                ),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.GENERATE_DRAFT,
+                error=exc,
+                session_phase=AgentSessionPhase.IDLE,
+            )
+        answer = execution.value
         result = self._prepared_draft_result(answer.result)
         status = _status_for_draft(result)
         update: AgentWorkflowState = {
@@ -894,6 +1011,10 @@ class AgentWorkflow:
             "reply": answer.reply,
             "citations": result.citations,
             "application_draft": result,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.GENERATE_DRAFT,
@@ -905,9 +1026,7 @@ class AgentWorkflow:
                 {
                     "active_draft": result,
                     "draft_messages": (request,),
-                    "session_phase": _phase_for_draft(
-                        result
-                    ),
+                    "session_phase": _phase_for_draft(result),
                 }
             )
         return update
@@ -943,10 +1062,7 @@ class AgentWorkflow:
                     "已提交草稿不可继续修改。",
                 ),
                 "status": status,
-                "reply": (
-                    "当前草稿已经提交审批，不能再修改。"
-                    "如需变更，请新建一份申请草稿。"
-                ),
+                "reply": ("当前草稿已经提交审批，不能再修改。如需变更，请新建一份申请草稿。"),
                 "citations": active.citations,
                 "application_draft": active,
                 "session_phase": AgentSessionPhase.SUBMITTED,
@@ -959,12 +1075,30 @@ class AgentWorkflow:
 
         request = _request_from(state)
         messages = state.get("draft_messages", ())
-        answer = await self._draft_generator.revise(
-            active.draft,
-            request,
-            session_id=_session_id_from(state),
-            context_messages=messages,
-        )
+        try:
+            execution = await self._tool_executor.execute(
+                tool=ToolName.DRAFT_REVISION,
+                operation=ToolOperationKind.PURE_COMPUTATION,
+                call=lambda: self._draft_generator.revise(
+                    active.draft,
+                    request,
+                    session_id=_session_id_from(state),
+                    context_messages=messages,
+                ),
+            )
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.UPDATE_DRAFT,
+                error=exc,
+                classification=_synthetic_classification(
+                    IntentType.DRAFT_UPDATE,
+                    "草稿修改工具不可用，保留修改前的草稿。",
+                ),
+                active_draft=active,
+                session_phase=_phase_for_draft(active),
+            )
+        answer = execution.value
         result = self._prepared_draft_result(answer.result)
         status = _status_for_draft(result)
         return {
@@ -979,6 +1113,10 @@ class AgentWorkflow:
             "active_draft": result,
             "draft_messages": (*messages, request),
             "session_phase": _phase_for_draft(result),
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.UPDATE_DRAFT,
@@ -992,9 +1130,7 @@ class AgentWorkflow:
     ) -> AgentWorkflowState:
         active = _active_draft_from(state)
         if active is None or active.draft is None:
-            raise RuntimeError(
-                "confirmation node requires an active draft"
-            )
+            raise RuntimeError("confirmation node requires an active draft")
         status = AgentResponseStatus.AWAITING_CONFIRMATION
         reply = (
             f"{state.get('reply') or ''}\n"
@@ -1005,9 +1141,7 @@ class AgentWorkflow:
         return {
             "status": status,
             "reply": reply,
-            "session_phase": (
-                AgentSessionPhase.AWAITING_CONFIRMATION
-            ),
+            "session_phase": (AgentSessionPhase.AWAITING_CONFIRMATION),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.AWAIT_CONFIRMATION,
@@ -1021,9 +1155,7 @@ class AgentWorkflow:
     ) -> AgentWorkflowState:
         active = _active_draft_from(state)
         if active is None or active.draft is None:
-            raise RuntimeError(
-                "human confirmation gate requires an active draft"
-            )
+            raise RuntimeError("human confirmation gate requires an active draft")
         decision = interrupt(
             {
                 "kind": "draft_confirmation",
@@ -1042,18 +1174,12 @@ class AgentWorkflow:
         try:
             action = AgentTurnAction(decision["action"])
         except (KeyError, ValueError) as exc:
-            raise ValueError(
-                "unsupported confirmation resume action"
-            ) from exc
+            raise ValueError("unsupported confirmation resume action") from exc
         if action is AgentTurnAction.NEW_REQUEST:
-            raise ValueError(
-                "new_request cannot resume confirmation gate"
-            )
+            raise ValueError("new_request cannot resume confirmation gate")
         message = decision.get("message")
         if not isinstance(message, str) or not message.strip():
-            raise ValueError(
-                "confirmation resume message must not be blank"
-            )
+            raise ValueError("confirmation resume message must not be blank")
         return {
             "request": message.strip(),
             "turn_action": action,
@@ -1079,8 +1205,7 @@ class AgentWorkflow:
         elif active.draft.status is DraftStatus.SUBMITTED:
             status = AgentResponseStatus.SUBMITTED
             reply = (
-                "当前草稿已经提交审批，无需再次确认。"
-                f"模拟审批单号：{active.draft.submission_id}。"
+                f"当前草稿已经提交审批，无需再次确认。模拟审批单号：{active.draft.submission_id}。"
             )
             phase = AgentSessionPhase.SUBMITTED
             updated = active
@@ -1091,10 +1216,7 @@ class AgentWorkflow:
             updated = active
             citations = active.citations
         elif not active.draft.ready_for_confirmation:
-            reply = (
-                active.clarification_question
-                or "草稿信息或材料尚未齐全，暂时不能确认。"
-            )
+            reply = active.clarification_question or "草稿信息或材料尚未齐全，暂时不能确认。"
             phase = AgentSessionPhase.COLLECTING_INFORMATION
             updated = active
             citations = active.citations
@@ -1121,8 +1243,7 @@ class AgentWorkflow:
                             *(
                                 warning
                                 for warning in active.draft.warnings
-                                if warning
-                                != "草稿尚未确认，也没有提交审批。"
+                                if warning != "草稿尚未确认，也没有提交审批。"
                             ),
                             "草稿已由用户确认，但尚未提交审批。",
                         )
@@ -1215,13 +1336,9 @@ class AgentWorkflow:
             status = AgentResponseStatus.NEEDS_CLARIFICATION
             phase = _phase_for_draft(active)
             reply = (
-                "草稿尚未经过明确确认，请先回复“确认草稿”，"
-                "确认成功后再单独回复“提交审批”。"
+                "草稿尚未经过明确确认，请先回复“确认草稿”，确认成功后再单独回复“提交审批”。"
                 if draft.ready_for_confirmation
-                else (
-                    active.clarification_question
-                    or "草稿信息或材料尚未齐全，暂时不能提交审批。"
-                )
+                else (active.clarification_question or "草稿信息或材料尚未齐全，暂时不能提交审批。")
             )
             return {
                 "classification": classification,
@@ -1238,14 +1355,20 @@ class AgentWorkflow:
             }
 
         try:
-            submission = await self._submission_service.submit(
-                draft,
-                confirmation_text=_request_from(state),
-                user_context=draft.applicant,
-                session_id=_session_id_from(state),
-                request_id=_submission_request_id(state),
-                submission_idempotency_key=(
-                    _submission_idempotency_key(draft)
+            execution = await self._tool_executor.execute(
+                tool=ToolName.APPROVAL_SUBMISSION,
+                operation=ToolOperationKind.MUTATION,
+                call=lambda: self._submission_service.submit(
+                    draft,
+                    confirmation_text=_request_from(state),
+                    user_context=draft.applicant,
+                    session_id=_session_id_from(state),
+                    request_id=_submission_request_id(state),
+                    submission_idempotency_key=(_submission_idempotency_key(draft)),
+                ),
+                passthrough_exceptions=(
+                    SubmissionPreconditionError,
+                    SubmissionConflictError,
                 ),
             )
         except SubmissionPreconditionError as exc:
@@ -1281,6 +1404,17 @@ class AgentWorkflow:
                     outcome="idempotency_conflict",
                 ),
             }
+        except ToolExecutionError as exc:
+            return self._tool_failure_state(
+                state,
+                node=AgentWorkflowNode.SUBMIT_APPROVAL,
+                error=exc,
+                classification=classification,
+                active_draft=active,
+                session_phase=_phase_for_draft(active),
+            )
+
+        submission = execution.value
 
         submitted = submission.submission_result
         submitted_draft = replace(
@@ -1308,10 +1442,7 @@ class AgentWorkflow:
                         (
                             "草稿已模拟提交审批；提交和审计记录已写入SQLite。"
                             if self._survives_process_restart
-                            else (
-                                "草稿已模拟提交审批；提交和审计记录"
-                                "仅保存在当前进程内。"
-                            )
+                            else ("草稿已模拟提交审批；提交和审计记录仅保存在当前进程内。")
                         ),
                     )
                 )
@@ -1325,17 +1456,11 @@ class AgentWorkflow:
         updated = self._prepared_draft_result(updated)
         status = AgentResponseStatus.SUBMITTED
         reply = (
-            (
-                "该草稿此前已经提交，本次请求按幂等规则返回首次提交结果，"
-                "没有创建新的审批申请。"
-            )
+            ("该草稿此前已经提交，本次请求按幂等规则返回首次提交结果，没有创建新的审批申请。")
             if submission.duplicate_submission
             else "草稿已成功模拟提交审批。"
         )
-        reply += (
-            f"模拟审批单号：{submitted.submission_id}；"
-            f"当前状态：{submitted.status.value}。"
-        )
+        reply += f"模拟审批单号：{submitted.submission_id}；当前状态：{submitted.status.value}。"
         return {
             "classification": classification,
             "status": status,
@@ -1345,14 +1470,14 @@ class AgentWorkflow:
             "active_draft": updated,
             "submission": submission,
             "session_phase": AgentSessionPhase.SUBMITTED,
+            "tool_calls": _append_tool_call(
+                state,
+                execution.record,
+            ),
             "trace_steps": _trace_step(
                 state,
                 node=AgentWorkflowNode.SUBMIT_APPROVAL,
-                outcome=(
-                    "idempotent_replay"
-                    if submission.duplicate_submission
-                    else status.value
-                ),
+                outcome=("idempotent_replay" if submission.duplicate_submission else status.value),
             ),
         }
 
@@ -1369,10 +1494,7 @@ class AgentWorkflow:
             phase = AgentSessionPhase.IDLE
         elif active.draft.status is DraftStatus.SUBMITTED:
             status = AgentResponseStatus.NEEDS_CLARIFICATION
-            reply = (
-                "当前草稿已经提交审批，不能再按草稿取消。"
-                "本阶段尚未实现审批撤回。"
-            )
+            reply = "当前草稿已经提交审批，不能再按草稿取消。本阶段尚未实现审批撤回。"
             updated = active
             citations = active.citations
             phase = AgentSessionPhase.SUBMITTED
@@ -1398,10 +1520,7 @@ class AgentWorkflow:
                 clarification_question=None,
             )
             status = AgentResponseStatus.CANCELLED
-            reply = (
-                f"已取消{cancelled_draft.title}。"
-                "该草稿没有提交审批。"
-            )
+            reply = f"已取消{cancelled_draft.title}。该草稿没有提交审批。"
             citations = updated.citations
             phase = AgentSessionPhase.CANCELLED
 
@@ -1491,17 +1610,11 @@ class AgentWorkflow:
             session_id=_session_id_from(state),
             turn_number=state.get("turn_number", 0),
             phase=phase,
-            active_draft_id=(
-                draft.draft_id if draft is not None else None
-            ),
-            draft_revision=(
-                draft.revision if draft is not None else None
-            ),
+            active_draft_id=(draft.draft_id if draft is not None else None),
+            draft_revision=(draft.revision if draft is not None else None),
             pending_confirmation=interrupted,
             checkpoint_backend=self._checkpoint_backend,
-            survives_process_restart=(
-                self._survives_process_restart
-            ),
+            survives_process_restart=(self._survives_process_restart),
         )
 
     def _result_from_state(
@@ -1520,9 +1633,7 @@ class AgentWorkflow:
         if not isinstance(reply, str) or not reply:
             raise RuntimeError("workflow state is missing reply")
         if not trace_steps:
-            raise RuntimeError(
-                "workflow state is missing execution trace"
-            )
+            raise RuntimeError("workflow state is missing execution trace")
 
         return AgentRouteResult(
             request=_request_from(state),
@@ -1549,6 +1660,7 @@ class AgentWorkflow:
                     interrupted=interrupted,
                 )
             ),
+            resilience=_resilience_from(state),
         )
 
     def _pending_input_result(
@@ -1570,9 +1682,7 @@ class AgentWorkflow:
             ),
             status=AgentResponseStatus.NEEDS_CLARIFICATION,
             reply=_PENDING_CONFIRMATION_REPLY,
-            citations=(
-                active.citations if active is not None else ()
-            ),
+            citations=(active.citations if active is not None else ()),
             application_draft=active,
             workflow=AgentWorkflowTrace(
                 name=_WORKFLOW_NAME,
@@ -1610,15 +1720,9 @@ class AgentWorkflow:
                 backend=snapshot.backend,
                 stored_message_count=snapshot.total_message_count,
                 context_applied=contextualized.context_applied,
-                context_messages_used=(
-                    contextualized.context_messages_used
-                ),
-                context_window_limit=(
-                    self._context_builder.message_limit
-                ),
-                survives_process_restart=(
-                    snapshot.survives_process_restart
-                ),
+                context_messages_used=(contextualized.context_messages_used),
+                context_window_limit=(self._context_builder.message_limit),
+                survives_process_restart=(snapshot.survives_process_restart),
             ),
         )
 
@@ -1633,9 +1737,7 @@ class AgentWorkflow:
         normalized_input = user_input.strip()
         if not normalized_input:
             raise ValueError("user_input must not be blank")
-        resolved_session_id = self._validate_or_create_session_id(
-            session_id
-        )
+        resolved_session_id = self._validate_or_create_session_id(session_id)
         config = self._config(resolved_session_id)
 
         async with self._lock_for(resolved_session_id):
@@ -1644,10 +1746,7 @@ class AgentWorkflow:
                 AgentWorkflowState,
                 dict(snapshot.values),
             )
-            pending_confirmation = (
-                AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value
-                in snapshot.next
-            )
+            pending_confirmation = AgentWorkflowNode.HUMAN_CONFIRMATION_GATE.value in snapshot.next
             memory_snapshot = await self._memory_store.get_snapshot(
                 resolved_session_id,
                 limit=self._context_builder.message_limit,
@@ -1670,18 +1769,19 @@ class AgentWorkflow:
                         result,
                         contextualized,
                     )
-                turn_number = snapshot_state.get(
-                    "turn_number",
-                    0,
-                ) + 1
+                turn_number = (
+                    snapshot_state.get(
+                        "turn_number",
+                        0,
+                    )
+                    + 1
+                )
                 resume_state: AgentWorkflowState = {
                     "request": normalized_input,
                     "contextual_request": normalized_input,
                     "turn_number": turn_number,
                     "turn_action": action,
-                    "classification": (
-                        _classification_for_action(action)
-                    ),
+                    "classification": (_classification_for_action(action)),
                     "status": None,
                     "reply": None,
                     "citations": (),
@@ -1689,6 +1789,7 @@ class AgentWorkflow:
                     "approval_check": None,
                     "application_draft": None,
                     "submission": None,
+                    "tool_calls": (),
                     "trace_steps": (
                         AgentWorkflowStep(
                             sequence=1,
@@ -1722,9 +1823,7 @@ class AgentWorkflow:
                 )
 
             if not isinstance(raw_state, dict):
-                raise TypeError(
-                    "workflow invocation did not return state mapping"
-                )
+                raise TypeError("workflow invocation did not return state mapping")
             state = cast(AgentWorkflowState, raw_state)
             interrupted = "__interrupt__" in raw_state
             session = await self._persist_route_state(

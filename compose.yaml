@@ -1,17 +1,57 @@
 name: enterprise-policy-agent
 
 services:
+  redis:
+    image: redis:8.10.0-alpine
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --loglevel
+      - warning
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test:
+        - CMD
+        - redis-cli
+        - ping
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    read_only: true
+    tmpfs:
+      - /data:size=128m,mode=0700
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
   agent:
     build:
       context: .
       dockerfile: Dockerfile
-    image: enterprise-policy-agent:day17
+    image: enterprise-policy-agent:day30
     env_file:
       - .env
     environment:
       APP_ENV: container
       APP_HOST: 0.0.0.0
       APP_PORT: "8000"
+      LLM_CACHE_PROVIDER: redis
+      REDIS_URL: redis://redis:6379/0
       SQLITE_DATABASE_PATH: /app/data/runtime/enterprise_policy_agent.db
       HF_HOME: /app/data/model-cache/huggingface
       SENTENCE_TRANSFORMERS_HOME: /app/data/model-cache/sentence-transformers

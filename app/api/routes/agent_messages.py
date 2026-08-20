@@ -38,6 +38,9 @@ from app.api.schemas.agent_messages import (
     SubmittedApprovalStepResponse,
     SubmittedApprovalWorkflowResponse,
 )
+from app.api.schemas.resilience import (
+    build_resilience_response,
+)
 from app.tools.approval_models import ApprovalCheckResult
 from app.tools.draft_models import DraftGenerationResult
 from app.tools.material_models import MaterialCheckResult
@@ -150,12 +153,8 @@ def _draft_response(
                 )
                 for item in draft.missing_fields
             ],
-            material_check=_material_response(
-                draft.material_check
-            ),
-            approval_check=_approval_response(
-                draft.approval_check
-            ),
+            material_check=_material_response(draft.material_check),
+            approval_check=_approval_response(draft.approval_check),
             policy_snapshots=[
                 DraftPolicySnapshotResponse(
                     document_id=item.document_id,
@@ -176,23 +175,17 @@ def _draft_response(
             ],
             summary_lines=list(draft.summary_lines),
             warnings=list(draft.warnings),
-            ready_for_confirmation=(
-                draft.ready_for_confirmation
-            ),
+            ready_for_confirmation=(draft.ready_for_confirmation),
             confirmation_required=draft.confirmation_required,
             user_confirmed=draft.user_confirmed,
             submitted=draft.submitted,
             audit_metadata=DraftAuditMetadataResponse(
                 session_id=draft.audit_metadata.session_id,
                 request_id=draft.audit_metadata.request_id,
-                idempotency_key=(
-                    draft.audit_metadata.idempotency_key
-                ),
+                idempotency_key=(draft.audit_metadata.idempotency_key),
                 created_at=draft.audit_metadata.created_at,
                 created_by=draft.audit_metadata.created_by,
-                identity_source=(
-                    draft.audit_metadata.identity_source
-                ),
+                identity_source=(draft.audit_metadata.identity_source),
                 persisted=draft.audit_metadata.persisted,
             ),
             revision=draft.revision,
@@ -248,21 +241,13 @@ def _submission_response(
             draft_id=audit.draft_id,
             draft_revision=audit.draft_revision,
             submission_id=audit.submission_id,
-            submission_idempotency_key=(
-                audit.submission_idempotency_key
-            ),
+            submission_idempotency_key=(audit.submission_idempotency_key),
             actor_employee_id=audit.actor_employee_id,
             recorded_at=audit.recorded_at,
-            confirmation_text_recorded=(
-                audit.confirmation_text_recorded
-            ),
-            confirmation_text_sha256=(
-                audit.confirmation_text_sha256
-            ),
+            confirmation_text_recorded=(audit.confirmation_text_recorded),
+            confirmation_text_sha256=(audit.confirmation_text_sha256),
             duplicate_submission=audit.duplicate_submission,
-            sensitive_fields_recorded=(
-                audit.sensitive_fields_recorded
-            ),
+            sensitive_fields_recorded=(audit.sensitive_fields_recorded),
         ),
         storage_backend=result.storage_backend,
         survives_process_restart=result.survives_process_restart,
@@ -299,9 +284,7 @@ def _session_response(
         draft_revision=session.draft_revision,
         pending_confirmation=session.pending_confirmation,
         checkpoint_backend=session.checkpoint_backend,
-        survives_process_restart=(
-            session.survives_process_restart
-        ),
+        survives_process_restart=(session.survives_process_restart),
     )
 
 
@@ -325,19 +308,13 @@ async def handle_agent_message(
     )
 
     material_check = (
-        _material_response(result.material_check)
-        if result.material_check is not None
-        else None
+        _material_response(result.material_check) if result.material_check is not None else None
     )
     approval_check = (
-        _approval_response(result.approval_check)
-        if result.approval_check is not None
-        else None
+        _approval_response(result.approval_check) if result.approval_check is not None else None
     )
     application_draft = (
-        _draft_response(result.application_draft)
-        if result.application_draft is not None
-        else None
+        _draft_response(result.application_draft) if result.application_draft is not None else None
     )
 
     return AgentMessageResponse(
@@ -349,46 +326,26 @@ async def handle_agent_message(
         ),
         status=result.status,
         reply=result.reply,
-        citations=[
-            citation.source_id
-            for citation in result.citations
-        ],
+        citations=[citation.source_id for citation in result.citations],
         material_check=material_check,
         approval_check=approval_check,
         application_draft=application_draft,
         submission=(
-            _submission_response(result.submission)
-            if result.submission is not None
-            else None
+            _submission_response(result.submission) if result.submission is not None else None
         ),
-        workflow=(
-            _workflow_response(result.workflow)
-            if result.workflow is not None
-            else None
-        ),
-        session=(
-            _session_response(result.session)
-            if result.session is not None
-            else None
-        ),
+        workflow=(_workflow_response(result.workflow) if result.workflow is not None else None),
+        session=(_session_response(result.session) if result.session is not None else None),
         memory=(
             AgentMemoryResponse(
                 backend=result.memory.backend,
-                stored_message_count=(
-                    result.memory.stored_message_count
-                ),
+                stored_message_count=(result.memory.stored_message_count),
                 context_applied=result.memory.context_applied,
-                context_messages_used=(
-                    result.memory.context_messages_used
-                ),
-                context_window_limit=(
-                    result.memory.context_window_limit
-                ),
-                survives_process_restart=(
-                    result.memory.survives_process_restart
-                ),
+                context_messages_used=(result.memory.context_messages_used),
+                context_window_limit=(result.memory.context_window_limit),
+                survives_process_restart=(result.memory.survives_process_restart),
             )
             if result.memory is not None
             else None
         ),
+        resilience=build_resilience_response(result.resilience),
     )

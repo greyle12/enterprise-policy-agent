@@ -7,6 +7,8 @@ from app.memory.conversation import (
     ConversationMemorySnapshot,
     ConversationMemoryStore,
 )
+from app.resilience import ResilientToolExecutor
+from app.security import PromptInjectionGuard
 
 from app.agent.workflow import (
     AgentStatePersister,
@@ -57,20 +59,22 @@ class AgentRouter:
         state_persister: AgentStatePersister | None = None,
         memory_store: ConversationMemoryStore | None = None,
         context_builder: ConversationContextBuilder | None = None,
+        tool_executor: ResilientToolExecutor | None = None,
+        prompt_guard: PromptInjectionGuard | None = None,
     ) -> None:
+        self._prompt_guard = prompt_guard or PromptInjectionGuard()
         self._workflow = AgentWorkflow(
             intent_classifier=intent_classifier,
             policy_answer_service=policy_answer_service,
             material_checker=material_checker,
             approval_checker=approval_checker,
             draft_generator=draft_generator,
-            submission_service=(
-                submission_service or MockApprovalSubmitter()
-            ),
+            submission_service=(submission_service or MockApprovalSubmitter()),
             checkpointer=checkpointer,
             state_persister=state_persister,
             memory_store=memory_store,
             context_builder=context_builder,
+            tool_executor=tool_executor,
         )
 
     async def route(
@@ -81,6 +85,7 @@ class AgentRouter:
     ) -> AgentRouteResult:
         """执行或恢复 LangGraph 会话并返回结构化结果。"""
 
+        self._prompt_guard.enforce_user_input(user_input)
         return await self._workflow.run(
             user_input,
             session_id=session_id,

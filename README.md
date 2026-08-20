@@ -68,6 +68,12 @@
 10. 幂等提交和模拟审批工作流；
 11. RAG 与 Agent 自动化评测；
 12. FastAPI、测试、日志、数据库和容器化部署。
+13. 内部制度 RAG 与显式授权 Web Search 的受控研究整合。
+14. 可重复的性能基准、预算门禁和 Python 热点分析。
+15. 可失效、可观测且故障安全的 Redis LLM 响应缓存。
+16. 单进程统一 LLM Provider 并发门禁、有限排队与安全过载降级。
+17. 请求关联、结构化访问日志、低基数 HTTP 指标和 Prometheus 兼容导出。
+18. 可信身份驱动的检索前授权、提示注入拒绝和污染证据隔离。
 
 ---
 
@@ -190,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
+Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
 ### 已完成
@@ -233,6 +239,56 @@ Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 - [x] 受限上下文窗口和省略追问消解；
 - [x] 常见凭据脱敏、消息截断和 50 轮保留上限；
 - [x] 对话历史查询和完整会话清除 API。
+- [x] 只读和纯计算工具的 Tenacity 有界重试；
+- [x] 每次工具调用的独立超时和稳定错误分类；
+- [x] 不可信工具结果立即失败，不进入下游流程；
+- [x] 审批提交固定单次执行，失败后保留已确认草稿；
+- [x] 脱敏错误编号、恢复动作和容错元数据 API。
+- [x] 内部制度优先的 Policy Research Assistant；
+- [x] 显式 `include_web` 授权与服务端 Provider 双重开关；
+- [x] 内部制度 `S` 引用与外部网页 `W` 引用分区；
+- [x] Tavily HTTP Search Provider、查询脱敏和结果长度限制；
+- [x] 外部资料只读、仅供参考且不进入办理工作流。
+- [x] 第 3 周工程能力与验收证据总结。
+- [x] 五个代表场景的完全离线性能基准；
+- [x] warm-up、p50、p95、错误率和固定预算门禁；
+- [x] cProfile 项目热点提取和相对路径报告；
+- [x] py-spy 与 Scalene 可选 profiling 环境；
+- [x] CI 自动性能回归检查和报告证据。
+- [x] 统一 LLM 边界上的可选 Redis 精确请求缓存；
+- [x] 模型、消息、协议版本共同参与的 SHA-256 缓存键；
+- [x] TTL、请求/响应大小上限和敏感凭据形态绕过；
+- [x] Redis 故障直连 LLM、进程内命中指标和安全状态 API；
+- [x] Compose 临时 Redis 服务和完全离线缓存专项验收。
+- [x] 相同 cache miss 的进程内异步 single-flight 请求合并；
+- [x] follower 取消隔离、异常清理和应用关闭时 Task 回收；
+- [x] 有容量上限的在途键注册表和 overflow 指标；
+- [x] 12 请求只触发 1 次上游调用的完全离线并发验收。
+- [x] 热点键、四键 hotset 与唯一键扇出的受控并发负载；
+- [x] 客户端端到端 p50 / p95、吞吐和错误率报告；
+- [x] 上游调用率、唯一键放大率和 Provider 峰值并发证据；
+- [x] JSON / Markdown 并发报告与 CI 自动质量门禁。
+- [x] BGE Reranker 批量 Provider、候选模型与稳定排序契约；
+- [x] Embedding/Reranker 逐条与批量输出等价性验收；
+- [x] Provider 调用减少、内部批次、吞吐和加速比报告；
+- [x] 完全离线批处理专项脚本与 CI 证据。
+- [x] 缓存与 single-flight 之后的统一 LLM Provider 并发门禁；
+- [x] FIFO 有界队列、队满立即拒绝和排队超时；
+- [x] 排队/执行取消清理、关闭排空和上游资源单次关闭；
+- [x] 安全 503 错误、Provider 状态 API 与完全离线背压验收。
+- [x] 合法性校验、服务端生成和响应回传的 `X-Request-ID`；
+- [x] 不记录原始 URL/query/body 的 JSON 结构化访问日志；
+- [x] 路由模板、固定直方图和 64 键上限的进程内 HTTP 指标；
+- [x] 安全关联 500、JSON 状态、Prometheus Provider/HTTP 指标和离线验收。
+- [x] 可信身份、制度生命周期、等级、部门、角色和区域授权；
+- [x] 未授权 Chunk 在向量评分前排除且不进入 Prompt；
+- [x] 中英文提示注入、权限提升、工具绕过和编码指令检测；
+- [x] 污染制度证据隔离、JSON 数据边界和安全关联 400；
+- [x] 无内容安全状态、Prometheus 指标与完全离线 CI 评测。
+- [x] 六场景完全离线作品集演示与 JSON / Markdown 发布证据；
+- [x] 真实解析、检索、LangGraph、业务规则和安全边界的集成演示；
+- [x] Day 30 发布契约、CI 自动运行和证据 Artifact；
+- [x] 已实现架构图、可重复演示手册、简历描述和面试讲解材料。
 
 ### 尚未实现
 
@@ -240,10 +296,11 @@ Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 - [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
-- [ ] Rerank；
+- [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
-- [ ] 权限过滤与提示注入专项评测；
-- [ ] 日志和可观测性。
+- [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
+- [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
+- [ ] 生产级持续压测、跨进程全局背压、分布式防击穿和真实模型 batch 调优。
 
 当前仓库不能被描述为“已经完成的企业级 Agent”。
 
@@ -252,7 +309,16 @@ Phase 10：持久化对话记忆与上下文解析（Day 19 已完成）
 ```text
 已完成制度 RAG、确定性业务工具、LangGraph 多轮流程、
 幂等模拟提交、SQLite 重启恢复、自动化黄金集评测和 Docker Compose 部署；
-当前还具备自动 CI 质量门禁和可重启恢复的受限对话记忆，
+当前还具备自动 CI 质量门禁、可重启恢复的受限对话记忆、
+有界工具重试和副作用安全降级，以及显式授权的制度研究助手，
+并具备离线性能预算和 cProfile 热点分析，
+以及可选、短 TTL、故障时直连模型的 Redis LLM 响应缓存和单进程异步防击穿，
+并能用三种请求分布测量并发 p95、吞吐、上游放大率和 Provider 峰值，
+同时具备 Embedding/Reranker 批量接口、结果等价性和调用减少证据，
+并在缓存与 single-flight 之后提供默认关闭的单进程 Provider 有界并发与安全过载语义，
+同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
+并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
+并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -376,7 +442,8 @@ leave_application_incomplete.json
 docs/tool_contracts/
 ```
 
-当前定义了 4 个工具。
+当前定义了 4 个核心办理工具；Day 21 另增加内部制度研究和外部 Web Search
+两个只读研究工具，它们不能执行草稿、审批或提交操作。
 
 ---
 
@@ -603,9 +670,22 @@ submission
 
 即使最终回答没有显示敏感内容，也不应让无权限内容进入模型上下文。
 
+Day 29 已在运行时实现该顺序：固定可信演示身份先检查制度状态、有效期、安全等级、部门、
+角色和地域，只有授权 Chunk ID 才参与向量评分。生产环境仍须用登录认证结果替换演示身份。
+
 ---
 
-### 9.3 敏感信息保护
+### 9.3 提示注入防护
+
+用户消息会在意图分类、RAG、Web Search 和工具执行前检查；疑似污染的制度证据也会在 Prompt
+构造前隔离。命中请求只返回固定错误码和请求 ID，不回显输入、命中规则或内部制度内容。
+
+确定性规则只是纵深防御的一层，仍应结合可信身份、最小权限、入库治理、结构化工具、输出
+校验、监控和持续红队。
+
+---
+
+### 9.4 敏感信息保护
 
 普通日志和回答中不得无必要地记录：
 
@@ -627,7 +707,7 @@ submission
 
 ---
 
-### 9.4 人在回路
+### 9.5 人在回路
 
 采购、请假和报销提交属于有业务影响的操作。
 
@@ -643,7 +723,7 @@ submission
 
 ---
 
-### 9.5 幂等控制
+### 9.6 幂等控制
 
 提交操作必须提供幂等键。
 
@@ -670,7 +750,7 @@ IDEMPOTENCY_KEY_CONFLICT
 
 ---
 
-### 9.6 审计记录
+### 9.7 审计记录
 
 关键操作应记录：
 
@@ -772,12 +852,14 @@ Compose 使用：
 
 - `agent_runtime` 保存 SQLite 数据；
 - `model_cache` 保存 BGE 模型缓存；
+- 临时 Redis 服务保存短 TTL 的 LLM 响应缓存；
 - 非 root 用户运行应用；
 - 只读根文件系统；
 - `no-new-privileges` 和全部 Linux capability 移除；
 - readiness 作为容器健康判断依据。
 
-`docker compose down` 会保留两个具名卷；`docker compose down --volumes` 会删除本地运行数据和模型缓存。
+`docker compose down` 会保留两个具名卷，但 Redis 响应缓存本来就是可丢失的临时数据；
+`docker compose down --volumes` 会删除本地运行数据和模型缓存。
 
 详细步骤、首次模型下载说明和排障方式见：
 
@@ -799,6 +881,13 @@ Push / Pull Request / 手动运行
 → Ruff check
 → 全量 pytest
 → 30 条离线黄金评测
+→ 五场景离线性能预算
+→ Redis LLM 缓存离线契约
+→ 异步 LLM single-flight 契约
+→ LLM Provider 并发与背压契约
+→ 请求关联与运行时可观测性契约
+→ 三种并发 load shape 对照
+→ Embedding/Reranker 批处理对照
 → 构建 Python Wheel
 ```
 
@@ -810,8 +899,8 @@ Docker Compose 配置
 → 非 root 用户和 Python 包检查
 ```
 
-Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、
-黄金评测 JSON/Markdown 和可安装 Wheel，方便查看失败原因和保存可复现证据。
+Pull Request 还会检查新引入的高危或严重依赖漏洞。构建结果保留 pytest JUnit、黄金评测、
+串行性能、并发负载与批处理报告，以及可安装 Wheel，方便查看失败原因和保存可复现证据。
 
 本地检查 CI 配置：
 
@@ -861,7 +950,370 @@ docs/conversation_memory.md
 
 ---
 
-## 14. 计划系统架构
+## 14. Agent 工具容错
+
+Day 20 在 LangGraph 与各业务工具之间增加统一执行边界：
+
+```text
+只读 / 纯计算工具
+→ 单次超时
+→ 仅对超时、限流和上游不可用进行最多 3 次尝试
+→ 成功则标记 recovered
+→ 仍失败则返回 unavailable 和安全错误
+
+审批提交
+→ 单次超时
+→ 固定只执行 1 次
+→ 结果不确定时保留已确认草稿
+→ 用户使用相同 session_id 再次提交，由幂等键防重
+```
+
+响应中的 `resilience` 会说明：
+
+- 是否发生安全降级；
+- 是否通过重试恢复；
+- 每个工具的尝试次数；
+- 操作是否允许自动重试；
+- 稳定错误编号和恢复动作。
+
+原始异常文本、请求正文和凭据不会进入容错元数据。完整策略、错误分类、配置和 PowerShell 示例见：
+
+```text
+docs/agent_error_handling.md
+```
+
+---
+
+## 15. 受控制度研究助手
+
+Day 21 新增独立于事务办理状态机的研究入口：
+
+```http
+POST /api/v1/research/answers
+```
+
+默认请求只使用内部制度 RAG：
+
+```json
+{
+  "question": "差旅住宿费如何报销？"
+}
+```
+
+只有同时满足以下两个条件才会调用外部 Web Search：
+
+1. 客户端明确传入 `"include_web": true`；
+2. 服务端配置 `WEB_SEARCH_PROVIDER=tavily` 和有效密钥。
+
+研究回答始终区分：
+
+- `S1`、`S2`：内部制度依据，可作为本项目中的权威业务依据；
+- `W1`、`W2`：外部公开资料，只供研究参考；
+- `source_policy.external_web_used_for_workflow=false`：外部资料不会驱动材料检查、
+  审批判断、草稿生成或提交。
+
+发送给外部 Provider 的内容只包含当前问题的脱敏、最多 500 字版本，不包含对话历史、
+内部制度原文、用户身份或申请草稿。网页摘要不会再次送入 LLM，避免外部提示注入改变
+内部制度结论。
+
+完整配置、API 字段、状态语义和 PowerShell 验收见：
+
+```text
+docs/policy_research_assistant.md
+docs/week3_milestone.md
+```
+
+---
+
+## 16. 性能瓶颈分析
+
+Day 22 新增完全离线、可重复的性能基准：
+
+```powershell
+python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
+```
+
+它覆盖：
+
+```text
+运行时启动
+制度 RAG 回答
+Agent 材料路由
+Agent 审批路由
+内部 RAG + 固定 Web 结果的混合研究
+```
+
+每个场景先 warm-up，再串行收集样本，输出 p50、p95、最大值、错误率和预算占用率。
+任何错误或 p95 超预算都会使质量门禁失败。基准使用确定性 Hash Embedding、固定 LLM
+回答和固定 Web 结果，因此不会下载模型、调用真实 LLM 或产生外部网络请求。
+
+内置 cProfile 命令：
+
+```powershell
+python -X utf8 -m scripts.profile_agent_performance --warmups 1 --iterations 5 --top 20
+```
+
+结构化热点报告只保存 `app/` 下的项目相对路径。`py-spy` 与 Scalene 位于可选 `profiling` extra，
+不会增加正式运行镜像的依赖。完整测量方法、预算、Windows 命令和解释边界见：
+
+```text
+docs/performance_analysis.md
+```
+
+---
+
+## 17. Redis LLM 响应缓存
+
+Day 23 在统一 `LLMClient` 外增加 cache-aside 装饰器。完全相同且合规的消息序列先读取
+Redis；未命中才调用原 LLM，并只缓存成功、非空、大小合规的文本 600 秒。
+
+缓存键由协议版本、模型身份和完整消息规范化后计算 SHA-256，Redis 键不包含原始提问。
+含凭据形态的消息和超大请求直接绕过；Redis 读写错误只增加缓存错误计数，并安全回退到
+原 LLM，不改变 SQLite、申请草稿、审批提交或 Web Search。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_llm_cache
+```
+
+运行时状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/cache/status |
+  ConvertTo-Json -Depth 5
+```
+
+配置、键失效、隐私边界、Compose Redis 和完整 Windows 验收见：
+
+```text
+docs/redis_llm_cache.md
+```
+
+---
+
+## 18. 异步 LLM single-flight
+
+Day 24 在 Day 23 精确缓存之上增加进程内异步请求合并。同一缓存键同时发生多个 miss 时，
+第一个请求创建 leader Task，其余 follower 使用 `asyncio.shield()` 等待共享结果，因此不会
+重复调用 LLM，也不会因某个客户端取消而取消其他等待者的共享任务。
+
+不同缓存键仍可并发执行；敏感、超大、非法或明确绕过缓存的请求不进入 single-flight。
+注册表默认最多跟踪 128 个不同的在途键，容量溢出时保持可用并记录指标。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_async_singleflight
+```
+
+完整算法、取消语义和状态字段见：
+
+```text
+docs/async_llm_singleflight.md
+```
+
+---
+
+## 19. 异步并发负载与吞吐证据
+
+Day 25 将 Day 24 的并发正确性契约扩展为三种受控请求分布：同一热点键、四键 hotset 和
+全部唯一键。报告同时记录端到端 p50 / p95、吞吐、错误率、上游调用率、唯一键放大率及
+Provider 峰值并发，并把排队时间纳入客户端延迟。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_concurrency_load
+```
+
+生成 JSON / Markdown 报告：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_concurrency_load_test `
+  --requests 24 `
+  --concurrency 12 `
+  --provider-latency-ms 15
+```
+
+完整场景、指标公式、验收和真实 Provider 边界见：
+
+```text
+docs/async_concurrency_load.md
+```
+
+---
+
+## 20. Embedding/Reranker 批处理优化
+
+Day 26 对比 32 条输入逐条调用与一次列表调用。Embedding 和 Reranker 都从 32 次应用层
+Provider 调用降为 1 次，配置 `batch_size=8` 时由模型内部执行 4 个逻辑批次；质量门禁同时
+验证输出摘要和顺序与逐条基线完全一致。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_embedding_reranker_batching
+```
+
+生成 JSON / Markdown 报告：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.run_batch_optimization `
+  --items 32 `
+  --batch-size 8 `
+  --call-overhead-ms 1.5 `
+  --batch-latency-ms 0.25
+```
+
+当前 Reranker 已具备批量 Provider 和稳定排序契约，但尚未接入正式检索链路。完整指标、
+真实模型边界和 batch size 选择方法见：
+
+```text
+docs/embedding_reranker_batching.md
+```
+
+---
+
+## 21. LLM Provider 并发门禁与背压
+
+Day 27 在统一真实 LLM 边界增加进程内 Provider 容量保护。门禁位于 Redis cache-aside 和
+single-flight 之后，因此 cache hit 与 follower 不消耗执行 permit；不同请求和缓存绕过请求
+仍受相同的并发上限保护。
+
+默认保持关闭；启用后使用 FIFO 有界队列，队满立即返回安全 503，排队超过配置时间则清理
+waiter 并返回稳定超时错误。取消、上游异常和应用关闭都会归还容量或排空资源。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_provider_backpressure
+```
+
+运行时状态：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/provider/status |
+  ConvertTo-Json -Depth 5
+```
+
+配置、FIFO/取消语义、503 契约、指标解释和真实参数选择方法见：
+
+```text
+docs/provider_backpressure.md
+```
+
+---
+
+## 22. 请求关联与运行时可观测性
+
+Day 28 为每个 HTTP 请求校验或生成 `X-Request-ID`，写入处理上下文并回传响应。访问日志只
+记录请求 ID、方法、路由模板、状态、耗时和结果，不记录原始路径参数、query string、请求体
+或异常正文；未知异常统一返回带关联 ID 的安全 500。
+
+进程内指标按 FastAPI 路由模板聚合并限制为 64 个正常路由键，提供固定 latency histogram，
+避免用户输入造成标签基数失控。`/metrics` 使用 Prometheus text format 0.0.4，同时导出 Day 27
+Provider 执行、排队和事件指标。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_runtime_observability
+```
+
+运行时端点：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/observability/status |
+  ConvertTo-Json -Depth 8
+Invoke-WebRequest http://127.0.0.1:8000/metrics |
+  Select-Object -ExpandProperty Content
+```
+
+安全字段、直方图、PromQL 示例、Docker 验收和单进程边界见：
+
+```text
+docs/runtime_observability.md
+```
+
+---
+
+## 23. RAG 权限过滤与提示注入防护
+
+Day 29 把安全设计变成强制执行边界：服务器固定注入可信演示身份，制度 Chunk 先检查状态、
+有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做向量评分。用户在聊天中自称管理员
+不能改变该上下文，也不能让无权限内容进入 LLM。
+
+用户输入在意图分类、内部 RAG、Web Search、Agent 工作流和工具执行前检查；疑似污染的制度
+标题、章节、条款或正文会被隔离。剩余证据以 JSON 数据边界发送，命中输入返回带请求 ID 的
+固定 `prompt_injection_blocked`，不回显原文或命中规则。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_rag_security
+```
+
+安全计数：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
+  ConvertTo-Json -Depth 6
+Invoke-WebRequest http://127.0.0.1:8000/metrics |
+  Select-Object -ExpandProperty Content
+```
+
+威胁模型、授权规则、离线指标、误报/漏报边界和生产改进见：
+
+```text
+docs/rag_security_guardrails.md
+```
+
+---
+
+## 24. Day 30 一键作品集演示与发布验收
+
+Day 30 将前 29 天分散的能力组合成六个面试友好的完全离线场景：制度引用、材料规则、审批
+路线、草稿确认与幂等提交、内外研究来源分区、提示注入执行前拒绝。演示复用真实解析、检索、
+LangGraph、规则与安全代码，只把 BGE、LLM 和 Web Search 替换为确定性离线夹具。
+
+运行演示与最终发布契约：
+
+```powershell
+python -X utf8 -m scripts.run_portfolio_demo --output-dir artifacts/portfolio
+python -X utf8 -m scripts.verify_portfolio_release
+```
+
+输出：
+
+```text
+artifacts/portfolio/portfolio-demo-report.json
+artifacts/portfolio/portfolio-demo-report.md
+```
+
+架构、现场演示顺序、简历描述和面试追问材料见：
+
+```text
+docs/system_architecture.md
+docs/portfolio_demo.md
+docs/interview_guide.md
+```
+
+离线 6/6 证明的是编排和工程契约可重复，不代表真实 BGE 召回、LLM 回答质量、外部网络或
+生产 SLA。
+
+---
+
+## 25. 规划系统架构（含未实现组件）
 
 ```text
 Client
@@ -874,14 +1326,37 @@ FastAPI API
   ├── Session ID
   └── Input Validation
   │
-  ▼
-Agent Orchestrator
+  ├── Security Boundary
+  │   ├── Prompt Injection Guard
+  │   ├── Trusted Policy Access Context
+  │   └── Safe Correlated Rejection
   │
-  ├── Intent Router
-  ├── Conversation State
-  ├── Bounded Conversation Memory
-  ├── Human Confirmation Node
-  ├── Error Recovery
+  ▼
+Application Services
+  │
+  ├── Transaction Agent Orchestrator
+  │   ├── Intent Router
+  │   ├── Conversation State
+  │   ├── Bounded Conversation Memory
+  │   ├── Human Confirmation Node
+  │   └── Error Recovery
+  │
+  ├── Policy Research Assistant
+  │   ├── Internal Policy RAG（authoritative）
+  │   └── Optional Web Search（advisory）
+  │
+  ├── LLM Boundary
+  │   ├── Sensitive / Size Bypass
+  │   ├── SHA-256 Exact-request Key
+  │   ├── Optional Redis Cache
+  │   ├── Process-local Async Single-flight
+  │   ├── Provider Concurrency + FIFO Backpressure
+  │   └── OpenAI-compatible Upstream
+  │
+  ├── Runtime Observability
+  │   ├── Request ID + Safe JSON Access Log
+  │   ├── Bounded Route-template Metrics
+  │   └── Prometheus-compatible Export
   │
   ├── search_policy
   ├── check_required_materials
@@ -902,11 +1377,25 @@ Agent Orchestrator
        ├── Workflow Repository
        ├── User Repository
        └── Audit Log
+
+Offline Performance Analysis
+  ├── Repeatable Scenario Benchmark
+  ├── p50 / p95 / Error Budget
+  ├── cProfile Hotspots
+  ├── Optional py-spy / Scalene
+  ├── Concurrent Load Shapes
+      ├── Hot Key / Mixed Hotset / Unique Keys
+      ├── Throughput / End-to-end p95 / Error Rate
+      └── Upstream Amplification / Provider Peak
+  └── Model Batch Optimization
+      ├── Embedding Documents / Reranker Candidates
+      ├── Provider Calls / Internal Batches / Throughput
+      └── Exact Output and Order Equivalence
 ```
 
 ---
 
-## 15. 项目目录
+## 26. 项目目录
 
 ```text
 demo1/
@@ -917,12 +1406,19 @@ demo1/
 ├── app/
 │   ├── api/
 │   ├── core/
+│   ├── cache/
 │   ├── llm/
 │   ├── rag/
 │   ├── agent/
 │   ├── memory/
 │   ├── tools/
 │   ├── persistence/
+│   ├── resilience/
+│   ├── research/
+│   ├── performance/
+│   ├── observability/
+│   ├── security/
+│   ├── portfolio/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -934,7 +1430,21 @@ demo1/
 │   ├── tool_contracts/
 │   ├── docker_deployment.md
 │   ├── continuous_integration.md
-│   └── conversation_memory.md
+│   ├── conversation_memory.md
+│   ├── agent_error_handling.md
+│   ├── policy_research_assistant.md
+│   ├── performance_analysis.md
+│   ├── redis_llm_cache.md
+│   ├── async_llm_singleflight.md
+│   ├── async_concurrency_load.md
+│   ├── embedding_reranker_batching.md
+│   ├── provider_backpressure.md
+│   ├── runtime_observability.md
+│   ├── rag_security_guardrails.md
+│   ├── system_architecture.md
+│   ├── portfolio_demo.md
+│   ├── interview_guide.md
+│   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
 │   ├── integration/
@@ -954,7 +1464,7 @@ demo1/
 
 ---
 
-## 16. 当前开发环境
+## 27. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -962,6 +1472,15 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+Tenacity：9.1.x
+Web Search：默认关闭；可选 Tavily HTTP API
+LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
+异步合并：缓存启用时默认跟踪最多 128 个 single-flight 在途键
+并发负载：默认每场景 24 请求、客户端并发 12、固定离线 I/O 15 ms
+Provider 背压：默认关闭；示例上限 4、FIFO 队列 16、排队超时 2 秒
+运行时观测：JSON 访问日志、64 个路由键、固定延迟直方图和 `/metrics`
+性能基线：Python 内置 perf_counter_ns 与 cProfile
+采样 Profiler：可选 py-spy 0.4.x、Scalene 2.x
 Docker Desktop：使用 Docker Compose v2
 ```
 
@@ -989,6 +1508,12 @@ python -m venv .venv
 python -m pip install -e ".[dev]"
 ```
 
+可选安装 Day 22 采样 profiler：
+
+```powershell
+python -m pip install -e ".[dev,profiling]"
+```
+
 验证环境：
 
 ```powershell
@@ -998,7 +1523,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 17. 数据验证命令
+## 28. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1036,9 +1561,79 @@ python -X utf8 -m scripts.verify_ci_configuration
 python -X utf8 -m scripts.verify_conversation_memory
 ```
 
+### 验证 Agent 工具容错
+
+```powershell
+python -X utf8 -m scripts.verify_agent_resilience
+```
+
+### 验证受控制度研究助手
+
+```powershell
+python -X utf8 -m scripts.verify_policy_research
+```
+
+### 验证性能基准与 cProfile
+
+```powershell
+python -X utf8 -m scripts.verify_agent_performance
+python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5
+```
+
+### 验证 Redis LLM 响应缓存
+
+```powershell
+python -X utf8 -m scripts.verify_llm_cache
+```
+
+### 验证异步 LLM single-flight
+
+```powershell
+python -X utf8 -m scripts.verify_async_singleflight
+```
+
+### 验证异步并发负载
+
+```powershell
+python -X utf8 -m scripts.verify_concurrency_load
+python -X utf8 -m scripts.run_concurrency_load_test --requests 24 --concurrency 12
+```
+
+### 验证 Embedding/Reranker 批处理
+
+```powershell
+python -X utf8 -m scripts.verify_embedding_reranker_batching
+python -X utf8 -m scripts.run_batch_optimization --items 32 --batch-size 8
+```
+
+### 验证 LLM Provider 背压
+
+```powershell
+python -X utf8 -m scripts.verify_provider_backpressure
+```
+
+### 验证请求关联与运行时可观测性
+
+```powershell
+python -X utf8 -m scripts.verify_runtime_observability
+```
+
+### 验证 RAG 权限与提示注入防护
+
+```powershell
+python -X utf8 -m scripts.verify_rag_security
+```
+
+### 运行 Day 30 作品集演示与发布验收
+
+```powershell
+python -X utf8 -m scripts.run_portfolio_demo --output-dir artifacts/portfolio
+python -X utf8 -m scripts.verify_portfolio_release
+```
+
 ---
 
-## 18. 开发路线
+## 29. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1062,9 +1657,10 @@ python -X utf8 -m scripts.verify_conversation_memory
 
 - [x] Embedding 接入；
 - [x] 内存向量索引；
+- [x] Reranker 批量 Provider 与稳定排序契约；
 - [ ] BM25；
 - [ ] Hybrid Search；
-- [ ] Rerank；
+- [ ] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
 - [x] 引用生成；
 - [ ] RAG 评测。
@@ -1089,8 +1685,8 @@ python -X utf8 -m scripts.verify_conversation_memory
 - [ ] 相对日期确认；
 - [x] 人在回路确认节点；
 - [x] 工具调用编排；
-- [ ] 错误恢复；
-- [ ] 重试和超时。
+- [x] 错误恢复；
+- [x] 重试和超时。
 
 ### Phase 6：FastAPI 与数据持久化
 
@@ -1113,28 +1709,71 @@ python -X utf8 -m scripts.verify_conversation_memory
 - [x] 缺失材料识别率；
 - [x] 意图识别准确率；
 - [x] 审批路线准确率；
-- [ ] 权限拒绝成功率；
-- [ ] 提示注入测试；
+- [x] 权限拒绝成功率；
+- [x] 提示注入测试；
 - [x] 重复提交阻止率；
 - [x] 错误案例明细报告。
 
-### Phase 8：部署与作品集整理
+### Phase 8：受控制度研究
+
+- [x] 内部制度 RAG 优先；
+- [x] 显式授权的外部 Web Search；
+- [x] 内外来源分区和权威边界；
+- [x] 查询脱敏与外部结果限制；
+- [x] 外部搜索重试、局部降级和离线验收。
+
+### Phase 9：性能分析
+
+- [x] 五个离线代表场景；
+- [x] warm-up 与串行重复测量；
+- [x] p50 / p95 / 错误率报告；
+- [x] 固定性能预算门禁；
+- [x] cProfile 项目热点；
+- [x] py-spy / Scalene 可选环境；
+- [x] 热点、hotset、唯一键三种完全离线并发负载；
+- [x] 端到端 p95、吞吐、错误率和上游放大证据；
+- [x] Embedding/Reranker 逐条与批量调用对照；
+- [x] Provider 调用、内部批次、等价性和吞吐报告；
+- [x] 单进程统一 LLM Provider 并发门禁；
+- [x] FIFO 有界队列、排队超时、取消清理和安全 503；
+- [ ] 真实模型与 Provider 基线；
+- [ ] 生产级持续压测与跨进程 Provider 配额协调；
+- [ ] 基于证据的性能优化。
+
+### Phase 10：缓存优化
+
+- [x] Redis 精确请求 LLM 响应缓存；
+- [x] 模型和消息变化自动失效；
+- [x] TTL 与内存边界；
+- [x] 敏感内容和超大请求绕过；
+- [x] Redis 故障安全降级；
+- [x] 命中、未命中、写入、绕过和错误指标；
+- [x] 单进程相同 cache miss 的异步 single-flight；
+- [x] 取消隔离、异常清理和 bounded 在途键注册表；
+- [ ] 多实例 single-flight；
+- [ ] 真实 LLM 延迟和成本节省基线。
+
+### Phase 11：部署与作品集整理
 
 - [x] Docker 多阶段镜像；
 - [x] Docker Compose；
 - [x] 健康检查；
 - [x] SQLite 持久卷自动验收；
 - [x] CI；
+- [x] 请求 ID 与安全 JSON 访问日志；
+- [x] 有界 HTTP 指标与 Prometheus 兼容端点；
+- [ ] Prometheus/Grafana 集中采集和告警；
+- [ ] OpenTelemetry 跨服务 Trace；
 - [ ] 演示数据初始化；
-- [ ] 演示脚本；
-- [ ] 架构图；
+- [x] 演示脚本；
+- [x] 架构图；
 - [ ] 项目截图；
-- [ ] 简历项目描述；
-- [ ] 面试讲解材料。
+- [x] 简历项目描述；
+- [x] 面试讲解材料。
 
 ---
 
-## 19. 设计原则
+## 30. 设计原则
 
 本项目遵循以下原则：
 
@@ -1146,13 +1785,23 @@ LLM 负责理解用户意图和生成自然语言
 用户负责高影响操作的最终确认
 幂等机制负责防止重复提交
 审计系统负责记录关键行为
+外部公开资料只供研究参考，不覆盖企业内部有效制度
+性能优化必须先有可重复基线、预算和 profiler 证据
+缓存只能优化可重建结果，不能成为审批状态或业务正确性的来源
+相同异步请求可以共享结果，但取消、异常和敏感内容边界必须显式设计
+Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
+Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
+运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
+权限过滤必须发生在向量评分和 Prompt 构造之前，聊天自述不能覆盖可信身份
+用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
+作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 20. 预期评测指标
+## 31. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1164,11 +1813,50 @@ Day 16 当前质量门禁：
 | 审批路线准确率 | 100% |
 | 制度引用准确率 | 100% |
 
-后续仍需补充制度问答语义正确率、权限越界拒绝率、提示注入防护通过率和真实 LLM 回归基线。
+后续仍需补充制度问答语义正确率、真实认证用户矩阵、持续红队和真实 LLM 回归基线。
+
+Day 22 离线性能预算：
+
+| 场景 | p95 上限 | 错误率上限 |
+|---|---:|---:|
+| 运行时启动 | 750 ms | 0% |
+| 制度 RAG 回答 | 150 ms | 0% |
+| 材料路由 | 250 ms | 0% |
+| 审批路由 | 250 ms | 0% |
+| 混合研究 | 250 ms | 0% |
+
+这些数值是离线回归护栏，不是生产 SLA，也不包含真实模型或网络延迟。
+
+Day 24 专项并发契约固定验证：12 个相同 cache miss 只产生 1 次上游调用和 1 次缓存写入，
+其余 11 个请求复用 leader 结果。该契约证明请求合并逻辑，不代表生产环境吞吐量或 SLA。
+
+Day 25 专项负载固定使用三种请求分布、每场景 24 请求和客户端并发 12。预期上游调用分别
+为 1、4、24，唯一键调用放大率均为 1.00x；p95 和吞吐保留为同环境趋势证据，不设置跨机器
+绝对预算，也不代表真实 DeepSeek/OpenAI-compatible Provider SLA。
+
+Day 26 专项批处理固定使用每场景 32 条输入和 batch size 8。Embedding 与 Reranker 的
+Provider 调用都应从 32 次降为 1 次，内部批次从 32 降为 4；输出摘要和顺序必须完全等价。
+离线 fixture 的吞吐提升只验证方法，不代表真实 BGE 模型或硬件 SLA。
+
+Day 27 专项背压固定使用 Provider 并发 2、FIFO 队列 2：5 个请求中接纳并完成 4 个、立即
+拒绝 1 个，峰值执行和排队都不得超过 2；另行验证排队超时、取消清理、关闭资源和默认关闭
+时的兼容直通。该契约是单进程容量边界，不代表跨实例限流或真实 Provider SLA。
+
+Day 28 专项观测固定产生 3 个业务请求和 2 个路由模板，验证请求 ID 关联、成功/5xx 计数、
+固定 histogram、监控端点不自计数、500 脱敏和 Prometheus 格式。原始路径参数、query、凭据
+形态和异常正文不得出现在状态、指标、访问事件或错误响应中。
+
+Day 29 专项安全评测固定验证 7 个权限拒绝边界、6 个高信号攻击和 4 个正常安全问题：权限
+拒绝、攻击拦截和正常放行在固定夹具中均须为 100%，被拒绝输入的 Provider 调用必须为 0，
+未授权与污染制度内容不得进入模型上下文。该结果不代表开放世界攻击检出率。
+
+Day 30 作品集发布门禁固定串行运行六个场景，要求相关制度引用、七项差旅材料、四步 IT 采购
+审批、人工确认、幂等重放、`S/W` 来源分区和提示注入零 Provider 调用全部通过。演示使用
+确定性词法向量、固定 LLM 和固定 Web 夹具，证明集成契约而非真实模型效果。
 
 ---
 
-## 21. 作品集价值
+## 32. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1186,6 +1874,15 @@ Day 16 当前质量门禁：
 - Docker 和工程化部署。
 - GitHub Actions 持续集成与供应链门禁。
 - 会话隔离、持久化和受限上下文记忆。
+- 内部 RAG 与显式授权 Web Search 的安全整合。
+- 离线性能基准、p95 预算和 cProfile 热点分析。
+- Redis cache-aside、精确失效、隐私绕过和故障安全降级。
+- asyncio Task 协调、single-flight 防击穿、取消隔离和并发竞态测试。
+- 并发 load shape、端到端 p95、吞吐、上游放大率和容量边界分析。
+- Embedding/Reranker 批量推理、稳定排序、等价性门禁和吞吐对照。
+- 请求关联、结构化日志、指标基数控制、Prometheus 格式和安全错误观测。
+- 检索前 ABAC 边界、提示注入纵深防御、污染证据隔离和安全回归评测。
+- 可重复的一键演示、机器可读发布证据、架构讲解和简历/面试材料。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1204,7 +1901,7 @@ Day 16 当前质量门禁：
 
 ---
 
-## 22. 免责声明
+## 33. 免责声明
 
 本仓库仅用于：
 

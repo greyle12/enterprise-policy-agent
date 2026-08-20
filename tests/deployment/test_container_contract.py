@@ -63,6 +63,27 @@ def test_compose_healthcheck_targets_readiness_endpoint() -> None:
     assert healthcheck["start_period"] == "10m"
 
 
+def test_compose_provides_ephemeral_hardened_redis_cache() -> None:
+    compose = yaml.safe_load(
+        (_PROJECT_ROOT / "compose.yaml").read_text(encoding="utf-8")
+    )
+    redis_service = compose["services"]["redis"]
+    agent_environment = compose["services"]["agent"]["environment"]
+
+    assert redis_service["image"] == "redis:8.10.0-alpine"
+    assert redis_service["ports"] == ["127.0.0.1:${REDIS_PORT:-6379}:6379"]
+    assert redis_service["read_only"] is True
+    assert redis_service["cap_drop"] == ["ALL"]
+    assert redis_service["cap_add"] == ["CHOWN", "SETGID", "SETUID"]
+    assert redis_service["security_opt"] == ["no-new-privileges:true"]
+    assert any(item.startswith("/data:") for item in redis_service["tmpfs"])
+    assert "--maxmemory-policy" in redis_service["command"]
+    assert "allkeys-lru" in redis_service["command"]
+    assert redis_service["healthcheck"]["test"] == ["CMD", "redis-cli", "ping"]
+    assert agent_environment["LLM_CACHE_PROVIDER"] == "redis"
+    assert agent_environment["REDIS_URL"] == "redis://redis:6379/0"
+
+
 def test_docker_build_context_excludes_secrets_and_runtime_data() -> None:
     patterns = {
         line.strip()
