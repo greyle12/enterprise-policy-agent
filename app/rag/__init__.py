@@ -1,3 +1,10 @@
+from app.rag.bm25 import (
+    BM25Record,
+    BM25SearchResult,
+    InMemoryBM25Index,
+    KeywordTokenizer,
+    PolicyKeywordTokenizer,
+)
 from app.rag.document_loader import (
     DEFAULT_DOCUMENT_LOADER_REGISTRY,
     DOCXDocumentLoader,
@@ -23,15 +30,20 @@ from app.rag.ocr import (
 )
 
 __all__ = [
+    "BM25Record",
+    "BM25SearchResult",
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
     "DOCXDocumentLoader",
     "DocumentLoadError",
     "DocumentLoader",
     "DocumentLoaderRegistry",
     "LoadedDocument",
+    "InMemoryBM25Index",
+    "KeywordTokenizer",
     "MarkdownDocumentLoader",
     "OCRRequiredError",
     "PDFDocumentLoader",
+    "PolicyKeywordTokenizer",
     "UnsupportedDocumentFormatError",
     "docx_metadata_sidecar_path",
     "pdf_metadata_sidecar_path",

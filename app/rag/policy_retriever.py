@@ -3,9 +3,11 @@ from __future__ import annotations
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
+from enum import StrEnum
 from pathlib import Path
 from typing import Protocol, Self
 
+from app.rag.bm25 import BM25Record, InMemoryBM25Index, KeywordTokenizer
 from app.rag.document_loader import (
     DEFAULT_DOCUMENT_LOADER_REGISTRY,
     DocumentLoaderRegistry,
@@ -39,12 +41,20 @@ class EmbeddingProvider(Protocol):
         """为用户问题生成向量。"""
 
 
+class RetrievalMethod(StrEnum):
+    """The retrieval channel that produced a ranked result."""
+
+    VECTOR = "vector"
+    BM25 = "bm25"
+
+
 @dataclass(frozen=True, slots=True)
 class PolicyRetrievalResult:
     """一次制度检索命中结果。"""
 
     chunk: PolicyChunk
     score: float
+    retrieval_method: RetrievalMethod = RetrievalMethod.VECTOR
 
 
 def _build_record_metadata(
@@ -94,6 +104,7 @@ class PolicyRetriever:
         *,
         embedding_provider: EmbeddingProvider,
         chunks: Sequence[PolicyChunk],
+        keyword_tokenizer: KeywordTokenizer | None = None,
     ) -> None:
         chunk_list = list(chunks)
 
@@ -130,10 +141,23 @@ class PolicyRetriever:
         index = InMemoryVectorIndex(dimension=embedding_provider.dimension)
         index.add(records)
 
+        keyword_index = InMemoryBM25Index(tokenizer=keyword_tokenizer)
+        keyword_index.add(
+            [
+                BM25Record(
+                    record_id=chunk.chunk_id,
+                    text=chunk.retrieval_text,
+                    metadata=_build_record_metadata(chunk),
+                )
+                for chunk in chunk_list
+            ]
+        )
+
         self._embedding_provider = embedding_provider
         self._chunks = tuple(chunk_list)
         self._chunks_by_id = chunks_by_id
         self._index = index
+        self._keyword_index = keyword_index
 
     @classmethod
     def from_directory(
@@ -142,6 +166,7 @@ class PolicyRetriever:
         *,
         embedding_provider: EmbeddingProvider,
         loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
+        keyword_tokenizer: KeywordTokenizer | None = None,
     ) -> Self:
         """解析指定目录并建立制度检索器。"""
 
@@ -153,6 +178,7 @@ class PolicyRetriever:
         return cls(
             embedding_provider=embedding_provider,
             chunks=chunks,
+            keyword_tokenizer=keyword_tokenizer,
         )
 
     @property
@@ -166,6 +192,12 @@ class PolicyRetriever:
         """返回索引向量维度。"""
 
         return self._embedding_provider.dimension
+
+    @property
+    def keyword_size(self) -> int:
+        """Return the number of chunks in the BM25 index."""
+
+        return self._keyword_index.size
 
     def search(
         self,
@@ -197,6 +229,29 @@ class PolicyRetriever:
                 score=result.score,
             )
             for result in vector_results
+        ]
+
+    def search_keywords(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+        allowed_chunk_ids: Collection[str] | None = None,
+    ) -> list[PolicyRetrievalResult]:
+        """Run BM25 only inside the caller-provided authorized chunk scope."""
+
+        keyword_results = self._keyword_index.search(
+            query,
+            top_k=top_k,
+            allowed_record_ids=allowed_chunk_ids,
+        )
+        return [
+            PolicyRetrievalResult(
+                chunk=self._chunks_by_id[result.record.record_id],
+                score=result.score,
+                retrieval_method=RetrievalMethod.BM25,
+            )
+            for result in keyword_results
         ]
 
     def restrict(
@@ -249,6 +304,18 @@ class AccessControlledPolicyRetriever:
         top_k: int = 5,
     ) -> list[PolicyRetrievalResult]:
         return self._retriever.search(
+            query,
+            top_k=top_k,
+            allowed_chunk_ids=self._allowed_chunk_ids(),
+        )
+
+    def search_keywords(
+        self,
+        query: str,
+        *,
+        top_k: int = 5,
+    ) -> list[PolicyRetrievalResult]:
+        return self._retriever.search_keywords(
             query,
             top_k=top_k,
             allowed_chunk_ids=self._allowed_chunk_ids(),

@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 25：OCR fallback（已完成）
+Advanced RAG Phase 26：BM25 关键词检索（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -305,11 +305,14 @@ Advanced RAG Phase 25：OCR fallback（已完成）
 - [x] 扫描 PDF 页渲染和 DOCX 内嵌图片 OCR fallback；
 - [x] OCR engine、页/块单元和置信度贯穿 Chunk、Citation 与 Research API；
 - [x] 低置信度拒绝、授权前置和 OCR 污染证据隔离专项验证。
+- [x] 依赖无关的中英文/企业编号确定性关键词 Tokenizer；
+- [x] `PolicyRetriever` 内并列的内存 BM25 索引与显式检索通道；
+- [x] 未授权 Chunk 在候选、DF、平均长度和 BM25 评分前排除；
+- [x] 5 文档/199 Chunk 完全离线 BM25 专项验证与 CI 门禁。
 
 ### 尚未实现
 
 - [ ] PostgreSQL / pgvector；
-- [ ] BM25 关键词检索；
 - [ ] Hybrid Search；
 - [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
@@ -334,6 +337,7 @@ Advanced RAG Phase 25：OCR fallback（已完成）
 同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
 并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
 并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
+同时具备授权范围内的 BM25 关键词检索、企业编号精确匹配和确定性排序，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1389,7 +1393,7 @@ Application Services
        │   ├── Chunker
        │   ├── Embedding
        │   ├── Vector Search
-       │   ├── BM25 Search（planned）
+       │   ├── Authorized BM25 Search
        │   └── Reranker（contract only）
        │
        ├── Policy Repository
@@ -1465,6 +1469,7 @@ demo1/
 │   ├── pdf_document_parsing.md
 │   ├── docx_document_parsing.md
 │   ├── ocr_fallback.md
+│   ├── bm25_retrieval.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1683,6 +1688,12 @@ python -X utf8 -m scripts.verify_docx_document_parsing
 python -X utf8 -m scripts.verify_ocr_fallback
 ```
 
+### 验证 Phase 26 BM25 关键词检索
+
+```powershell
+python -X utf8 -m scripts.verify_bm25_retrieval
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1708,7 +1719,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] YAML 元数据提取；
 - [x] 章节和条款切分；
 - [x] Chunk 数据模型；
-- [ ] 基础关键词检索；
+- [x] 基础关键词检索；
 - [x] 制度引用结构；
 - [x] 单元测试。
 
@@ -1717,7 +1728,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] Embedding 接入；
 - [x] 内存向量索引；
 - [x] Reranker 批量 Provider 与稳定排序契约；
-- [ ] BM25；
+- [x] BM25；
 - [ ] Hybrid Search；
 - [ ] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
@@ -1878,6 +1889,19 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] OCR 证据继续经过 authorization-before-similarity 与 Prompt Guard；
 - [x] 完全离线 Provider 替身、PDF/DOCX 动态夹具与 CI 门禁；
 - [ ] OCR 人工复核队列、异步任务和真实中文扫描集评测。
+
+### Advanced RAG Phase 26：BM25 关键词检索
+
+- [x] `KeywordTokenizer` Protocol 与 NFKC/casefold 规范化；
+- [x] 企业编号保留、短中文词和字符 bigram Token；
+- [x] `InMemoryBM25Index`、`k1=1.2`、`b=0.75` 与确定性排序；
+- [x] 复用 `PolicyChunk.retrieval_text`、Retriever 元数据和结果模型；
+- [x] `PolicyRetriever.search_keywords(...)` 独立通道，不调用 Embedding；
+- [x] authorization-before-candidate/statistics/scoring 安全契约；
+- [x] 查询/文档 Token 上限、重复 ID 和非法输入防护；
+- [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
+- [ ] Hybrid Search + RRF（Phase 27）；
+- [ ] 持久化倒排索引、专业中文分词和 Retrieval Evaluation。
 
 ---
 
