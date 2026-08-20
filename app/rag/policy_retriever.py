@@ -22,6 +22,7 @@ from app.rag.fusion import (
     RankedList,
     reciprocal_rank_fusion,
 )
+from app.rag.indexing import build_record_metadata
 from app.rag.policy_chunker import chunk_policy_directory
 from app.rag.reranking import (
     RerankCandidate,
@@ -91,45 +92,6 @@ class PolicyRetrievalResult:
     pre_rerank_rank: int | None = None
 
 
-def _build_record_metadata(
-    chunk: PolicyChunk,
-) -> dict[str, str]:
-    """将引用所需字段保存到向量记录元数据。"""
-
-    metadata = {
-        "document_id": chunk.document_id,
-        "document_title": chunk.document_title,
-        "document_version": chunk.document_version,
-        "document_status": chunk.document_status.value,
-        "issuing_department": chunk.issuing_department,
-        "chapter_title": chunk.chapter_title,
-        "article_label": chunk.article_label,
-        "article_title": chunk.article_title,
-        "source_path": str(chunk.source_path),
-        "source_media_type": chunk.source_media_type,
-        "source_line_start": str(chunk.source_line_start),
-        "source_line_end": str(chunk.source_line_end),
-        "security_level": chunk.security_level.value,
-        "content_hash": chunk.content_hash,
-    }
-    if chunk.metadata_source_path is not None:
-        metadata["metadata_source_path"] = str(chunk.metadata_source_path)
-    if chunk.source_page_start is not None and chunk.source_page_end is not None:
-        metadata["source_page_start"] = str(chunk.source_page_start)
-        metadata["source_page_end"] = str(chunk.source_page_end)
-    if chunk.source_block_start is not None and chunk.source_block_end is not None:
-        metadata["source_block_start"] = str(chunk.source_block_start)
-        metadata["source_block_end"] = str(chunk.source_block_end)
-    if chunk.source_ocr_applied:
-        metadata["source_ocr_engine"] = chunk.source_ocr_engine or ""
-        metadata["source_ocr_unit_kind"] = chunk.source_ocr_unit_kind or ""
-        metadata["source_ocr_unit_numbers"] = ",".join(
-            str(number) for number in chunk.source_ocr_unit_numbers
-        )
-        metadata["source_ocr_confidence_min"] = str(chunk.source_ocr_confidence_min)
-    return metadata
-
-
 class PolicyRetriever:
     """Build vector/BM25 indexes and expose independent or fused retrieval."""
 
@@ -142,6 +104,7 @@ class PolicyRetriever:
         reranking_provider: RerankingProvider | None = None,
         rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
         vector_index: VectorIndex | None = None,
+        index_vectors: bool = True,
     ) -> None:
         chunk_list = list(chunks)
 
@@ -159,35 +122,40 @@ class PolicyRetriever:
         ):
             raise ValueError("rerank_candidate_k must be greater than zero")
 
-        retrieval_texts = [chunk.retrieval_text for chunk in chunk_list]
-        vectors = embedding_provider.embed_documents(retrieval_texts)
-
-        if len(vectors) != len(chunk_list):
-            raise RuntimeError(
-                f"Embedding count does not match chunk count: {len(vectors)} != {len(chunk_list)}"
-            )
-
-        records = [
-            VectorRecord(
-                record_id=chunk.chunk_id,
-                text=chunk.content,
-                vector=vector,
-                metadata=_build_record_metadata(chunk),
-            )
-            for chunk, vector in zip(
-                chunk_list,
-                vectors,
-                strict=True,
-            )
-        ]
-
         index = vector_index or InMemoryVectorIndex(dimension=embedding_provider.dimension)
         if index.dimension != embedding_provider.dimension:
             raise ValueError(
                 "vector index dimension does not match embedding provider: "
                 f"{index.dimension} != {embedding_provider.dimension}"
             )
-        index.upsert(records)
+        if index_vectors:
+            retrieval_texts = [chunk.retrieval_text for chunk in chunk_list]
+            vectors = embedding_provider.embed_documents(retrieval_texts)
+            if len(vectors) != len(chunk_list):
+                raise RuntimeError(
+                    "Embedding count does not match chunk count: "
+                    f"{len(vectors)} != {len(chunk_list)}"
+                )
+            index.upsert(
+                [
+                    VectorRecord(
+                        record_id=chunk.chunk_id,
+                        text=chunk.content,
+                        vector=vector,
+                        metadata=build_record_metadata(chunk),
+                    )
+                    for chunk, vector in zip(chunk_list, vectors, strict=True)
+                ]
+            )
+        else:
+            if vector_index is None:
+                raise ValueError("index_vectors=False requires an injected vector_index")
+            available_ids = {entry.record_id for entry in index.list_entries()}
+            missing_ids = sorted(set(chunks_by_id).difference(available_ids))
+            if missing_ids:
+                raise RuntimeError(
+                    "vector index is missing synchronized chunks: " + ", ".join(missing_ids)
+                )
 
         keyword_index = InMemoryBM25Index(tokenizer=keyword_tokenizer)
         keyword_index.add(
@@ -195,7 +163,7 @@ class PolicyRetriever:
                 BM25Record(
                     record_id=chunk.chunk_id,
                     text=chunk.retrieval_text,
-                    metadata=_build_record_metadata(chunk),
+                    metadata=build_record_metadata(chunk),
                 )
                 for chunk in chunk_list
             ]
@@ -220,6 +188,7 @@ class PolicyRetriever:
         reranking_provider: RerankingProvider | None = None,
         rerank_candidate_k: int = DEFAULT_RERANK_CANDIDATE_K,
         vector_index: VectorIndex | None = None,
+        index_vectors: bool = True,
     ) -> Self:
         """解析指定目录并建立制度检索器。"""
 
@@ -235,6 +204,7 @@ class PolicyRetriever:
             reranking_provider=reranking_provider,
             rerank_candidate_k=rerank_candidate_k,
             vector_index=vector_index,
+            index_vectors=index_vectors,
         )
 
     @property

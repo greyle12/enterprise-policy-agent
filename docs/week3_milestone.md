@@ -110,7 +110,8 @@ SQLite checkpoint 保存业务状态
 ## 7. 当前边界
 
 本周完成的是可测试、可容器化的单机作品集版本，不代表多实例生产系统。仍未完成的
-重点包括增量索引、集中式日志与指标、数据库高可用、Redis 高可用和真实企业数据验证。
+重点包括蓝绿索引发布、集中式日志与指标、数据库高可用、Redis 高可用和真实企业数据验证。
 
 后续 Day 29 已补充检索前权限过滤和提示注入专项评测；Advanced RAG Phase 26/27 已补充
-BM25、RRF Hybrid Search、可选 Reranker 与 PostgreSQL/pgvector 向量持久化。其余边界仍然成立。
+BM25、RRF Hybrid Search、可选 Reranker、PostgreSQL/pgvector 持久化与增量 Document Indexing
+Pipeline。其余边界仍然成立。

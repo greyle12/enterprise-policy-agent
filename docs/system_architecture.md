@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Advanced RAG Phase 29 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 30 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -52,7 +52,7 @@ sequenceDiagram
 | FastAPI | Schema 校验、依赖注入、错误映射、Request ID | 业务规则计算 |
 | Prompt Guard | 高信号输入攻击阻断、污染证据隔离 | 完整开放世界攻击识别 |
 | Policy Access | 状态、日期、等级、部门、角色、区域授权 | 登录和员工目录 |
-| Policy RAG | Loader 路由、解析、Chunk、Embedding、检索、上下文、引用 | 决定审批路线 |
+| Policy RAG | Loader、增量索引、Embedding、检索、上下文、引用 | 决定审批路线 |
 | LangGraph | 意图分支、多轮状态、确认节点、工具编排 | 自行创造业务规则 |
 | Rule Tools | 材料检查、审批路线、草稿字段计算 | 生成开放式自然语言 |
 | Persistence | SQLite 业务状态、可选 pgvector 向量存储 | 多节点分布式一致性 |
@@ -90,7 +90,8 @@ sequenceDiagram
 flowchart LR
     Policies["Markdown / PDF / DOCX + sidecar"] --> Loader["Document Loader"]
     Loader --> Chunks["结构化 Chunk"]
-    Chunks --> Vector["VectorIndex: memory / pgvector"]
+    Chunks --> Indexer["Fingerprint + Incremental Indexer"]
+    Indexer --> Vector["VectorIndex: memory / pgvector"]
     Chunks --> BM25["内存 BM25"]
     Vector --> Fusion["RRF Hybrid Fusion"]
     BM25 --> Fusion
@@ -101,6 +102,7 @@ flowchart LR
 ```
 
 - Vector Index 可选进程内精确索引或 PostgreSQL/pgvector 持久化精确索引；正式 BGE 维度为 512；
+- Indexer 比较稳定 Chunk 指纹，只为新增/变化记录生成 Embedding，并原子删除陈旧记录；
 - BM25 仍是单进程内存结构，并与 Vector 使用同一批 `retrieval_text`；
 - 可信身份先产生授权 Chunk 白名单；pgvector 先物化授权 SQL 候选，向量相似度与 BM25 候选、DF、平均长度和评分都只能查看该白名单；
 - Vector 与 BM25 分别召回授权候选，RRF 只按名次融合并保留每路诊断信号；

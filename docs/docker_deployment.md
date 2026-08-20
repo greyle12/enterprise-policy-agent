@@ -254,8 +254,8 @@ docker compose down
 docker compose up --detach --wait
 ```
 
-因此草稿、会话、审批单、审计记录和制度向量可以跨进程重启和容器重建恢复。当前启动仍会全量生成
-Embedding 并幂等 upsert；Phase 30 才会增加内容哈希驱动的增量索引和陈旧 Chunk 删除。
+因此草稿、会话、审批单、审计记录和制度向量可以跨进程重启和容器重建恢复。Phase 30 启动同步会比较
+稳定索引指纹；完全相同的 collection 不重复生成文档 Embedding，变化项与陈旧 Chunk 在同一事务提交。
 
 Redis 使用 128 MiB 临时 `/data`、`allkeys-lru`，并关闭 RDB 与 AOF。它不是具名卷，
 重建或停止 Redis 后缓存会丢失；业务状态和正确性不依赖这些缓存数据。

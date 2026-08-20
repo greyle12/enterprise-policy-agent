@@ -63,6 +63,7 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_hybrid_search" in workflow
     assert "scripts.verify_reranker_integration" in workflow
     assert "scripts.verify_pgvector_store" in workflow
+    assert "scripts.verify_document_indexing" in workflow
     assert "scripts.run_portfolio_demo" in workflow
     assert "--output-dir artifacts/portfolio" in workflow
     assert "scripts.verify_portfolio_release" in workflow

@@ -148,6 +148,12 @@ class Settings(BaseSettings):
         le=100,
     )
     rag_vector_store_provider: VectorStoreProviderName = VectorStoreProviderName.MEMORY
+    rag_index_pipeline_version: str = Field(
+        default="policy-index-v1",
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+    )
     rag_pgvector_dsn: SecretStr = SecretStr(
         "postgresql://policy_agent:local-development-only@127.0.0.1:5432/policy_agent"
     )

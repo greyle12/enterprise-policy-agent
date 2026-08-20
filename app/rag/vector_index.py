@@ -32,6 +32,14 @@ class SearchResult:
     score: float
 
 
+@dataclass(frozen=True)
+class VectorIndexEntry:
+    """Lightweight persisted record descriptor used by incremental indexing."""
+
+    record_id: str
+    metadata: dict[str, str] = field(default_factory=dict)
+
+
 class VectorIndex(Protocol):
     """Storage-independent vector index contract used by PolicyRetriever."""
 
@@ -45,6 +53,17 @@ class VectorIndex(Protocol):
 
     def upsert(self, records: Sequence[VectorRecord]) -> None:
         """Insert or replace records atomically by record ID."""
+
+    def list_entries(self) -> list[VectorIndexEntry]:
+        """Return record IDs and metadata without loading stored embeddings."""
+
+    def apply_changes(
+        self,
+        records: Sequence[VectorRecord],
+        *,
+        delete_record_ids: Collection[str] = (),
+    ) -> None:
+        """Atomically apply validated upserts and deletions."""
 
     def search(
         self,
@@ -104,8 +123,45 @@ class InMemoryVectorIndex:
     def upsert(self, records: Sequence[VectorRecord]) -> None:
         """Insert or replace records while preserving index validation."""
 
-        for stored_record in self._prepare_records(records):
-            self._records[stored_record.record.record_id] = stored_record
+        self.apply_changes(records)
+
+    def list_entries(self) -> list[VectorIndexEntry]:
+        """Return deterministic lightweight descriptors for synchronization."""
+
+        return [
+            VectorIndexEntry(
+                record_id=stored.record.record_id,
+                metadata=dict(stored.record.metadata),
+            )
+            for stored in sorted(
+                self._records.values(),
+                key=lambda item: item.record.record_id,
+            )
+        ]
+
+    def apply_changes(
+        self,
+        records: Sequence[VectorRecord],
+        *,
+        delete_record_ids: Collection[str] = (),
+    ) -> None:
+        """Validate the whole change set before replacing the in-memory snapshot."""
+
+        prepared = self._prepare_records(records)
+        delete_ids = _normalize_delete_ids(delete_record_ids)
+        upsert_ids = {stored.record.record_id for stored in prepared}
+        overlap = sorted(upsert_ids.intersection(delete_ids))
+        if overlap:
+            raise ValueError(
+                "record ids cannot be upserted and deleted together: " + ", ".join(overlap)
+            )
+
+        updated = dict(self._records)
+        for stored_record in prepared:
+            updated[stored_record.record.record_id] = stored_record
+        for record_id in delete_ids:
+            updated.pop(record_id, None)
+        self._records = updated
 
     def search(
         self,
@@ -204,3 +260,13 @@ def _calculate_dot_product(
     return sum(
         left_value * right_value for left_value, right_value in zip(left, right, strict=True)
     )
+
+
+def _normalize_delete_ids(record_ids: Collection[str]) -> frozenset[str]:
+    normalized: set[str] = set()
+    for record_id in record_ids:
+        value = record_id.strip()
+        if not value:
+            raise ValueError("delete record ids must not be blank")
+        normalized.add(value)
+    return frozenset(normalized)

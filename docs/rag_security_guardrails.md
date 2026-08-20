@@ -70,6 +70,10 @@ Advanced RAG Phase 29 迁移到 pgvector 后仍保持同一顺序：授权 ID �
 `MATERIALIZED authorized_records`，外层才执行 `<=>` cosine distance。不是先从数据库取全库 Top-K
 再在 Python 中过滤；空授权集合也不会发起向量查询。
 
+Phase 30 将 `security_level`、部门、角色、区域、状态和有效期等授权相关元数据纳入稳定索引指纹。
+即使条款正文不变，权限元数据变化也会让该 Chunk 进入更新集合，避免 pgvector 长期保留旧授权元数据；
+在线请求仍以当前解析的 `PolicyChunk` 和可信身份计算白名单。
+
 ## 3. Build：提示注入与证据污染防护
 
 ### 3.1 用户输入

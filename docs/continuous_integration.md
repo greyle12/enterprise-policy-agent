@@ -18,6 +18,7 @@ Advanced RAG Phase 26 增加 BM25 词面排序、企业编号检索、授权范�
 Advanced RAG Phase 27 增加 Vector/BM25 候选融合、RRF 贡献、单通道降级和正式问答链路契约。
 Advanced RAG Phase 28 增加 RRF 候选批量精排、授权前置、配置回退和正式 Reranker 入口契约。
 Advanced RAG Phase 29 增加 VectorIndex、pgvector schema/upsert、授权 SQL CTE、持久卷和 Compose 契约。
+Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk 原子删除和预索引复用契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -104,6 +105,7 @@ timeout 30 分钟
 → Phase 27 authorization-scoped Hybrid Search 与 RRF 离线契约
 → Phase 28 authorization-scoped Reranker 正式接入离线契约
 → Phase 29 pgvector 存储、持久化和 authorization-before-distance 离线契约
+→ Phase 30 Document Indexing Pipeline 幂等、增量更新与 stale deletion 离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -113,13 +115,15 @@ timeout 30 分钟
 任意一步返回非零退出码，Job 即失败。
 
 离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
-Document Loader、PDF/DOCX/OCR、BM25/Hybrid/Reranker/pgvector 契约、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
+Document Loader、PDF/DOCX/OCR、BM25/Hybrid/Reranker/pgvector/Document Indexing 契约、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
 也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。Loader 专项读取
 仓库中的 Markdown；PDF/DOCX/OCR 专项在临时目录动态生成真实文档和 sidecar，不保存用户文档。
 OCR CI 使用确定性进程内 Provider，不安装或调用系统 Tesseract。可观测性
 专项使用进程内 TestClient；安全专项使用固定身份、制度和攻击夹具，不调用 Provider。Phase 29
 使用进程内 SQL/连接池替身，不连接真实 PostgreSQL；真实具名卷恢复由本机 Docker 验收脚本负责。因此来自
 Fork 的 Pull Request 可以在没有密钥、不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
+Phase 30 使用确定性内存 Embedding/Vector Store 边界，验证第二次运行零 Embedding、单 Chunk 更新、
+源删除和授权前置，不下载真实模型。
 
 ### 3.1 构建证据
 
@@ -245,6 +249,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_hybrid_search
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_reranker_integration
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_pgvector_store
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_indexing
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -291,6 +296,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Hybrid/RRF 契约失败 | 单独运行 `scripts.verify_hybrid_search`，检查两路候选、RRF 贡献、去重、单通道降级和融合前授权 |
 | Reranker 接入契约失败 | 单独运行 `scripts.verify_reranker_integration`，检查候选池、单次批量调用、原始 RRF 诊断、禁用回退和 Provider 前授权 |
 | pgvector 契约失败 | 单独运行 `scripts.verify_pgvector_store`，检查 schema、upsert、collection、授权 CTE、Compose 镜像和具名卷 |
+| Document Indexing 契约失败 | 单独运行 `scripts.verify_document_indexing`，检查稳定指纹、零变更跳过、单 Chunk 更新、stale 删除和授权前置 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -314,6 +320,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不用作品集 6/6 代替真实模型评测；Day 30 使用确定性词法向量、LLM 和 Web 夹具；
 - 不验证 BGE 首次模型下载；
 - 不在 GitHub-hosted Runner 启动真实 PostgreSQL；Phase 29 CI 只验证离线 SQL/安全契约，真实卷恢复由本机 Docker 脚本验证；
+- 不下载真实 BGE 验证增量同步；Phase 30 使用确定性 Embedding 替身证明调用数量和索引状态转换；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 

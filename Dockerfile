@@ -59,6 +59,7 @@ COPY --chown=agent:agent data/policies ./data/policies
 COPY --chown=agent:agent scripts/check_container_health.py ./scripts/
 COPY --chown=agent:agent scripts/container_persistence_probe.py ./scripts/
 COPY --chown=agent:agent scripts/pgvector_persistence_probe.py ./scripts/
+COPY --chown=agent:agent scripts/index_policy_documents.py ./scripts/
 
 USER agent
 

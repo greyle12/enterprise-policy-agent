@@ -24,6 +24,7 @@ def test_dockerfile_uses_pinned_python_and_non_root_runtime() -> None:
     assert "HEALTHCHECK" in dockerfile
     assert 'CMD ["python", "-m", "app"]' in dockerfile
     assert "scripts/pgvector_persistence_probe.py" in dockerfile
+    assert "scripts/index_policy_documents.py" in dockerfile
     assert "COPY . ." not in dockerfile
 
 
@@ -92,6 +93,9 @@ def test_compose_provides_persistent_pgvector_and_authorized_store_configuration
     assert "pgvector_data" in compose["volumes"]
     assert agent["depends_on"]["postgres"]["condition"] == "service_healthy"
     assert agent["environment"]["RAG_VECTOR_STORE_PROVIDER"] == "pgvector"
+    assert agent["environment"]["RAG_INDEX_PIPELINE_VERSION"] == (
+        "${RAG_INDEX_PIPELINE_VERSION:-policy-index-v1}"
+    )
     assert "@postgres:5432/" in agent["environment"]["RAG_PGVECTOR_DSN"]
 
 

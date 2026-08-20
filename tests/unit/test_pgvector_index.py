@@ -59,10 +59,23 @@ class _Connection:
             return _Cursor(one=(count,))
         if "SELECT\n                    EXISTS" in query:
             return _Cursor(one=(self.database.schema_ready, self.database.schema_ready))
+        if "SELECT record_id, metadata" in query:
+            collection = str(normalized_params[0])
+            rows = [
+                (record_id, metadata)
+                for (stored_collection, record_id), (_, _, metadata) in sorted(
+                    self.database.records.items()
+                )
+                if stored_collection == collection
+            ]
+            return _Cursor(rows=rows)
         if "DELETE FROM rag_policy_vectors" in query:
             collection = str(normalized_params[0])
+            delete_ids = set(normalized_params[1]) if "record_id = ANY" in query else None
             self.database.records = {
-                key: value for key, value in self.database.records.items() if key[0] != collection
+                key: value
+                for key, value in self.database.records.items()
+                if key[0] != collection or (delete_ids is not None and key[1] not in delete_ids)
             }
             return _Cursor()
         if "ORDER BY embedding <=>" in query:
@@ -113,9 +126,11 @@ class _Pool:
     def __init__(self, database: _Database | None = None) -> None:
         self.database = database or _Database()
         self.closed = False
+        self.connection_count = 0
 
     @contextmanager
     def connection(self) -> Iterator[_Connection]:
+        self.connection_count += 1
         yield _Connection(self.database)
 
     def close(self) -> None:
@@ -184,6 +199,48 @@ def test_upsert_persists_across_index_instances_and_updates_by_id() -> None:
     assert result[0].record.text == "住宿费需要合规票据"
     assert result[0].record.metadata == {"version": "2"}
     assert result[0].score == pytest.approx(1.0)
+
+
+def test_lists_entries_without_loading_embeddings() -> None:
+    pool = _Pool()
+    index = PgVectorIndex(pool=pool, dimension=3, collection_name="policies")
+    index.upsert(_records())
+
+    entries = index.list_entries()
+
+    assert [entry.record_id for entry in entries] == ["core-secret", "purchase", "travel"]
+    assert entries[0].metadata == {"security_level": "core"}
+    query, _ = pool.database.executed[-1]
+    assert "SELECT record_id, metadata" in query
+    assert "embedding" not in query
+
+
+def test_apply_changes_uses_one_connection_for_upsert_and_scoped_delete() -> None:
+    pool = _Pool()
+    index = PgVectorIndex(pool=pool, dimension=3, collection_name="policies")
+    index.upsert(_records())
+    before = pool.connection_count
+
+    index.apply_changes(
+        [
+            VectorRecord(
+                record_id="travel",
+                text="更新后的差旅规则",
+                vector=[1.0, 0.0, 0.0],
+            )
+        ],
+        delete_record_ids={"purchase"},
+    )
+
+    assert pool.connection_count == before + 1
+    assert index.size == 2
+    delete_sql, params = next(
+        (query, params)
+        for query, params in reversed(pool.database.executed)
+        if "record_id = ANY" in query and "DELETE" in query
+    )
+    assert "collection_name = %s" in delete_sql
+    assert params == ("policies", ["purchase"])
 
 
 def test_authorization_allow_list_is_in_sql_before_similarity_ordering() -> None:

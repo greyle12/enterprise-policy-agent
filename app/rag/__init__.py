@@ -27,6 +27,14 @@ from app.rag.fusion import (
     RankedList,
     reciprocal_rank_fusion,
 )
+from app.rag.indexing import (
+    DEFAULT_INDEX_PIPELINE_VERSION,
+    DocumentIndexingReport,
+    DocumentIndexingResult,
+    DocumentIndexingStatus,
+    PolicyDocumentIndexer,
+    PolicyIndexingRun,
+)
 from app.rag.ocr import (
     OCRError,
     OCRImage,
@@ -41,6 +49,7 @@ from app.rag.vector_index import (
     InMemoryVectorIndex,
     SearchResult,
     VectorIndex,
+    VectorIndexEntry,
     VectorRecord,
     VectorStoreProviderName,
 )
@@ -50,11 +59,15 @@ __all__ = [
     "BM25SearchResult",
     "BM25UnsearchableQueryError",
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
+    "DEFAULT_INDEX_PIPELINE_VERSION",
     "DEFAULT_RRF_RANK_CONSTANT",
     "DOCXDocumentLoader",
     "DocumentLoadError",
     "DocumentLoader",
     "DocumentLoaderRegistry",
+    "DocumentIndexingReport",
+    "DocumentIndexingResult",
+    "DocumentIndexingStatus",
     "LoadedDocument",
     "InMemoryBM25Index",
     "KeywordTokenizer",
@@ -62,6 +75,8 @@ __all__ = [
     "OCRRequiredError",
     "PDFDocumentLoader",
     "PolicyKeywordTokenizer",
+    "PolicyDocumentIndexer",
+    "PolicyIndexingRun",
     "RRFContribution",
     "RRFResult",
     "RankedList",
@@ -80,6 +95,7 @@ __all__ = [
     "SearchResult",
     "TesseractOCRProvider",
     "VectorIndex",
+    "VectorIndexEntry",
     "VectorRecord",
     "VectorStoreProviderName",
 ]

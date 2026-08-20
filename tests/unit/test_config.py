@@ -98,6 +98,7 @@ def test_uses_default_llm_settings() -> None:
     assert settings.rag_reranker_batch_size == 8
     assert settings.rag_reranker_candidate_k == 20
     assert settings.rag_vector_store_provider is VectorStoreProviderName.MEMORY
+    assert settings.rag_index_pipeline_version == "policy-index-v1"
     assert settings.rag_pgvector_dsn.get_secret_value().startswith("postgresql://")
     assert settings.rag_pgvector_collection == "enterprise-policy-bge-small-zh-v1"
     assert settings.rag_pgvector_min_pool_size == 1
@@ -146,6 +147,7 @@ def test_loads_llm_settings_from_env_file(
             "RAG_RERANKER_BATCH_SIZE=16\n"
             "RAG_RERANKER_CANDIDATE_K=30\n"
             "RAG_VECTOR_STORE_PROVIDER=pgvector\n"
+            "RAG_INDEX_PIPELINE_VERSION=company-policy-index-v2\n"
             "RAG_PGVECTOR_DSN=postgresql://rag:secret@postgres.example:5432/rag\n"
             "RAG_PGVECTOR_COLLECTION=company-policy-v2\n"
             "RAG_PGVECTOR_MIN_POOL_SIZE=2\n"
@@ -192,6 +194,7 @@ def test_loads_llm_settings_from_env_file(
     assert settings.rag_reranker_batch_size == 16
     assert settings.rag_reranker_candidate_k == 30
     assert settings.rag_vector_store_provider is VectorStoreProviderName.PGVECTOR
+    assert settings.rag_index_pipeline_version == "company-policy-index-v2"
     assert settings.rag_pgvector_dsn.get_secret_value() == (
         "postgresql://rag:secret@postgres.example:5432/rag"
     )
@@ -287,6 +290,16 @@ def test_rejects_invalid_pgvector_dsn(dsn: str) -> None:
         Settings(
             llm_api_key="test-key",
             rag_pgvector_dsn=dsn,
+            _env_file=None,
+        )
+
+
+@pytest.mark.parametrize("version", ["", "contains spaces", "/unsafe"])
+def test_rejects_invalid_index_pipeline_version(version: str) -> None:
+    with pytest.raises(ValidationError, match="rag_index_pipeline_version"):
+        Settings(
+            llm_api_key="test-key",
+            rag_index_pipeline_version=version,
             _env_file=None,
         )
 

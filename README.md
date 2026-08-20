@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 29：PostgreSQL + pgvector 向量持久化（已完成）
+Advanced RAG Phase 30：Document Indexing Pipeline（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -322,11 +322,17 @@ Advanced RAG Phase 29：PostgreSQL + pgvector 向量持久化（已完成）
 - [x] 授权 ID 先形成 MATERIALIZED SQL 候选集，再执行 `<=>` 相似度排序；
 - [x] PostgreSQL/pgvector Compose 服务、具名卷、readiness 和重建持久化探针；
 - [x] Phase 29 完全离线 SQL/安全契约与 CI 门禁。
+- [x] 内容、检索文本、权限元数据、Embedding identity 和 Pipeline version 稳定指纹；
+- [x] 文档级 added/updated/unchanged/deleted 与 Chunk 级变更统计；
+- [x] 只为新增/变化 Chunk 生成 Embedding，重复运行零 Embedding；
+- [x] Vector Store 原子 upsert + stale Chunk deletion 和独立 indexing CLI；
+- [x] Runtime 复用已同步向量，同时保留现有 BM25、权限过滤、RRF、Reranker 与 Citation；
+- [x] Phase 30 完全离线幂等/增量/删除/安全专项验证与 CI 门禁。
 
 ### 尚未实现
 
-- [ ] Document Indexing Pipeline：增量变更、陈旧 Chunk 删除和索引版本发布；
 - [ ] Retrieval Evaluation：Recall@K、MRR 与真实 BGE 消融评测；
+- [ ] 蓝绿 collection 发布指针、回滚和分布式 indexing leader；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -352,6 +358,8 @@ Advanced RAG Phase 29：PostgreSQL + pgvector 向量持久化（已完成）
 同时具备授权范围内的 BM25 关键词检索、企业编号精确匹配和确定性排序，
 并使用 RRF 将 Vector 与 BM25 名次融合为正式制度问答候选，
 并可将授权 RRF 候选批量交给 BGE Cross-Encoder 做第二阶段精排，
+并可将 Vector 分支持久化到 PostgreSQL/pgvector，且 SQL 授权候选先于距离计算，
+并通过稳定指纹只更新变化 Chunk、原子删除陈旧向量并输出文档级同步报告，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1407,6 +1415,10 @@ Application Services
        │   ├── Policy Parser
        │   ├── Metadata Extractor
        │   ├── Chunker
+       │   ├── Incremental Document Indexer
+       │   │   ├── Stable Chunk / Document Fingerprints
+       │   │   ├── Changed-only Embedding
+       │   │   └── Atomic Upsert + Stale Delete
        │   ├── Embedding
        │   ├── VectorIndex Protocol
        │   │   ├── In-memory Exact Search
@@ -1492,6 +1504,7 @@ demo1/
 │   ├── hybrid_search_rrf.md
 │   ├── reranker_integration.md
 │   ├── pgvector_store.md
+│   ├── document_indexing_pipeline.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1732,6 +1745,13 @@ python -X utf8 -m scripts.verify_reranker_integration
 
 ```powershell
 python -X utf8 -m scripts.verify_pgvector_store
+```
+
+### 验证 Phase 30 Document Indexing Pipeline
+
+```powershell
+python -X utf8 -m scripts.verify_document_indexing
+python -X utf8 -m scripts.index_policy_documents
 ```
 
 ### 运行 Day 30 作品集演示与发布验收
@@ -1985,8 +2005,22 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] readiness 同时验证 SQLite 与配置的 Vector Store；
 - [x] Docker 重建后的 SQLite/pgvector 双持久化探针；
 - [x] 完全离线 SQL/权限专项验证与 CI 门禁；
-- [ ] 增量 Document Indexing Pipeline、陈旧 Chunk 删除与 collection 发布（Phase 30）；
+- [x] 增量 Document Indexing Pipeline 与陈旧 Chunk 原子删除（Phase 30）；
 - [ ] Recall@K、MRR 和 ANN 参数评测（Phase 31）。
+
+### Advanced RAG Phase 30：Document Indexing Pipeline
+
+- [x] 复用 Loader、Parser、Chunker、Embedding Provider 和 VectorIndex；
+- [x] `retrieval_text`、引用/权限元数据、模型 identity 和 pipeline version 稳定指纹；
+- [x] 文档 added/updated/unchanged/deleted 与 Chunk 级统计；
+- [x] unchanged Chunk 不进入 Embedding Provider；
+- [x] `VectorIndex.list_entries()` 不传输向量即可比较当前快照；
+- [x] `VectorIndex.apply_changes()` 原子提交 upsert 和 stale deletion；
+- [x] 应用启动只解析/切分一次，并让 Retriever 复用同步后的向量；
+- [x] 独立 `scripts.index_policy_documents` JSON CLI；
+- [x] 完全离线幂等、单 Chunk 更新、源删除和授权前置专项验证；
+- [ ] 蓝绿 collection 构建、发布指针和一键回滚；
+- [ ] Recall@K、MRR 与真实 BGE 检索评测（Phase 31）。
 
 ---
 
@@ -2012,6 +2046,7 @@ Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task
 权限过滤必须发生在 Vector/BM25、RRF 和 Prompt 构造之前，聊天自述不能覆盖可信身份
 Reranker 只能处理已经授权并经过 RRF 去重的有限候选，不能接收全库或未授权正文
 pgvector 必须先物化授权记录集合，再在该集合上计算向量距离，不能全库 Top-K 后过滤
+索引同步必须由稳定指纹驱动；unchanged Chunk 不重复 Embedding，stale 删除与 upsert 必须原子提交
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```

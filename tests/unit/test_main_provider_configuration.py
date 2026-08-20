@@ -10,6 +10,7 @@ from app import main as main_module
 from app.llm import ConcurrencyLimitedLLMClient, ProviderLimiterStateName
 from app.llm.client import ChatMessage
 from app.rag.reranking import RerankerProviderName
+from app.rag import vector_store as vector_store_module
 from app.rag.vector_index import InMemoryVectorIndex, VectorStoreProviderName
 
 
@@ -112,7 +113,7 @@ def test_builds_and_initializes_pgvector_index(monkeypatch: pytest.MonkeyPatch) 
         captured.update(kwargs)
         return index
 
-    monkeypatch.setattr(main_module.PgVectorIndex, "from_dsn", from_dsn)
+    monkeypatch.setattr(vector_store_module.PgVectorIndex, "from_dsn", from_dsn)
     settings = SimpleNamespace(
         rag_vector_store_provider=VectorStoreProviderName.PGVECTOR,
         rag_pgvector_dsn=SecretStr("postgresql://user:secret@postgres/policies"),

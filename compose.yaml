@@ -84,6 +84,7 @@ services:
       LLM_CACHE_PROVIDER: redis
       REDIS_URL: redis://redis:6379/0
       RAG_VECTOR_STORE_PROVIDER: pgvector
+      RAG_INDEX_PIPELINE_VERSION: ${RAG_INDEX_PIPELINE_VERSION:-policy-index-v1}
       RAG_PGVECTOR_DSN: "postgresql://${POSTGRES_USER:-policy_agent}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-policy_agent}"
       SQLITE_DATABASE_PATH: /app/data/runtime/enterprise_policy_agent.db
       HF_HOME: /app/data/model-cache/huggingface

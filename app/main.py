@@ -51,22 +51,19 @@ from app.persistence import (
     SQLiteConversationMemoryStore,
     SQLiteMockApprovalSubmitter,
 )
-from app.rag.embeddings import BGEEmbeddingProvider
+from app.rag.embeddings import BGEEmbeddingProvider, DEFAULT_BGE_MODEL_NAME
+from app.rag.indexing import PolicyDocumentIndexer
 from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
-from app.rag.pgvector_index import PgVectorIndex
 from app.rag.reranking import (
     BGERerankingProvider,
     RerankerProviderName,
     RerankingProvider,
 )
-from app.rag.vector_index import (
-    InMemoryVectorIndex,
-    VectorIndex,
-    VectorStoreProviderName,
-)
+from app.rag.vector_index import VectorIndex
+from app.rag.vector_store import build_policy_vector_index
 from app.resilience import ResilientToolExecutor
 from app.research import (
     DisabledWebSearchProvider,
@@ -89,7 +86,7 @@ from app.security import (
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
-_EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
+_EMBEDDING_MODEL_NAME = DEFAULT_BGE_MODEL_NAME
 _DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
     employee_id="DEMO-EMP-001",
     employee_name="演示用户",
@@ -124,17 +121,24 @@ def _build_policy_answer_service(
         model_name=_EMBEDDING_MODEL_NAME,
     )
     reranking_provider = _build_reranking_provider(settings)
-    vector_index = _build_policy_vector_index(
+    vector_index = build_policy_vector_index(
         settings,
         dimension=embedding_provider.dimension,
     )
     try:
-        raw_retriever = PolicyRetriever.from_directory(
-            _POLICY_DIRECTORY,
+        indexing_run = PolicyDocumentIndexer(
+            embedding_provider=embedding_provider,
+            vector_index=vector_index,
+            embedding_identity=_EMBEDDING_MODEL_NAME,
+            pipeline_version=settings.rag_index_pipeline_version,
+        ).synchronize_directory(_POLICY_DIRECTORY)
+        raw_retriever = PolicyRetriever(
+            chunks=indexing_run.chunks,
             embedding_provider=embedding_provider,
             reranking_provider=reranking_provider,
             rerank_candidate_k=settings.rag_reranker_candidate_k,
             vector_index=vector_index,
+            index_vectors=False,
         )
         retriever = raw_retriever.restrict(_DEMO_POLICY_ACCESS_CONTEXT)
 
@@ -167,25 +171,9 @@ def _build_policy_answer_service(
 
 
 def _build_policy_vector_index(settings: Settings, *, dimension: int) -> VectorIndex:
-    """Create the configured vector store without changing the Retriever contract."""
+    """Backward-compatible wrapper around the shared Vector Store factory."""
 
-    if settings.rag_vector_store_provider is VectorStoreProviderName.MEMORY:
-        return InMemoryVectorIndex(dimension=dimension)
-
-    index = PgVectorIndex.from_dsn(
-        settings.rag_pgvector_dsn.get_secret_value(),
-        dimension=dimension,
-        collection_name=settings.rag_pgvector_collection,
-        min_pool_size=settings.rag_pgvector_min_pool_size,
-        max_pool_size=settings.rag_pgvector_max_pool_size,
-        connect_timeout_seconds=settings.rag_pgvector_connect_timeout_seconds,
-    )
-    try:
-        index.initialize_schema()
-    except BaseException:
-        index.close()
-        raise
-    return index
+    return build_policy_vector_index(settings, dimension=dimension)
 
 
 def _build_reranking_provider(settings: Settings) -> RerankingProvider | None:

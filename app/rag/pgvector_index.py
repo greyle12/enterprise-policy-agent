@@ -7,7 +7,7 @@ from math import ceil, isfinite, sqrt
 from typing import Any, Protocol, Self
 
 from app.rag.embeddings import EmbeddingVector
-from app.rag.vector_index import SearchResult, VectorRecord
+from app.rag.vector_index import SearchResult, VectorIndexEntry, VectorRecord
 
 _TABLE_NAME = "rag_policy_vectors"
 
@@ -192,10 +192,50 @@ class PgVectorIndex:
     def upsert(self, records: Sequence[VectorRecord]) -> None:
         """Persist a validated batch using one transactional executemany call."""
 
+        self.apply_changes(records)
+
+    def list_entries(self) -> list[VectorIndexEntry]:
+        """Load synchronization metadata without transferring vector payloads."""
+
+        self._ensure_open()
+        with self._pool.connection() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT record_id, metadata
+                FROM {_TABLE_NAME}
+                WHERE collection_name = %s
+                ORDER BY record_id
+                """,
+                (self._collection_name,),
+            ).fetchall()
+        return [
+            VectorIndexEntry(
+                record_id=str(row[0]),
+                metadata=_parse_metadata(row[1]),
+            )
+            for row in rows
+        ]
+
+    def apply_changes(
+        self,
+        records: Sequence[VectorRecord],
+        *,
+        delete_record_ids: Collection[str] = (),
+    ) -> None:
+        """Apply upserts and stale-record deletion in one database transaction."""
+
         self._ensure_open()
         prepared = self._prepare_records(records)
-        if not prepared:
+        delete_ids = self._prepare_delete_ids(delete_record_ids)
+        upsert_ids = {str(row[1]) for row in prepared}
+        overlap = sorted(upsert_ids.intersection(delete_ids))
+        if overlap:
+            raise ValueError(
+                "record ids cannot be upserted and deleted together: " + ", ".join(overlap)
+            )
+        if not prepared and not delete_ids:
             return
+
         query = f"""
             INSERT INTO {_TABLE_NAME} (
                 collection_name,
@@ -211,7 +251,17 @@ class PgVectorIndex:
                 updated_at = CURRENT_TIMESTAMP
         """
         with self._pool.connection() as connection:
-            connection.executemany(query, prepared)
+            if prepared:
+                connection.executemany(query, prepared)
+            if delete_ids:
+                connection.execute(
+                    f"""
+                    DELETE FROM {_TABLE_NAME}
+                    WHERE collection_name = %s
+                      AND record_id = ANY(%s)
+                    """,
+                    (self._collection_name, list(delete_ids)),
+                )
 
     def search(
         self,
@@ -345,6 +395,16 @@ class PgVectorIndex:
             raise ValueError(f"{label} must contain only finite values")
         if sqrt(sum(value * value for value in vector)) == 0.0:
             raise ValueError(f"{label} must not be a zero vector")
+
+    @staticmethod
+    def _prepare_delete_ids(record_ids: Collection[str]) -> tuple[str, ...]:
+        normalized: set[str] = set()
+        for record_id in record_ids:
+            value = record_id.strip()
+            if not value:
+                raise ValueError("delete record ids must not be blank")
+            normalized.add(value)
+        return tuple(sorted(normalized))
 
     def _ensure_open(self) -> None:
         if self._closed:

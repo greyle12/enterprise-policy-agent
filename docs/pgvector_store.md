@@ -6,8 +6,8 @@ Phase 28 的向量索引只存在于 Agent 进程内。进程退出后索引消�
 Phase 29 增加可替换的 `VectorIndex` 协议和 PostgreSQL/pgvector 实现，使向量记录可以保存在具名卷
 或外部 PostgreSQL 中，同时不重建另一套 Retriever、Embedding、Hybrid Search 或 Reranker。
 
-本阶段只负责存储适配和运行边界。Phase 30 才负责正式的文档索引流水线、内容变更检测、删除陈旧
-Chunk、索引版本切换和失败恢复。
+本阶段只负责存储适配和运行边界。Phase 30 已在其上增加正式文档索引流水线、内容变更检测和陈旧
+Chunk 删除；蓝绿 collection 发布和跨实例失败恢复仍是后续生产化能力。
 
 ## 2. 在 RAG Pipeline 中的位置
 
@@ -197,20 +197,22 @@ pgvector 官方 Docker 标签和安装说明见：https://github.com/pgvector/pg
 `ON CONFLICT (collection_name, record_id) DO UPDATE` 使相同 Chunk 可以幂等写入。连接上下文在成功时提交，
 失败时事务回滚。
 
-当前应用启动仍会：
+Phase 30 后应用启动执行：
 
 ```text
-加载文档 → 生成全部 Embedding → upsert 全部记录
+加载/切分一次 → 比较持久化指纹 → 只生成变化项 Embedding → 原子 upsert + stale delete
 ```
 
-这证明 Vector Store 持久化和可替换边界已经成立，但还没有避免重复 Embedding。Phase 30 将增加：
+当前已经增加：
 
-- document/chunk content hash 比较；
+- `retrieval_text`、引用/权限元数据、模型 identity 和 pipeline version 指纹；
 - unchanged / inserted / updated / deleted 统计；
 - 陈旧 Chunk 删除；
 - 独立 indexing CLI；
-- collection/version 发布切换；
-- 部分失败与重试策略。
+- 单事务变更提交与空输入防误清空。
+
+蓝绿 collection 发布指针、回滚和分布式同步协调仍属于生产化后续工作。详见
+`docs/document_indexing_pipeline.md`。
 
 ## 10. Readiness 与资源释放
 
