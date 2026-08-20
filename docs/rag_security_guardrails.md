@@ -173,7 +173,7 @@ Set-Location D:\Ai_agent_program\demo1
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
 ```
 
-Compose 镜像标签为 `enterprise-policy-agent:day29`。启动后可用 `/api/v1/security/status` 和
+Compose 当前镜像标签为 `enterprise-policy-agent:day30`。启动后可用 `/api/v1/security/status` 和
 `/metrics` 验证计数。
 
 ## 6. Improve：当前边界

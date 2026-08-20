@@ -206,12 +206,13 @@ Prometheus 格式以及结构化日志白名单。
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_portfolio_release
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
 ### 4.4 Docker 验收
 
-当前 Compose 镜像标签为 `enterprise-policy-agent:day29`。Docker Desktop Linux Engine 启动后：
+当前 Compose 镜像标签为 `enterprise-policy-agent:day30`。Docker Desktop Linux Engine 启动后：
 
 ```powershell
 docker info
@@ -219,7 +220,7 @@ docker compose config --quiet
 docker compose --progress plain build agent
 
 if ($LASTEXITCODE -ne 0) {
-    throw "Day 29 Agent 镜像构建失败，请保留输出"
+    throw "Day 30 Agent 镜像构建失败，请保留输出"
 }
 
 docker compose up --detach --wait

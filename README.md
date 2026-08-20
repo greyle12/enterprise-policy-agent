@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 20：RAG 权限过滤与提示注入防护（Day 29 已完成）
+Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
 ### 已完成
@@ -285,6 +285,10 @@ Phase 20：RAG 权限过滤与提示注入防护（Day 29 已完成）
 - [x] 中英文提示注入、权限提升、工具绕过和编码指令检测；
 - [x] 污染制度证据隔离、JSON 数据边界和安全关联 400；
 - [x] 无内容安全状态、Prometheus 指标与完全离线 CI 评测。
+- [x] 六场景完全离线作品集演示与 JSON / Markdown 发布证据；
+- [x] 真实解析、检索、LangGraph、业务规则和安全边界的集成演示；
+- [x] Day 30 发布契约、CI 自动运行和证据 Artifact；
+- [x] 已实现架构图、可重复演示手册、简历描述和面试讲解材料。
 
 ### 尚未实现
 
@@ -314,6 +318,7 @@ Phase 20：RAG 权限过滤与提示注入防护（Day 29 已完成）
 并在缓存与 single-flight 之后提供默认关闭的单进程 Provider 有界并发与安全过载语义，
 同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
 并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
+并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -1275,7 +1280,40 @@ docs/rag_security_guardrails.md
 
 ---
 
-## 24. 计划系统架构
+## 24. Day 30 一键作品集演示与发布验收
+
+Day 30 将前 29 天分散的能力组合成六个面试友好的完全离线场景：制度引用、材料规则、审批
+路线、草稿确认与幂等提交、内外研究来源分区、提示注入执行前拒绝。演示复用真实解析、检索、
+LangGraph、规则与安全代码，只把 BGE、LLM 和 Web Search 替换为确定性离线夹具。
+
+运行演示与最终发布契约：
+
+```powershell
+python -X utf8 -m scripts.run_portfolio_demo --output-dir artifacts/portfolio
+python -X utf8 -m scripts.verify_portfolio_release
+```
+
+输出：
+
+```text
+artifacts/portfolio/portfolio-demo-report.json
+artifacts/portfolio/portfolio-demo-report.md
+```
+
+架构、现场演示顺序、简历描述和面试追问材料见：
+
+```text
+docs/system_architecture.md
+docs/portfolio_demo.md
+docs/interview_guide.md
+```
+
+离线 6/6 证明的是编排和工程契约可重复，不代表真实 BGE 召回、LLM 回答质量、外部网络或
+生产 SLA。
+
+---
+
+## 25. 规划系统架构（含未实现组件）
 
 ```text
 Client
@@ -1357,7 +1395,7 @@ Offline Performance Analysis
 
 ---
 
-## 25. 项目目录
+## 26. 项目目录
 
 ```text
 demo1/
@@ -1380,6 +1418,7 @@ demo1/
 │   ├── performance/
 │   ├── observability/
 │   ├── security/
+│   ├── portfolio/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -1402,6 +1441,9 @@ demo1/
 │   ├── provider_backpressure.md
 │   ├── runtime_observability.md
 │   ├── rag_security_guardrails.md
+│   ├── system_architecture.md
+│   ├── portfolio_demo.md
+│   ├── interview_guide.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1422,7 +1464,7 @@ demo1/
 
 ---
 
-## 26. 当前开发环境
+## 27. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1481,7 +1523,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 27. 数据验证命令
+## 28. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1582,9 +1624,16 @@ python -X utf8 -m scripts.verify_runtime_observability
 python -X utf8 -m scripts.verify_rag_security
 ```
 
+### 运行 Day 30 作品集演示与发布验收
+
+```powershell
+python -X utf8 -m scripts.run_portfolio_demo --output-dir artifacts/portfolio
+python -X utf8 -m scripts.verify_portfolio_release
+```
+
 ---
 
-## 28. 开发路线
+## 29. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1716,15 +1765,15 @@ python -X utf8 -m scripts.verify_rag_security
 - [ ] Prometheus/Grafana 集中采集和告警；
 - [ ] OpenTelemetry 跨服务 Trace；
 - [ ] 演示数据初始化；
-- [ ] 演示脚本；
-- [ ] 架构图；
+- [x] 演示脚本；
+- [x] 架构图；
 - [ ] 项目截图；
-- [ ] 简历项目描述；
-- [ ] 面试讲解材料。
+- [x] 简历项目描述；
+- [x] 面试讲解材料。
 
 ---
 
-## 29. 设计原则
+## 30. 设计原则
 
 本项目遵循以下原则：
 
@@ -1745,13 +1794,14 @@ Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
 权限过滤必须发生在向量评分和 Prompt 构造之前，聊天自述不能覆盖可信身份
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
+作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 30. 预期评测指标
+## 31. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1800,9 +1850,13 @@ Day 29 专项安全评测固定验证 7 个权限拒绝边界、6 个高信号�
 拒绝、攻击拦截和正常放行在固定夹具中均须为 100%，被拒绝输入的 Provider 调用必须为 0，
 未授权与污染制度内容不得进入模型上下文。该结果不代表开放世界攻击检出率。
 
+Day 30 作品集发布门禁固定串行运行六个场景，要求相关制度引用、七项差旅材料、四步 IT 采购
+审批、人工确认、幂等重放、`S/W` 来源分区和提示注入零 Provider 调用全部通过。演示使用
+确定性词法向量、固定 LLM 和固定 Web 夹具，证明集成契约而非真实模型效果。
+
 ---
 
-## 31. 作品集价值
+## 32. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1828,6 +1882,7 @@ Day 29 专项安全评测固定验证 7 个权限拒绝边界、6 个高信号�
 - Embedding/Reranker 批量推理、稳定排序、等价性门禁和吞吐对照。
 - 请求关联、结构化日志、指标基数控制、Prometheus 格式和安全错误观测。
 - 检索前 ABAC 边界、提示注入纵深防御、污染证据隔离和安全回归评测。
+- 可重复的一键演示、机器可读发布证据、架构讲解和简历/面试材料。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1846,7 +1901,7 @@ Day 29 专项安全评测固定验证 7 个权限拒绝边界、6 个高信号�
 
 ---
 
-## 32. 免责声明
+## 33. 免责声明
 
 本仓库仅用于：
 

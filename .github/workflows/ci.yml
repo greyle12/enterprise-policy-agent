@@ -77,6 +77,14 @@ jobs:
       - name: Verify policy authorization and prompt-injection defenses
         run: python -X utf8 -m scripts.verify_rag_security
 
+      - name: Generate the offline portfolio demonstration evidence
+        run: >-
+          python -X utf8 -m scripts.run_portfolio_demo
+          --output-dir artifacts/portfolio
+
+      - name: Verify the Day 30 portfolio release contract
+        run: python -X utf8 -m scripts.verify_portfolio_release
+
       - name: Run the offline concurrency load benchmark
         run: >-
           python -X utf8 -m scripts.run_concurrency_load_test
@@ -106,6 +114,8 @@ jobs:
             artifacts/performance/agent-concurrency-load-report.md
             artifacts/performance/agent-batch-optimization-report.json
             artifacts/performance/agent-batch-optimization-report.md
+            artifacts/portfolio/portfolio-demo-report.json
+            artifacts/portfolio/portfolio-demo-report.md
           if-no-files-found: warn
           retention-days: 14
 

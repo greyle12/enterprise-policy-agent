@@ -43,7 +43,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: enterprise-policy-agent:day29
+    image: enterprise-policy-agent:day30
     env_file:
       - .env
     environment:

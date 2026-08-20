@@ -54,6 +54,11 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_provider_backpressure" in workflow
     assert "scripts.verify_runtime_observability" in workflow
     assert "scripts.verify_rag_security" in workflow
+    assert "scripts.run_portfolio_demo" in workflow
+    assert "--output-dir artifacts/portfolio" in workflow
+    assert "scripts.verify_portfolio_release" in workflow
+    assert "portfolio-demo-report.json" in workflow
+    assert "portfolio-demo-report.md" in workflow
     assert "scripts.run_concurrency_load_test" in workflow
     assert "agent-concurrency-load-report.json" in workflow
     assert "agent-concurrency-load-report.md" in workflow

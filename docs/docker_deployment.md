@@ -1,12 +1,12 @@
-# Docker 部署与验收（Day 17，Day 29 更新）
+# Docker 部署与验收（Day 17，Day 30 更新）
 
 本文档说明如何在 Windows Docker Desktop 上构建、启动、检查和停止企业制度 Agent。
 Day 23 的 Compose 同时启动临时 Redis，用于可丢失、短 TTL 的 LLM 响应缓存；Day 24
 在 Agent 进程内合并相同缓存键的并发未命中请求。Day 27 增加默认关闭的单进程 LLM
 Provider 背压。Day 28 增加请求 ID、脱敏 JSON 访问日志、进程内 HTTP 指标和 Prometheus
-兼容抓取端点。Day 29 将镜像
-标签更新为 `enterprise-policy-agent:day29`，并增加检索前权限过滤、提示注入防护和无内容
-安全指标；专项验收仍在宿主机完全离线执行。
+兼容抓取端点。Day 29 增加检索前权限过滤、提示注入防护和无内容安全指标；Day 30 将镜像
+标签更新为 `enterprise-policy-agent:day30`，并增加完全离线作品集演示与发布验收。专项脚本
+仍在宿主机执行，不要求容器访问真实 Provider。
 
 ## 1. 前置条件
 
