@@ -73,6 +73,7 @@
 15. 可失效、可观测且故障安全的 Redis LLM 响应缓存。
 16. 单进程统一 LLM Provider 并发门禁、有限排队与安全过载降级。
 17. 请求关联、结构化访问日志、低基数 HTTP 指标和 Prometheus 兼容导出。
+18. 可信身份驱动的检索前授权、提示注入拒绝和污染证据隔离。
 
 ---
 
@@ -195,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 19：请求关联与运行时可观测性（Day 28 已完成）
+Phase 20：RAG 权限过滤与提示注入防护（Day 29 已完成）
 ```
 
 ### 已完成
@@ -279,6 +280,11 @@ Phase 19：请求关联与运行时可观测性（Day 28 已完成）
 - [x] 不记录原始 URL/query/body 的 JSON 结构化访问日志；
 - [x] 路由模板、固定直方图和 64 键上限的进程内 HTTP 指标；
 - [x] 安全关联 500、JSON 状态、Prometheus Provider/HTTP 指标和离线验收。
+- [x] 可信身份、制度生命周期、等级、部门、角色和区域授权；
+- [x] 未授权 Chunk 在向量评分前排除且不进入 Prompt；
+- [x] 中英文提示注入、权限提升、工具绕过和编码指令检测；
+- [x] 污染制度证据隔离、JSON 数据边界和安全关联 400；
+- [x] 无内容安全状态、Prometheus 指标与完全离线 CI 评测。
 
 ### 尚未实现
 
@@ -288,7 +294,6 @@ Phase 19：请求关联与运行时可观测性（Day 28 已完成）
 - [ ] Hybrid Search；
 - [ ] Reranker 接入正式检索链路与黄金相关性评测；
 - [ ] Redis 会话状态；
-- [ ] 权限过滤与提示注入专项评测；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
 - [ ] 生产级持续压测、跨进程全局背压、分布式防击穿和真实模型 batch 调优。
@@ -308,6 +313,7 @@ Phase 19：请求关联与运行时可观测性（Day 28 已完成）
 同时具备 Embedding/Reranker 批量接口、结果等价性和调用减少证据，
 并在缓存与 single-flight 之后提供默认关闭的单进程 Provider 有界并发与安全过载语义，
 同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
+并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -659,9 +665,22 @@ submission
 
 即使最终回答没有显示敏感内容，也不应让无权限内容进入模型上下文。
 
+Day 29 已在运行时实现该顺序：固定可信演示身份先检查制度状态、有效期、安全等级、部门、
+角色和地域，只有授权 Chunk ID 才参与向量评分。生产环境仍须用登录认证结果替换演示身份。
+
 ---
 
-### 9.3 敏感信息保护
+### 9.3 提示注入防护
+
+用户消息会在意图分类、RAG、Web Search 和工具执行前检查；疑似污染的制度证据也会在 Prompt
+构造前隔离。命中请求只返回固定错误码和请求 ID，不回显输入、命中规则或内部制度内容。
+
+确定性规则只是纵深防御的一层，仍应结合可信身份、最小权限、入库治理、结构化工具、输出
+校验、监控和持续红队。
+
+---
+
+### 9.4 敏感信息保护
 
 普通日志和回答中不得无必要地记录：
 
@@ -683,7 +702,7 @@ submission
 
 ---
 
-### 9.4 人在回路
+### 9.5 人在回路
 
 采购、请假和报销提交属于有业务影响的操作。
 
@@ -699,7 +718,7 @@ submission
 
 ---
 
-### 9.5 幂等控制
+### 9.6 幂等控制
 
 提交操作必须提供幂等键。
 
@@ -726,7 +745,7 @@ IDEMPOTENCY_KEY_CONFLICT
 
 ---
 
-### 9.6 审计记录
+### 9.7 审计记录
 
 关键操作应记录：
 
@@ -1222,7 +1241,41 @@ docs/runtime_observability.md
 
 ---
 
-## 23. 计划系统架构
+## 23. RAG 权限过滤与提示注入防护
+
+Day 29 把安全设计变成强制执行边界：服务器固定注入可信演示身份，制度 Chunk 先检查状态、
+有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做向量评分。用户在聊天中自称管理员
+不能改变该上下文，也不能让无权限内容进入 LLM。
+
+用户输入在意图分类、内部 RAG、Web Search、Agent 工作流和工具执行前检查；疑似污染的制度
+标题、章节、条款或正文会被隔离。剩余证据以 JSON 数据边界发送，命中输入返回带请求 ID 的
+固定 `prompt_injection_blocked`，不回显原文或命中规则。
+
+完全离线专项验收：
+
+```powershell
+& .\.venv\Scripts\python.exe -X utf8 `
+  -m scripts.verify_rag_security
+```
+
+安全计数：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
+  ConvertTo-Json -Depth 6
+Invoke-WebRequest http://127.0.0.1:8000/metrics |
+  Select-Object -ExpandProperty Content
+```
+
+威胁模型、授权规则、离线指标、误报/漏报边界和生产改进见：
+
+```text
+docs/rag_security_guardrails.md
+```
+
+---
+
+## 24. 计划系统架构
 
 ```text
 Client
@@ -1234,6 +1287,11 @@ FastAPI API
   ├── Request ID
   ├── Session ID
   └── Input Validation
+  │
+  ├── Security Boundary
+  │   ├── Prompt Injection Guard
+  │   ├── Trusted Policy Access Context
+  │   └── Safe Correlated Rejection
   │
   ▼
 Application Services
@@ -1299,7 +1357,7 @@ Offline Performance Analysis
 
 ---
 
-## 24. 项目目录
+## 25. 项目目录
 
 ```text
 demo1/
@@ -1321,6 +1379,7 @@ demo1/
 │   ├── research/
 │   ├── performance/
 │   ├── observability/
+│   ├── security/
 │   ├── evaluation/
 │   ├── repositories/
 │   └── schemas/
@@ -1342,6 +1401,7 @@ demo1/
 │   ├── embedding_reranker_batching.md
 │   ├── provider_backpressure.md
 │   ├── runtime_observability.md
+│   ├── rag_security_guardrails.md
 │   └── week3_milestone.md
 ├── tests/
 │   ├── unit/
@@ -1362,7 +1422,7 @@ demo1/
 
 ---
 
-## 25. 当前开发环境
+## 26. 当前开发环境
 
 ```text
 操作系统：Windows
@@ -1421,7 +1481,7 @@ python -c "import fastapi, pytest; print('FastAPI:', fastapi.__version__); print
 
 ---
 
-## 26. 数据验证命令
+## 27. 数据验证命令
 
 ### 验证 5 份制度
 
@@ -1516,9 +1576,15 @@ python -X utf8 -m scripts.verify_provider_backpressure
 python -X utf8 -m scripts.verify_runtime_observability
 ```
 
+### 验证 RAG 权限与提示注入防护
+
+```powershell
+python -X utf8 -m scripts.verify_rag_security
+```
+
 ---
 
-## 27. 开发路线
+## 28. 开发路线
 
 ### Phase 1：需求建模与工程骨架
 
@@ -1594,8 +1660,8 @@ python -X utf8 -m scripts.verify_runtime_observability
 - [x] 缺失材料识别率；
 - [x] 意图识别准确率；
 - [x] 审批路线准确率；
-- [ ] 权限拒绝成功率；
-- [ ] 提示注入测试；
+- [x] 权限拒绝成功率；
+- [x] 提示注入测试；
 - [x] 重复提交阻止率；
 - [x] 错误案例明细报告。
 
@@ -1658,7 +1724,7 @@ python -X utf8 -m scripts.verify_runtime_observability
 
 ---
 
-## 28. 设计原则
+## 29. 设计原则
 
 本项目遵循以下原则：
 
@@ -1677,13 +1743,15 @@ LLM 负责理解用户意图和生成自然语言
 Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
 Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
+权限过滤必须发生在向量评分和 Prompt 构造之前，聊天自述不能覆盖可信身份
+用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 ```
 
 Agent 的目标不是无限自主，而是在明确业务边界内安全地完成任务。
 
 ---
 
-## 29. 预期评测指标
+## 30. 预期评测指标
 
 Day 16 当前质量门禁：
 
@@ -1695,7 +1763,7 @@ Day 16 当前质量门禁：
 | 审批路线准确率 | 100% |
 | 制度引用准确率 | 100% |
 
-后续仍需补充制度问答语义正确率、权限越界拒绝率、提示注入防护通过率和真实 LLM 回归基线。
+后续仍需补充制度问答语义正确率、真实认证用户矩阵、持续红队和真实 LLM 回归基线。
 
 Day 22 离线性能预算：
 
@@ -1728,9 +1796,13 @@ Day 28 专项观测固定产生 3 个业务请求和 2 个路由模板，验证�
 固定 histogram、监控端点不自计数、500 脱敏和 Prometheus 格式。原始路径参数、query、凭据
 形态和异常正文不得出现在状态、指标、访问事件或错误响应中。
 
+Day 29 专项安全评测固定验证 7 个权限拒绝边界、6 个高信号攻击和 4 个正常安全问题：权限
+拒绝、攻击拦截和正常放行在固定夹具中均须为 100%，被拒绝输入的 Provider 调用必须为 0，
+未授权与污染制度内容不得进入模型上下文。该结果不代表开放世界攻击检出率。
+
 ---
 
-## 30. 作品集价值
+## 31. 作品集价值
 
 项目完成后，可以用于展示以下能力：
 
@@ -1755,6 +1827,7 @@ Day 28 专项观测固定产生 3 个业务请求和 2 个路由模板，验证�
 - 并发 load shape、端到端 p95、吞吐、上游放大率和容量边界分析。
 - Embedding/Reranker 批量推理、稳定排序、等价性门禁和吞吐对照。
 - 请求关联、结构化日志、指标基数控制、Prometheus 格式和安全错误观测。
+- 检索前 ABAC 边界、提示注入纵深防御、污染证据隔离和安全回归评测。
 
 相比普通 PDF 问答项目，本项目增加了：
 
@@ -1773,7 +1846,7 @@ Day 28 专项观测固定产生 3 个业务请求和 2 个路由模板，验证�
 
 ---
 
-## 31. 免责声明
+## 32. 免责声明
 
 本仓库仅用于：
 

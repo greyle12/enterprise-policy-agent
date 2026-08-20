@@ -139,6 +139,10 @@ Tavily 返回的标题和摘要被视为不可信数据：
 
 研究助手使用确定性模板分栏展示内部结论和外部摘要。
 
+Day 29 进一步在研究入口增加共享提示注入防护：当前问题只有通过检查后，才会进入内部 RAG
+或生成脱敏外部查询；命中输入不会调用 Tavily。内部检索证据还会执行污染隔离，详见
+`docs/rag_security_guardrails.md`。
+
 ## 8. Tavily Provider
 
 Day 21 直接使用 `httpx` 调用 Tavily Search HTTP API，不新增 SDK 依赖。请求使用：

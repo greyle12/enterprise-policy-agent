@@ -6,7 +6,8 @@ Day 18 使用 GitHub Actions 将项目已有的测试、代码规范、黄金评
 Day 24 增加异步 single-flight 并发契约，Day 25 增加三种请求分布的离线并发负载报告，
 Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用次数报告；Day 27 增加
 LLM Provider 有界并发、FIFO 排队、超时和取消清理的完全离线背压契约；Day 28 增加请求
-关联、脱敏日志、低基数 HTTP 指标、安全 500 和 Prometheus 格式的进程内可观测性契约。
+关联、脱敏日志、低基数 HTTP 指标、安全 500 和 Prometheus 格式的进程内可观测性契约；
+Day 29 增加检索前权限过滤、提示注入拒绝、污染证据隔离和零 Provider 调用断言。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -83,6 +84,7 @@ timeout 30 分钟
 → 异步 LLM single-flight 离线并发契约
 → LLM Provider 并发与背压离线契约
 → 请求关联与运行时可观测性离线契约
+→ RAG 权限与提示注入防护离线契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
 → 构建 Python Wheel
@@ -90,10 +92,11 @@ timeout 30 分钟
 
 任意一步返回非零退出码，Job 即失败。
 
-离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、并发负载
-和批处理对照都不使用 `.env` 中的模型配置，也不会发送外部模型请求。缓存与负载专项使用
-内存协议替身，不连接真实 Redis。可观测性专项使用进程内 TestClient，不启动端口，也不部署
-Prometheus。因此来自 Fork 的 Pull Request 可以在没有密钥的情况下执行相同质量门禁。
+离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
+并发负载和批处理对照都不使用 `.env` 中的模型配置，也不会发送外部模型请求。缓存与负载
+专项使用内存协议替身，不连接真实 Redis。可观测性专项使用进程内 TestClient；安全专项使用
+固定身份、制度和攻击夹具，不调用 Provider。因此来自 Fork 的 Pull Request 可以在没有密钥、
+不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
 
 ### 3.1 构建证据
 
@@ -208,6 +211,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_async_singleflight
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_concurrency_load_test `
   --requests 24 `
@@ -241,6 +245,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | single-flight 契约失败 | 单独运行 `scripts.verify_async_singleflight`，检查去重、取消隔离和并发断言 |
 | Provider 背压契约失败 | 单独运行 `scripts.verify_provider_backpressure`，检查执行峰值、FIFO、溢出、超时和取消清理 |
 | 运行时可观测性契约失败 | 单独运行 `scripts.verify_runtime_observability`，检查请求 ID、路由模板、500 脱敏、指标和 Prometheus 格式 |
+| RAG 安全契约失败 | 单独运行 `scripts.verify_rag_security`，检查可信身份、7 类权限边界、攻击/正常用例、证据隔离和 Provider 调用数 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | Dependency Review 不可用 | 检查仓库是否公开，或私有仓库是否具备所需安全功能 |
@@ -259,6 +264,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不运行真实 BGE Reranker；Day 26 只执行固定离线模型替身；
 - 不调用真实 LLM 验证容量；Day 27 只执行固定离线 Provider 替身；
 - 不启动 Prometheus、Grafana 或日志采集器；Day 28 只验证进程内指标、格式和脱敏契约；
+- 不连接真实身份系统或调用模型执行红队；Day 29 只使用固定离线身份、制度和攻击夹具；
 - 不验证 BGE 首次模型下载；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。

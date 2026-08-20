@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from app.llm import ProviderLimiterStatus
 from app.observability.metrics import HttpMetricsSnapshot
+from app.security import PromptSecurityMetricsSnapshot
 
 _PREFIX = "enterprise_policy_agent"
 
@@ -23,6 +24,7 @@ def render_prometheus_metrics(
     http: HttpMetricsSnapshot,
     *,
     provider: ProviderLimiterStatus | None,
+    prompt_security: PromptSecurityMetricsSnapshot | None = None,
 ) -> str:
     """Render bounded process-local metrics in Prometheus text format 0.0.4."""
 
@@ -135,5 +137,61 @@ def render_prometheus_metrics(
         }
         for event, count in sorted(events.items()):
             lines.append(f"{_PREFIX}_llm_provider_events_total{_labels(event=event)} {count}")
+
+    lines.extend(
+        [
+            (
+                f"# HELP {_PREFIX}_prompt_security_available Whether the "
+                "process-local prompt guard is initialized."
+            ),
+            f"# TYPE {_PREFIX}_prompt_security_available gauge",
+            f"{_PREFIX}_prompt_security_available {1 if prompt_security else 0}",
+        ]
+    )
+    if prompt_security is not None:
+        allowed_inputs = prompt_security.user_inputs_checked - prompt_security.user_inputs_blocked
+        allowed_evidence = (
+            prompt_security.evidence_chunks_checked - prompt_security.evidence_chunks_quarantined
+        )
+        lines.extend(
+            [
+                (
+                    f"# HELP {_PREFIX}_prompt_security_user_inputs_total "
+                    "Prompt input checks by outcome."
+                ),
+                f"# TYPE {_PREFIX}_prompt_security_user_inputs_total counter",
+                (
+                    f"{_PREFIX}_prompt_security_user_inputs_total"
+                    f"{_labels(outcome='allowed')} {allowed_inputs}"
+                ),
+                (
+                    f"{_PREFIX}_prompt_security_user_inputs_total"
+                    f"{_labels(outcome='blocked')} {prompt_security.user_inputs_blocked}"
+                ),
+                (
+                    f"# HELP {_PREFIX}_prompt_security_evidence_chunks_total "
+                    "Retrieved evidence checks by outcome."
+                ),
+                f"# TYPE {_PREFIX}_prompt_security_evidence_chunks_total counter",
+                (
+                    f"{_PREFIX}_prompt_security_evidence_chunks_total"
+                    f"{_labels(outcome='allowed')} {allowed_evidence}"
+                ),
+                (
+                    f"{_PREFIX}_prompt_security_evidence_chunks_total"
+                    f"{_labels(outcome='quarantined')} "
+                    f"{prompt_security.evidence_chunks_quarantined}"
+                ),
+                (
+                    f"# HELP {_PREFIX}_prompt_security_llm_calls_avoided_total "
+                    "LLM calls skipped after blocked inputs."
+                ),
+                f"# TYPE {_PREFIX}_prompt_security_llm_calls_avoided_total counter",
+                (
+                    f"{_PREFIX}_prompt_security_llm_calls_avoided_total "
+                    f"{prompt_security.llm_calls_avoided}"
+                ),
+            ]
+        )
 
     return "\n".join(lines) + "\n"

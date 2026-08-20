@@ -10,6 +10,7 @@ from app.agent.intent_classifier import IntentClassifier
 from app.agent.router import AgentRouter
 from app.api.provider_errors import provider_capacity_error_response
 from app.api.runtime_errors import unhandled_application_error_response
+from app.api.security_errors import prompt_injection_blocked_response
 from app.api.routes.agent_messages import (
     router as agent_messages_router,
 )
@@ -29,6 +30,7 @@ from app.api.routes.provider_status import router as provider_status_router
 from app.api.routes.research_answers import (
     router as research_answers_router,
 )
+from app.api.routes.security import router as security_router
 from app.core.config import Settings, get_settings
 from app.cache import (
     CacheProviderName,
@@ -66,6 +68,13 @@ from app.tools.approval_check import ApprovalRuleChecker
 from app.tools.draft_generation import ApplicationDraftGenerator
 from app.tools.draft_models import DraftUserContext
 from app.tools.material_check import RequiredMaterialsChecker
+from app.schemas.policy import SecurityLevel
+from app.security import (
+    PolicyAccessContext,
+    PromptInjectionBlockedError,
+    PromptInjectionGuard,
+    TrustedIdentitySource,
+)
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
@@ -78,9 +87,20 @@ _DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
     region="中国大陆",
     identity_source="trusted_demo_context",
 )
+_DEMO_POLICY_ACCESS_CONTEXT = PolicyAccessContext(
+    employee_id="DEMO-EMP-001",
+    department="演示部门",
+    roles=("EMPLOYEE",),
+    security_clearance=SecurityLevel.INTERNAL,
+    region="中国大陆",
+    identity_source=TrustedIdentitySource.TRUSTED_DEMO_CONTEXT,
+)
 
 
-def _build_policy_answer_service() -> tuple[
+def _build_policy_answer_service(
+    *,
+    prompt_guard: PromptInjectionGuard | None = None,
+) -> tuple[
     PolicyAnswerService,
     CachedLLMClient,
     ConcurrencyLimitedLLMClient,
@@ -90,10 +110,11 @@ def _build_policy_answer_service() -> tuple[
     embedding_provider = BGEEmbeddingProvider(
         model_name=_EMBEDDING_MODEL_NAME,
     )
-    retriever = PolicyRetriever.from_directory(
+    raw_retriever = PolicyRetriever.from_directory(
         _POLICY_DIRECTORY,
         embedding_provider=embedding_provider,
     )
+    retriever = raw_retriever.restrict(_DEMO_POLICY_ACCESS_CONTEXT)
 
     settings = get_settings()
     raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
@@ -115,6 +136,7 @@ def _build_policy_answer_service() -> tuple[
     service = PolicyAnswerService(
         retriever=retriever,
         llm_client=llm_client,
+        prompt_guard=prompt_guard,
     )
 
     return service, llm_client, provider_limiter
@@ -171,7 +193,10 @@ async def _lifespan(
 ) -> AsyncIterator[None]:
     """初始化并释放应用级共享资源。"""
 
-    service, llm_client, provider_limiter = _build_policy_answer_service()
+    prompt_guard = application.state.prompt_security_guard
+    service, llm_client, provider_limiter = _build_policy_answer_service(
+        prompt_guard=prompt_guard,
+    )
     material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
     approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     settings = get_settings()
@@ -204,11 +229,13 @@ async def _lifespan(
         state_persister=state_store,
         memory_store=SQLiteConversationMemoryStore(settings.sqlite_database_path),
         tool_executor=tool_executor,
+        prompt_guard=prompt_guard,
     )
     policy_research_assistant = PolicyResearchAssistant(
         policy_researcher=service,
         web_search_provider=web_search_provider,
         tool_executor=tool_executor,
+        prompt_guard=prompt_guard,
     )
     application.state.policy_answer_service = service
     application.state.policy_research_assistant = policy_research_assistant
@@ -242,12 +269,14 @@ def create_app(
     http_metrics = HttpMetricsRegistry(
         max_route_keys=http_metrics_max_route_keys,
     )
+    prompt_guard = PromptInjectionGuard()
     application = FastAPI(
         title="Enterprise Policy Agent",
         version="0.1.0",
         lifespan=(_lifespan if enable_lifespan else None),
     )
     application.state.http_metrics = http_metrics
+    application.state.prompt_security_guard = prompt_guard
     application.add_middleware(
         RuntimeObservabilityMiddleware,
         metrics=http_metrics,
@@ -255,6 +284,10 @@ def create_app(
     application.add_exception_handler(
         ProviderCapacityError,
         provider_capacity_error_response,
+    )
+    application.add_exception_handler(
+        PromptInjectionBlockedError,
+        prompt_injection_blocked_response,
     )
     application.add_exception_handler(
         Exception,
@@ -289,6 +322,10 @@ def create_app(
     )
     application.include_router(
         observability_router,
+        prefix="/api/v1",
+    )
+    application.include_router(
+        security_router,
         prefix="/api/v1",
     )
     application.include_router(metrics_router)

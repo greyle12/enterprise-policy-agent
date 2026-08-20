@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from math import sqrt
 
@@ -61,13 +61,8 @@ class InMemoryVectorIndex:
             if not record.record_id.strip():
                 raise ValueError("record_id must not be empty")
 
-            if (
-                record.record_id in self._records
-                or record.record_id in incoming_ids
-            ):
-                raise ValueError(
-                    f"record id already exists: {record.record_id}"
-                )
+            if record.record_id in self._records or record.record_id in incoming_ids:
+                raise ValueError(f"record id already exists: {record.record_id}")
 
             self._validate_vector(record.vector)
 
@@ -100,8 +95,10 @@ class InMemoryVectorIndex:
         self,
         query_vector: EmbeddingVector,
         top_k: int = 5,
+        *,
+        allowed_record_ids: Collection[str] | None = None,
     ) -> list[SearchResult]:
-        """返回与查询向量最相似的 Top-K 记录。"""
+        """返回过滤范围内与查询向量最相似的 Top-K 记录。"""
         if top_k < 1:
             raise ValueError("top_k must be greater than zero")
 
@@ -112,6 +109,7 @@ class InMemoryVectorIndex:
         if query_norm == 0.0:
             raise ValueError("query vector must not be a zero vector")
 
+        allowed = frozenset(allowed_record_ids) if allowed_record_ids is not None else None
         results = [
             SearchResult(
                 record=stored_record.record,
@@ -124,6 +122,7 @@ class InMemoryVectorIndex:
                 ),
             )
             for stored_record in self._records.values()
+            if allowed is None or stored_record.record.record_id in allowed
         ]
 
         results.sort(
@@ -136,8 +135,7 @@ class InMemoryVectorIndex:
     def _validate_vector(self, vector: Sequence[float]) -> None:
         if len(vector) != self._dimension:
             raise ValueError(
-                "vector dimension mismatch: "
-                f"expected {self._dimension}, got {len(vector)}"
+                f"vector dimension mismatch: expected {self._dimension}, got {len(vector)}"
             )
 
 
@@ -150,6 +148,5 @@ def _calculate_dot_product(
     right: Sequence[float],
 ) -> float:
     return sum(
-        left_value * right_value
-        for left_value, right_value in zip(left, right, strict=True)
+        left_value * right_value for left_value, right_value in zip(left, right, strict=True)
     )

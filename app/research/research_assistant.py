@@ -22,6 +22,7 @@ from app.resilience import (
     ToolName,
     ToolOperationKind,
 )
+from app.security import PromptInjectionGuard
 
 _MAX_EXTERNAL_QUERY_CHARACTERS = 500
 _EXTERNAL_BOUNDARY_NOTICE = (
@@ -129,10 +130,12 @@ class PolicyResearchAssistant:
         policy_researcher: PolicyResearcher,
         web_search_provider: WebSearchProvider,
         tool_executor: ResilientToolExecutor | None = None,
+        prompt_guard: PromptInjectionGuard | None = None,
     ) -> None:
         self._policy_researcher = policy_researcher
         self._web_search_provider = web_search_provider
         self._tool_executor = tool_executor or ResilientToolExecutor()
+        self._prompt_guard = prompt_guard or PromptInjectionGuard()
 
     async def answer(
         self,
@@ -143,6 +146,7 @@ class PolicyResearchAssistant:
         normalized_question = question.strip()
         if not normalized_question:
             raise ValueError("question must not be blank")
+        self._prompt_guard.enforce_user_input(normalized_question)
 
         records: list[ToolCallRecord] = []
         policy_answer: PolicyAnswer | None = None

@@ -74,6 +74,9 @@ jobs:
       - name: Verify request correlation and runtime observability
         run: python -X utf8 -m scripts.verify_runtime_observability
 
+      - name: Verify policy authorization and prompt-injection defenses
+        run: python -X utf8 -m scripts.verify_rag_security
+
       - name: Run the offline concurrency load benchmark
         run: >-
           python -X utf8 -m scripts.run_concurrency_load_test

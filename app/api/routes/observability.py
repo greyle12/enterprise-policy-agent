@@ -13,6 +13,7 @@ from app.api.schemas.observability import (
 )
 from app.llm import ProviderLimiterStatus
 from app.observability import HttpMetricsRegistry, render_prometheus_metrics
+from app.security import PromptInjectionGuard
 
 logger = logging.getLogger(__name__)
 
@@ -103,9 +104,13 @@ async def prometheus_metrics(request: Request) -> Response:
                 extra={"error_type": type(error).__name__},
             )
 
+    guard = getattr(request.app.state, "prompt_security_guard", None)
+    prompt_security_snapshot = guard.snapshot() if isinstance(guard, PromptInjectionGuard) else None
+
     content = render_prometheus_metrics(
         http_snapshot,
         provider=provider_snapshot,
+        prompt_security=prompt_security_snapshot,
     )
     return Response(
         content=content,

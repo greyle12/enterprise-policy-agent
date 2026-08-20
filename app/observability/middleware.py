@@ -22,6 +22,7 @@ _REQUEST_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$")
 DEFAULT_EXCLUDED_METRICS_PATHS = frozenset(
     {
         "/api/v1/observability/status",
+        "/api/v1/security/status",
         "/health/live",
         "/health/ready",
         "/metrics",

@@ -34,11 +34,14 @@ def test_lifespan_configures_and_closes_service(
     provider_limiter = object()
     web_search_provider = FakeWebSearchProvider()
 
-    def build_fake_service() -> tuple[
+    def build_fake_service(
+        *, prompt_guard=None
+    ) -> tuple[
         object,
         FakeLLMClient,
         object,
     ]:
+        assert prompt_guard is application.state.prompt_security_guard
         return service, llm_client, provider_limiter
 
     monkeypatch.setattr(

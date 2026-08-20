@@ -72,8 +72,8 @@ Prometheus 兼容导出，让一次 API 调用可以被安全定位和量化。
 - 被合并到 overflow 的请求数；
 - 指标内部不变量错误数。
 
-健康检查、JSON 状态和 `/metrics` 自身不参与 HTTP 指标，避免探针流量污染业务趋势，也避免
-每次抓取改变下一次抓取结果。
+健康检查、JSON 观测状态、Day 29 安全状态和 `/metrics` 自身不参与 HTTP 指标，避免探针流量
+污染业务趋势，也避免每次抓取改变下一次抓取结果。
 
 ### 2.4 结构化日志与安全 500
 
@@ -139,6 +139,11 @@ text/plain; version=0.0.4; charset=utf-8
 | `enterprise_policy_agent_llm_provider_in_flight` | Gauge | 当前真实 LLM 调用 |
 | `enterprise_policy_agent_llm_provider_queued` | Gauge | Day 27 FIFO 等待数 |
 | `enterprise_policy_agent_llm_provider_events_total` | Counter | 接纳、完成、拒绝、超时等事件 |
+| `enterprise_policy_agent_prompt_security_user_inputs_total` | Counter | Day 29 输入允许/拒绝计数 |
+| `enterprise_policy_agent_prompt_security_evidence_chunks_total` | Counter | 制度证据允许/隔离计数 |
+| `enterprise_policy_agent_prompt_security_llm_calls_avoided_total` | Counter | 拒绝后避免的 LLM 调用数 |
+
+Day 29 安全指标只包含 outcome 和计数，不包含原始问题、制度内容、命中规则或拒绝原因。
 
 Prometheus 示例查询：
 
@@ -200,12 +205,13 @@ Prometheus 格式以及结构化日志白名单。
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_ci_configuration
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.run_golden_evaluation --mode offline
 ```
 
 ### 4.4 Docker 验收
 
-Compose 镜像标签更新为 `enterprise-policy-agent:day28`。Docker Desktop Linux Engine 启动后：
+当前 Compose 镜像标签为 `enterprise-policy-agent:day29`。Docker Desktop Linux Engine 启动后：
 
 ```powershell
 docker info
@@ -213,7 +219,7 @@ docker compose config --quiet
 docker compose --progress plain build agent
 
 if ($LASTEXITCODE -ne 0) {
-    throw "Day 28 Agent 镜像构建失败，请保留输出"
+    throw "Day 29 Agent 镜像构建失败，请保留输出"
 }
 
 docker compose up --detach --wait
