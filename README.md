@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 23：PDF 文档解析（已完成）
+Advanced RAG Phase 24：DOCX 文档解析（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -297,10 +297,13 @@ Advanced RAG Phase 23：PDF 文档解析（已完成）
 - [x] PDF 可信 sidecar 元数据、页码 provenance 与 Citation 传递；
 - [x] 加密/损坏/缺少 sidecar 拒绝及扫描件 `OCRRequiredError`；
 - [x] Phase 23 完全离线真实 PDF 专项验证与 CI 门禁。
+- [x] python-docx 段落、标题样式和表格按文档顺序提取；
+- [x] DOCX 可信 sidecar 元数据与顶层块 provenance 传递；
+- [x] 空/图片型 DOCX `OCRRequiredError`、损坏/缺少 sidecar 拒绝；
+- [x] Phase 24 完全离线真实 DOCX 专项验证与 CI 门禁。
 
 ### 尚未实现
 
-- [ ] DOCX 文档解析；
 - [ ] OCR fallback；
 - [ ] PostgreSQL / pgvector；
 - [ ] BM25 关键词检索；
@@ -1376,7 +1379,8 @@ Application Services
        │   ├── Document Loader Registry
        │   │   ├── Markdown Loader
        │   │   ├── PDF Native-text Loader
-       │   │   └── DOCX / OCR（planned）
+       │   │   ├── DOCX Paragraph/Table Loader
+       │   │   └── OCR（planned）
        │   ├── Policy Parser
        │   ├── Metadata Extractor
        │   ├── Chunker
@@ -1456,6 +1460,7 @@ demo1/
 │   ├── rag_security_guardrails.md
 │   ├── document_loader.md
 │   ├── pdf_document_parsing.md
+│   ├── docx_document_parsing.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1488,6 +1493,7 @@ Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
 PDF Parser：PyMuPDF 1.26.x
+DOCX Parser：python-docx 1.2.x
 Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
@@ -1652,6 +1658,12 @@ python -X utf8 -m scripts.verify_document_loader
 python -X utf8 -m scripts.verify_pdf_document_parsing
 ```
 
+### 验证 Phase 24 DOCX 文档解析
+
+```powershell
+python -X utf8 -m scripts.verify_docx_document_parsing
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1808,7 +1820,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] Parser、Chunker、Retriever 增量接入；
 - [x] 原有安全边界和 5 文档/199 Chunk 回归验证；
 - [x] PDF Loader（Phase 23）；
-- [ ] DOCX Loader（Phase 24）；
+- [x] DOCX Loader（Phase 24）；
 - [ ] OCR fallback（Phase 25）。
 
 ### Advanced RAG Phase 23：PDF 文档解析
@@ -1820,7 +1832,19 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `PolicyChunk`、Context、Citation 和 Research API 页码传递；
 - [x] 加密、损坏、缺元数据和 OCR-required 错误边界；
 - [x] 完全离线真实 PDF 生成与 CI 验收；
-- [ ] DOCX Loader（Phase 24）；
+- [x] DOCX Loader（Phase 24）；
+- [ ] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 24：DOCX 文档解析
+
+- [x] python-docx 顶层段落和表格按原始文档顺序提取；
+- [x] Word Title / Heading 样式转换为现有 Markdown 标题层级；
+- [x] 表格确定性序列化并保留在所属条款中；
+- [x] `policy.docx` + `policy.metadata.yaml` 可信 ingestion 契约；
+- [x] Loader 行到 DOCX 顶层块序号的稳定映射；
+- [x] `PolicyChunk`、Context、Citation、Retriever 元数据和 Research API 块范围传递；
+- [x] 损坏、缺元数据和 OCR-required 错误边界；
+- [x] 完全离线真实 DOCX 生成与 CI 验收；
 - [ ] OCR fallback（Phase 25）。
 
 ---

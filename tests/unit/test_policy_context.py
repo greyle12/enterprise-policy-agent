@@ -93,6 +93,31 @@ def test_preserves_pdf_page_range_in_context_and_citation(
     assert context.citations[0].source_page_end == 3
 
 
+def test_preserves_docx_block_range_in_context_and_citation(
+    sample_results: list[PolicyRetrievalResult],
+) -> None:
+    docx_result = PolicyRetrievalResult(
+        chunk=sample_results[0].chunk.model_copy(
+            update={
+                "source_media_type": (
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ),
+                "source_block_start": 5,
+                "source_block_end": 8,
+            }
+        ),
+        score=sample_results[0].score,
+    )
+
+    context = build_policy_context([docx_result])
+
+    record = json.loads(context.text)[0]
+    assert record["source_block_start"] == "5"
+    assert record["source_block_end"] == "8"
+    assert context.citations[0].source_block_start == 5
+    assert context.citations[0].source_block_end == 8
+
+
 def test_preserves_retrieval_order(
     sample_results: list[PolicyRetrievalResult],
 ) -> None:

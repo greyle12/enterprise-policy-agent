@@ -138,8 +138,8 @@ def test_pdf_flows_through_parser_and_existing_chunker(tmp_path: Path) -> None:
     assert all(chunk.metadata_source_path == sidecar for chunk in chunks)
 
 
-def test_default_registry_registers_markdown_and_pdf() -> None:
-    assert DEFAULT_DOCUMENT_LOADER_REGISTRY.supported_extensions == (".md", ".pdf")
+def test_default_registry_registers_markdown_pdf_and_docx() -> None:
+    assert DEFAULT_DOCUMENT_LOADER_REGISTRY.supported_extensions == (".docx", ".md", ".pdf")
 
 
 def test_pdf_loader_requires_trusted_sidecar(tmp_path: Path) -> None:

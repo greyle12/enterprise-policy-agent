@@ -73,6 +73,9 @@ def _build_record_metadata(
     if chunk.source_page_start is not None and chunk.source_page_end is not None:
         metadata["source_page_start"] = str(chunk.source_page_start)
         metadata["source_page_end"] = str(chunk.source_page_end)
+    if chunk.source_block_start is not None and chunk.source_block_end is not None:
+        metadata["source_block_start"] = str(chunk.source_block_start)
+        metadata["source_block_end"] = str(chunk.source_block_end)
     return metadata
 
 

@@ -65,6 +65,8 @@ async def answer_research_question(
                     score=citation.score,
                     source_page_start=citation.source_page_start,
                     source_page_end=citation.source_page_end,
+                    source_block_start=citation.source_block_start,
+                    source_block_end=citation.source_block_end,
                 )
                 for citation in policy_answer.citations
             ]

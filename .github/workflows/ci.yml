@@ -86,6 +86,9 @@ jobs:
       - name: Verify Phase 23 native PDF parsing and provenance
         run: python -X utf8 -m scripts.verify_pdf_document_parsing
 
+      - name: Verify Phase 24 DOCX parsing and block provenance
+        run: python -X utf8 -m scripts.verify_docx_document_parsing
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo

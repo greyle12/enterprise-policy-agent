@@ -61,6 +61,8 @@ def _result() -> PolicyResearchAnswer:
         score=0.94,
         source_page_start=4,
         source_page_end=4,
+        source_block_start=9,
+        source_block_end=11,
     )
     policy_answer = PolicyAnswer(
         question="对比差旅报销要求",
@@ -147,6 +149,8 @@ def test_returns_research_sources_with_explicit_authority_boundary() -> None:
     assert payload["internal_sources"][0]["document_title"] == "差旅报销管理制度"
     assert payload["internal_sources"][0]["source_page_start"] == 4
     assert payload["internal_sources"][0]["source_page_end"] == 4
+    assert payload["internal_sources"][0]["source_block_start"] == 9
+    assert payload["internal_sources"][0]["source_block_end"] == 11
     assert payload["external_sources"][0] == {
         "source_id": "W1",
         "title": "公开指南",

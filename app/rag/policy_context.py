@@ -21,6 +21,8 @@ class PolicyCitation:
     score: float
     source_page_start: int | None = None
     source_page_end: int | None = None
+    source_block_start: int | None = None
+    source_block_end: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -60,6 +62,9 @@ def _context_record(
     if chunk.source_page_start is not None and chunk.source_page_end is not None:
         record["source_page_start"] = str(chunk.source_page_start)
         record["source_page_end"] = str(chunk.source_page_end)
+    if chunk.source_block_start is not None and chunk.source_block_end is not None:
+        record["source_block_start"] = str(chunk.source_block_start)
+        record["source_block_end"] = str(chunk.source_block_end)
     return record
 
 
@@ -117,6 +122,8 @@ def build_policy_context(
             score=result.score,
             source_page_start=result.chunk.source_page_start,
             source_page_end=result.chunk.source_page_end,
+            source_block_start=result.chunk.source_block_start,
+            source_block_end=result.chunk.source_block_end,
         )
         for index, result in enumerate(
             selected_results,

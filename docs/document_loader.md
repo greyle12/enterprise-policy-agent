@@ -1,7 +1,7 @@
 # Phase 22：Document Loader 抽象
 
-Phase 22 在既有制度 RAG 之前增加统一的文档加载边界。Phase 23 已在该边界上注册 PDF 原生
-文本 Loader；DOCX 和 OCR 仍属于后续阶段。
+Phase 22 在既有制度 RAG 之前增加统一的文档加载边界。Phase 23 和 Phase 24 已在该边界上注册
+PDF 原生文本 Loader 与 DOCX 段落/表格 Loader；OCR 仍属于后续阶段。
 
 ## 1. 它解决什么问题
 
@@ -49,7 +49,8 @@ Document Loader 只解决“文件如何变成文本”。它不解释制度编�
 - `load(path) -> LoadedDocument`。
 
 协议使用依赖倒置：Parser 依赖最小契约，不直接依赖 PyMuPDF、python-docx 或 OCR SDK。
-Phase 23 已通过新增 `PDFDocumentLoader` 验证无需复制 Parser、Chunker、Retriever 或安全代码。
+Phase 23/24 已通过新增 `PDFDocumentLoader`、`DOCXDocumentLoader` 验证无需复制 Parser、
+Chunker、Retriever 或安全代码。
 
 ### 3.2 不可变 Registry
 
@@ -71,8 +72,8 @@ chunk_policy_directory(directory)
 PolicyRetriever.from_directory(directory, embedding_provider=provider)
 ```
 
-它们默认使用只包含 Markdown Loader 的 Registry。需要扩展格式时，通过关键字参数传入新的
-Registry；原有 `PolicyDocument`、`PolicyChunk` 和引用结构不变。
+它们默认使用已注册 Markdown、PDF、DOCX 的 Registry。测试或部署需要限制格式时，可通过
+关键字参数传入自定义 Registry；原有入口保持不变。
 
 ## 4. 安全模型为什么没有变化
 
@@ -104,7 +105,8 @@ Trusted PolicyAccessContext
 3. 使用 Registry + 最小 Protocol：多一个小抽象，但保持现有 RAG 数据模型稳定，也方便用
    离线 Fixture Loader 测试整个 Parser → Chunker → Retriever 路径。
 
-当前项目选择第三种。它满足增量开发，并只为已完成的 PDF 能力引入 PyMuPDF。
+当前项目选择第三种。它满足增量开发，并只为已完成的 PDF/DOCX 能力引入 PyMuPDF 和
+python-docx。
 
 ## 6. 错误边界
 
@@ -144,7 +146,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 {
   "phase": 22,
   "passed": true,
-  "supported_extensions": [".md", ".pdf"],
+  "supported_extensions": [".docx", ".md", ".pdf"],
   "document_count": 5,
   "chunk_count": 199,
   "network_calls": false,
@@ -157,7 +159,7 @@ python -X utf8 -m scripts.verify_ci_configuration
 - 当前只支持顶层目录，不递归扫描，也没有对象存储 URI；
 - 未限制文件字节数、页数、压缩比或提取耗时；
 - 没有恶意文件扫描、沙箱进程和文档级审计记录；
-- PDF 已保留页码，但没有表格、版面块等结构信息；
+- PDF 已保留页码，但没有表格和复杂版面结构信息；DOCX 已保留顶层块序号，但不伪造页码；
 - 没有 OCR 质量分数、语言检测或人工复核队列；
 - 文档元数据仍依赖 YAML front matter；非 Markdown 格式如何携带可信元数据将在对应 Phase
   显式设计。
@@ -182,6 +184,8 @@ Loader 处理文件格式与字节提取，Parser 处理企业制度语义和 Sc
 
 Phase 23 选择同名 sidecar YAML：`policy.pdf` 对应 `policy.metadata.yaml`。它必须由受控 ingestion
 流程写入；不能让 LLM 从正文猜权限字段。
+
+DOCX 使用相同的受信任 sidecar 规则：`policy.docx` 对应 `policy.metadata.yaml`。
 
 ### 这个改动怎样保证授权过滤仍在向量评分前？
 

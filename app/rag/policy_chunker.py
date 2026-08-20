@@ -132,6 +132,21 @@ def _source_page_range(
     return min(page_numbers), max(page_numbers)
 
 
+def _source_block_range(
+    document: PolicyDocument,
+    *,
+    source_line_start: int,
+    source_line_end: int,
+) -> tuple[int | None, int | None]:
+    if not document.content_block_numbers:
+        return None, None
+
+    block_numbers = document.content_block_numbers[source_line_start - 1 : source_line_end]
+    if not block_numbers:
+        raise PolicyChunkingError("DOCX Chunk 没有对应的来源块序号映射")
+    return min(block_numbers), max(block_numbers)
+
+
 def _finalize_article(
     *,
     document: PolicyDocument,
@@ -170,6 +185,11 @@ def _finalize_article(
         source_line_start=buffer.source_line_start,
         source_line_end=actual_line_end,
     )
+    source_block_start, source_block_end = _source_block_range(
+        document,
+        source_line_start=buffer.source_line_start,
+        source_line_end=actual_line_end,
+    )
 
     return PolicyChunk(
         chunk_id=_build_chunk_id(
@@ -196,6 +216,8 @@ def _finalize_article(
         source_line_end=actual_line_end,
         source_page_start=source_page_start,
         source_page_end=source_page_end,
+        source_block_start=source_block_start,
+        source_block_end=source_block_end,
         effective_date=metadata.effective_date,
         expiry_date=metadata.expiry_date,
         allowed_departments=list(metadata.allowed_departments),

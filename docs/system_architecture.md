@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Advanced RAG Phase 23 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 24 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -88,7 +88,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Policies["Markdown / PDF + sidecar"] --> Loader["Document Loader"]
+    Policies["Markdown / PDF / DOCX + sidecar"] --> Loader["Document Loader"]
     Loader --> Chunks["结构化 Chunk"]
     Chunks --> Index["内存向量索引"]
     AgentState["Agent 状态"] --> SQLite["SQLite"]
@@ -97,8 +97,8 @@ flowchart LR
 ```
 
 - 制度索引目前为单进程内存结构，正式 BGE 默认维度为 512；
-- Loader Registry 当前注册 Markdown 和 PyMuPDF 原生文本 Loader；DOCX 和 OCR 尚未实现；
-- PDF 权限元数据来自受控 sidecar，Chunk 和 Citation 保留页码来源；
+- Loader Registry 当前注册 Markdown、PyMuPDF 原生文本和 python-docx Loader；OCR 尚未实现；
+- PDF/DOCX 权限元数据来自受控 sidecar；PDF 保留页码，DOCX 保留顶层块范围；
 - 会话、checkpoint、提交和审计可以使用 SQLite 跨重启恢复；
 - Redis 只用于可选 LLM 精确请求缓存，不是当前会话主存储；
 - HTTP 指标、Provider 指标和安全计数是进程内状态。

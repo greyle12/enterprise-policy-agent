@@ -11,6 +11,8 @@ Day 29 增加检索前权限过滤、提示注入拒绝、污染证据隔离和�
 增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据；Advanced RAG
 Phase 22 增加统一 Document Loader、原有 Parser/Chunker 兼容性和 5 文档/199 Chunk 契约。
 Advanced RAG Phase 23 增加真实 PDF 动态生成、原生文本、sidecar、页码和 OCR handoff 契约。
+Advanced RAG Phase 24 增加真实 DOCX 动态生成、段落/表格顺序、sidecar、块定位和 OCR handoff
+契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -91,6 +93,7 @@ timeout 30 分钟
 → RAG 权限与提示注入防护离线契约
 → Phase 22 Document Loader 离线契约
 → Phase 23 PDF 原生文本与页码离线契约
+→ Phase 24 DOCX 段落/表格与块定位离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -100,9 +103,9 @@ timeout 30 分钟
 任意一步返回非零退出码，Job 即失败。
 
 离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
-Document Loader、PDF 解析、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
+Document Loader、PDF/DOCX 解析、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
 也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。Loader 专项读取
-仓库中的 Markdown；PDF 专项在临时目录动态生成两页 PDF 和 sidecar，不保存用户文档。可观测性
+仓库中的 Markdown；PDF/DOCX 专项在临时目录动态生成真实文档和 sidecar，不保存用户文档。可观测性
 专项使用进程内 TestClient；安全专项使用固定身份、制度和攻击夹具，不调用 Provider。因此来自
 Fork 的 Pull Request 可以在没有密钥、不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
 
@@ -224,6 +227,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_loader
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_pdf_document_parsing
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_docx_document_parsing
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -264,6 +268,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | RAG 安全契约失败 | 单独运行 `scripts.verify_rag_security`，检查可信身份、7 类权限边界、攻击/正常用例、证据隔离和 Provider 调用数 |
 | Document Loader 契约失败 | 单独运行 `scripts.verify_document_loader`，检查扩展名注册、5 份制度、199 个 Chunk 和稳定来源路径 |
 | PDF 解析契约失败 | 单独运行 `scripts.verify_pdf_document_parsing`，检查 PyMuPDF、sidecar、页码、OCR handoff 和加密/损坏拒绝 |
+| DOCX 解析契约失败 | 单独运行 `scripts.verify_docx_document_parsing`，检查 python-docx、sidecar、段落/表格顺序、块定位和 OCR handoff |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |

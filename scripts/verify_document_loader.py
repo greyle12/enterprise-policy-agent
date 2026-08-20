@@ -34,6 +34,9 @@ def run_verification(policy_directory: Path) -> dict[str, object]:
             ".md" in DEFAULT_DOCUMENT_LOADER_REGISTRY.supported_extensions
         ),
         "pdf_loader_registered": (".pdf" in DEFAULT_DOCUMENT_LOADER_REGISTRY.supported_extensions),
+        "docx_loader_registered": (
+            ".docx" in DEFAULT_DOCUMENT_LOADER_REGISTRY.supported_extensions
+        ),
         "all_policy_files_discovered": len(discovered) == _EXPECTED_DOCUMENT_COUNT,
         "all_files_loaded_as_markdown": all(
             item.loader_name == "markdown" and item.media_type == "text/markdown" for item in loaded

@@ -110,6 +110,11 @@ class PolicyDocument(BaseModel):
         ge=1,
     )
     content_page_numbers: tuple[int, ...] = ()
+    source_block_count: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    content_block_numbers: tuple[int, ...] = ()
     raw_text: str = Field(
         min_length=1,
         description="Document Loader 输出的规范化全文",
@@ -127,6 +132,16 @@ class PolicyDocument(BaseModel):
                 for page_number in self.content_page_numbers
             ):
                 raise ValueError("content_page_numbers 必须位于 PDF 页码范围内")
+        if self.content_block_numbers:
+            if self.source_block_count is None:
+                raise ValueError("content_block_numbers 需要 source_block_count")
+            if len(self.content_block_numbers) != len(self.content.splitlines()):
+                raise ValueError("content_block_numbers 必须与 content 行数一致")
+            if any(
+                block_number < 1 or block_number > self.source_block_count
+                for block_number in self.content_block_numbers
+            ):
+                raise ValueError("content_block_numbers 必须位于 DOCX 块序号范围内")
         return self
 
     @property

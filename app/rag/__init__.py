@@ -1,5 +1,6 @@
 from app.rag.document_loader import (
     DEFAULT_DOCUMENT_LOADER_REGISTRY,
+    DOCXDocumentLoader,
     DocumentLoadError,
     DocumentLoader,
     DocumentLoaderRegistry,
@@ -8,11 +9,13 @@ from app.rag.document_loader import (
     OCRRequiredError,
     PDFDocumentLoader,
     UnsupportedDocumentFormatError,
+    docx_metadata_sidecar_path,
     pdf_metadata_sidecar_path,
 )
 
 __all__ = [
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
+    "DOCXDocumentLoader",
     "DocumentLoadError",
     "DocumentLoader",
     "DocumentLoaderRegistry",
@@ -21,5 +24,6 @@ __all__ = [
     "OCRRequiredError",
     "PDFDocumentLoader",
     "UnsupportedDocumentFormatError",
+    "docx_metadata_sidecar_path",
     "pdf_metadata_sidecar_path",
 ]

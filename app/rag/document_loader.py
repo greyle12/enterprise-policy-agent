@@ -64,6 +64,8 @@ class LoadedDocument:
     metadata_source_path: Path | None = None
     page_count: int | None = None
     line_page_numbers: tuple[int, ...] = ()
+    block_count: int | None = None
+    line_block_numbers: tuple[int, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.text.strip():
@@ -85,6 +87,15 @@ class LoadedDocument:
                 raise ValueError("line_page_numbers must align with text lines")
             if any(page < 1 or page > self.page_count for page in self.line_page_numbers):
                 raise ValueError("line_page_numbers must be within page_count")
+        if self.block_count is not None and self.block_count < 1:
+            raise ValueError("block_count must be greater than zero")
+        if self.line_block_numbers:
+            if self.block_count is None:
+                raise ValueError("line_block_numbers require block_count")
+            if len(self.line_block_numbers) != len(self.text.splitlines()):
+                raise ValueError("line_block_numbers must align with text lines")
+            if any(block < 1 or block > self.block_count for block in self.line_block_numbers):
+                raise ValueError("line_block_numbers must be within block_count")
 
 
 class DocumentLoader(Protocol):
@@ -161,6 +172,8 @@ _PLAIN_ARTICLE_PATTERN = re.compile(
 _SENTENCE_PUNCTUATION = frozenset("。！？；;!?.")
 PDF_METADATA_SIDECAR_SUFFIX = ".metadata.yaml"
 DEFAULT_PDF_MIN_TEXT_CHARACTERS = 20
+DOCX_METADATA_SIDECAR_SUFFIX = ".metadata.yaml"
+DEFAULT_DOCX_MIN_TEXT_CHARACTERS = 20
 
 
 class _PDFPage(Protocol):
@@ -189,6 +202,42 @@ def pdf_metadata_sidecar_path(path: str | Path) -> Path:
 
     source_path = Path(path)
     return source_path.with_name(f"{source_path.stem}{PDF_METADATA_SIDECAR_SUFFIX}")
+
+
+def docx_metadata_sidecar_path(path: str | Path) -> Path:
+    """Return the trusted sidecar path for one DOCX source."""
+
+    source_path = Path(path)
+    return source_path.with_name(f"{source_path.stem}{DOCX_METADATA_SIDECAR_SUFFIX}")
+
+
+def _load_metadata_sidecar(
+    source_path: Path,
+    *,
+    format_name: str,
+    metadata_path: Path,
+) -> tuple[str, Path]:
+    if not metadata_path.exists():
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar does not exist: {metadata_path}"
+        )
+    if not metadata_path.is_file():
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar is not a file: {metadata_path}"
+        )
+    try:
+        metadata_text = metadata_path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar is not valid UTF-8: {metadata_path}"
+        ) from exc
+    except OSError as exc:
+        raise DocumentMetadataError(
+            f"cannot read {format_name} metadata sidecar: {metadata_path}: {exc}"
+        ) from exc
+    if not metadata_text.strip():
+        raise DocumentMetadataError(f"{format_name} metadata sidecar is empty: {metadata_path}")
+    return metadata_text, metadata_path
 
 
 def _looks_like_article_title(text: str) -> bool:
@@ -276,23 +325,11 @@ class PDFDocumentLoader:
 
     def _load_metadata(self, source_path: Path) -> tuple[str, Path]:
         metadata_path = pdf_metadata_sidecar_path(source_path)
-        if not metadata_path.exists():
-            raise DocumentMetadataError(f"PDF metadata sidecar does not exist: {metadata_path}")
-        if not metadata_path.is_file():
-            raise DocumentMetadataError(f"PDF metadata sidecar is not a file: {metadata_path}")
-        try:
-            metadata_text = metadata_path.read_text(encoding="utf-8-sig")
-        except UnicodeDecodeError as exc:
-            raise DocumentMetadataError(
-                f"PDF metadata sidecar is not valid UTF-8: {metadata_path}"
-            ) from exc
-        except OSError as exc:
-            raise DocumentMetadataError(
-                f"cannot read PDF metadata sidecar: {metadata_path}: {exc}"
-            ) from exc
-        if not metadata_text.strip():
-            raise DocumentMetadataError(f"PDF metadata sidecar is empty: {metadata_path}")
-        return metadata_text, metadata_path
+        return _load_metadata_sidecar(
+            source_path,
+            format_name="PDF",
+            metadata_path=metadata_path,
+        )
 
     def _extract_text(self, source_path: Path) -> tuple[str, int, tuple[int, ...]]:
         try:
@@ -368,6 +405,182 @@ class PDFDocumentLoader:
             metadata_source_path=metadata_path,
             page_count=page_count,
             line_page_numbers=line_page_numbers,
+        )
+
+
+_DOCX_HEADING_STYLE_PATTERN = re.compile(r"^(?:heading|标题)\s*(?P<level>[1-9])$", re.IGNORECASE)
+_DOCX_TITLE_STYLES = frozenset({"title", "标题"})
+
+
+def _normalize_docx_text(text: str) -> str:
+    return " ".join(text.replace("\u3000", " ").split())
+
+
+def _docx_heading_level(style_name: str) -> int | None:
+    normalized = _normalize_docx_text(style_name).lower()
+    if normalized in _DOCX_TITLE_STYLES:
+        return 1
+    match = _DOCX_HEADING_STYLE_PATTERN.fullmatch(normalized)
+    if match is None:
+        return None
+    return int(match.group("level")) + 1
+
+
+def _normalize_docx_paragraph(text: str, style_name: str) -> tuple[str, ...]:
+    lines: list[str] = []
+    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        lines.extend(_normalize_pdf_line(raw_line))
+    normalized_lines = tuple(line for line in lines if line)
+    if not normalized_lines:
+        return ()
+
+    first_line = normalized_lines[0]
+    if first_line.startswith("#"):
+        return normalized_lines
+    heading_level = _docx_heading_level(style_name)
+    if heading_level is None:
+        return normalized_lines
+    return (f"{'#' * heading_level} {first_line}", *normalized_lines[1:])
+
+
+def _escape_docx_table_cell(text: str) -> str:
+    normalized_lines = [
+        _normalize_docx_text(line)
+        for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    ]
+    normalized = "<br>".join(line for line in normalized_lines if line)
+    return normalized.replace("|", r"\|")
+
+
+def _render_docx_table(table: object) -> tuple[str, ...]:
+    rows = getattr(table, "rows", ())
+    rendered_rows = [
+        tuple(_escape_docx_table_cell(cell.text) for cell in row.cells) for row in rows
+    ]
+    rendered_rows = [row for row in rendered_rows if any(row)]
+    if not rendered_rows:
+        return ()
+
+    width = max(len(row) for row in rendered_rows)
+
+    def render_row(row: tuple[str, ...]) -> str:
+        padded = (*row, *("" for _ in range(width - len(row))))
+        return "| " + " | ".join(padded) + " |"
+
+    lines = [render_row(rendered_rows[0])]
+    lines.append("| " + " | ".join("---" for _ in range(width)) + " |")
+    lines.extend(render_row(row) for row in rendered_rows[1:])
+    return tuple(lines)
+
+
+class DOCXDocumentLoader:
+    """Extract DOCX paragraphs and tables with trusted sidecar metadata."""
+
+    name = "python-docx"
+    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    supported_extensions = frozenset({".docx"})
+
+    def __init__(
+        self,
+        *,
+        minimum_text_characters: int = DEFAULT_DOCX_MIN_TEXT_CHARACTERS,
+    ) -> None:
+        if minimum_text_characters < 1:
+            raise ValueError("minimum_text_characters must be greater than zero")
+        self._minimum_text_characters = minimum_text_characters
+
+    @property
+    def minimum_text_characters(self) -> int:
+        return self._minimum_text_characters
+
+    def _load_metadata(self, source_path: Path) -> tuple[str, Path]:
+        metadata_path = docx_metadata_sidecar_path(source_path)
+        return _load_metadata_sidecar(
+            source_path,
+            format_name="DOCX",
+            metadata_path=metadata_path,
+        )
+
+    def _open(self, source_path: Path) -> object:
+        try:
+            from docx import Document
+        except ModuleNotFoundError as exc:
+            raise DocumentDependencyError(
+                "DOCX parsing requires python-docx; install the project dependencies"
+            ) from exc
+        try:
+            return Document(str(source_path))
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot open DOCX document: {source_path}: {exc}") from exc
+
+    def _extract_text(self, source_path: Path) -> tuple[str, int, tuple[int, ...]]:
+        document = self._open(source_path)
+        try:
+            from docx.table import Table
+            from docx.text.paragraph import Paragraph
+        except ModuleNotFoundError as exc:
+            raise DocumentDependencyError(
+                "DOCX parsing requires python-docx; install the project dependencies"
+            ) from exc
+
+        lines: list[str] = []
+        block_numbers: list[int] = []
+        block_count = 0
+        try:
+            for block_count, block in enumerate(document.iter_inner_content(), start=1):
+                if isinstance(block, Paragraph):
+                    style_name = block.style.name if block.style is not None else ""
+                    block_lines = _normalize_docx_paragraph(block.text, style_name)
+                elif isinstance(block, Table):
+                    block_lines = _render_docx_table(block)
+                else:
+                    continue
+
+                if not block_lines:
+                    continue
+                if lines and lines[-1]:
+                    lines.append("")
+                    block_numbers.append(block_count)
+                lines.extend(block_lines)
+                block_numbers.extend(block_count for _ in block_lines)
+        except DocumentLoadError:
+            raise
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot extract DOCX text: {source_path}: {exc}") from exc
+
+        while lines and not lines[-1]:
+            lines.pop()
+            block_numbers.pop()
+        text = "\n".join(lines)
+        native_character_count = sum(not character.isspace() for character in text)
+        if native_character_count < self._minimum_text_characters:
+            raise OCRRequiredError(
+                "DOCX native text is below the configured threshold; OCR fallback is required: "
+                f"{native_character_count} < {self._minimum_text_characters}"
+            )
+        if block_count < 1:
+            raise InvalidDocumentError(f"DOCX document contains no body blocks: {source_path}")
+        return text, block_count, tuple(block_numbers)
+
+    def load(self, path: Path) -> LoadedDocument:
+        source_path = Path(path)
+        _validate_source_path(source_path)
+        if source_path.suffix.lower() not in self.supported_extensions:
+            raise UnsupportedDocumentFormatError(
+                f"DOCX loader does not support extension: {source_path.suffix.lower()}"
+            )
+
+        metadata_text, metadata_path = self._load_metadata(source_path)
+        text, block_count, line_block_numbers = self._extract_text(source_path)
+        return LoadedDocument(
+            source_path=source_path,
+            text=text,
+            media_type=self.media_type,
+            loader_name=self.name,
+            metadata_text=metadata_text,
+            metadata_source_path=metadata_path,
+            block_count=block_count,
+            line_block_numbers=line_block_numbers,
         )
 
 
@@ -448,12 +661,14 @@ DEFAULT_DOCUMENT_LOADER_REGISTRY = DocumentLoaderRegistry(
     [
         MarkdownDocumentLoader(),
         PDFDocumentLoader(),
+        DOCXDocumentLoader(),
     ]
 )
 
 
 __all__ = [
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
+    "DEFAULT_DOCX_MIN_TEXT_CHARACTERS",
     "DEFAULT_PDF_MIN_TEXT_CHARACTERS",
     "DocumentDecodingError",
     "DocumentDependencyError",
@@ -468,9 +683,12 @@ __all__ = [
     "InvalidDocumentError",
     "LoadedDocument",
     "MarkdownDocumentLoader",
+    "DOCXDocumentLoader",
+    "DOCX_METADATA_SIDECAR_SUFFIX",
     "OCRRequiredError",
     "PDFDocumentLoader",
     "PDF_METADATA_SIDECAR_SUFFIX",
     "UnsupportedDocumentFormatError",
     "pdf_metadata_sidecar_path",
+    "docx_metadata_sidecar_path",
 ]

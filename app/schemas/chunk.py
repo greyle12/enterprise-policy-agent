@@ -89,6 +89,8 @@ class PolicyChunk(BaseModel):
     source_line_end: int = Field(ge=1)
     source_page_start: int | None = Field(default=None, ge=1)
     source_page_end: int | None = Field(default=None, ge=1)
+    source_block_start: int | None = Field(default=None, ge=1)
+    source_block_end: int | None = Field(default=None, ge=1)
 
     effective_date: date
     expiry_date: date | None = None
@@ -134,6 +136,16 @@ class PolicyChunk(BaseModel):
             and self.source_page_end < self.source_page_start
         ):
             raise ValueError("source_page_end 不能小于 source_page_start")
+
+        if (self.source_block_start is None) != (self.source_block_end is None):
+            raise ValueError("source_block_start 和 source_block_end 必须同时存在或同时为空")
+
+        if (
+            self.source_block_start is not None
+            and self.source_block_end is not None
+            and self.source_block_end < self.source_block_start
+        ):
+            raise ValueError("source_block_end 不能小于 source_block_start")
 
         if self.char_count != len(self.content):
             raise ValueError("char_count 必须等于 content 的实际字符数")

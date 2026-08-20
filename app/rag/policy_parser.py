@@ -87,6 +87,8 @@ def parse_policy_text(
     source_loader_name: str = "markdown",
     source_page_count: int | None = None,
     content_page_numbers: tuple[int, ...] = (),
+    source_block_count: int | None = None,
+    content_block_numbers: tuple[int, ...] = (),
 ) -> PolicyDocument:
     """Parse normalized policy text with inline or trusted external metadata."""
 
@@ -96,27 +98,36 @@ def parse_policy_text(
     if metadata_text is None:
         yaml_text, markdown_content = _split_front_matter(raw_text)
         normalized_page_numbers: tuple[int, ...] = ()
+        normalized_block_numbers: tuple[int, ...] = ()
     else:
         if not metadata_text.strip():
             raise PolicyParseError("制度元数据不能为空")
         normalized_text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
         lines = normalized_text.splitlines()
         page_numbers = list(content_page_numbers)
+        block_numbers = list(content_block_numbers)
         if page_numbers and len(page_numbers) != len(lines):
             raise PolicyParseError("PDF 页码映射必须与 Loader 文本行数一致")
+        if block_numbers and len(block_numbers) != len(lines):
+            raise PolicyParseError("DOCX 块序号映射必须与 Loader 文本行数一致")
         while lines and not lines[0].strip():
             lines.pop(0)
             if page_numbers:
                 page_numbers.pop(0)
+            if block_numbers:
+                block_numbers.pop(0)
         while lines and not lines[-1].strip():
             lines.pop()
             if page_numbers:
                 page_numbers.pop()
+            if block_numbers:
+                block_numbers.pop()
         markdown_content = "\n".join(lines)
         if not markdown_content.strip():
             raise PolicyParseError("制度正文不能为空")
         yaml_text = metadata_text.strip()
         normalized_page_numbers = tuple(page_numbers)
+        normalized_block_numbers = tuple(block_numbers)
 
     metadata_dict = _parse_yaml_metadata(yaml_text)
 
@@ -134,6 +145,8 @@ def parse_policy_text(
         metadata_source_path=metadata_source_path,
         source_page_count=source_page_count,
         content_page_numbers=normalized_page_numbers,
+        source_block_count=source_block_count,
+        content_block_numbers=normalized_block_numbers,
         raw_text=raw_text,
     )
 
@@ -150,6 +163,8 @@ def parse_loaded_policy(loaded: LoadedDocument) -> PolicyDocument:
         source_loader_name=loaded.loader_name,
         source_page_count=loaded.page_count,
         content_page_numbers=loaded.line_page_numbers,
+        source_block_count=loaded.block_count,
+        content_block_numbers=loaded.line_block_numbers,
     )
 
 
