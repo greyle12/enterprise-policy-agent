@@ -15,10 +15,21 @@ class FailingDatabaseProbe:
         raise RuntimeError("sensitive database path must not reach clients")
 
 
-def _configure_components(application, database_probe) -> None:
+class HealthyVectorProbe:
+    def ping(self) -> None:
+        return None
+
+
+class FailingVectorProbe:
+    def ping(self) -> None:
+        raise RuntimeError("sensitive pgvector DSN must not reach clients")
+
+
+def _configure_components(application, database_probe, vector_probe=None) -> None:
     application.state.policy_answer_service = object()
     application.state.agent_router = object()
     application.state.agent_state_store = database_probe
+    application.state.policy_vector_index = vector_probe or HealthyVectorProbe()
 
 
 def test_liveness_does_not_require_initialized_dependencies() -> None:
@@ -84,6 +95,22 @@ def test_readiness_hides_database_failure_details() -> None:
         },
     }
     assert "sensitive database path" not in response.text
+
+
+def test_readiness_hides_pgvector_failure_details() -> None:
+    application = create_app(enable_lifespan=False)
+    _configure_components(
+        application,
+        HealthyDatabaseProbe(),
+        FailingVectorProbe(),
+    )
+
+    with TestClient(application) as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json()["checks"]["database"] == "unavailable"
+    assert "sensitive pgvector DSN" not in response.text
 
 
 def test_openapi_exposes_both_health_endpoints() -> None:

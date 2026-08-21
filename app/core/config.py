@@ -13,6 +13,11 @@ from pydantic_settings import (
 
 from app.cache import CacheProviderName
 from app.research.models import WebSearchProviderName
+from app.rag.reranking import (
+    DEFAULT_BGE_RERANKER_MODEL_NAME,
+    RerankerProviderName,
+)
+from app.rag.vector_index import VectorStoreProviderName
 
 
 class Settings(BaseSettings):
@@ -126,6 +131,53 @@ class Settings(BaseSettings):
         ge=1,
         le=5,
     )
+    rag_reranker_provider: RerankerProviderName = RerankerProviderName.DISABLED
+    rag_reranker_model_name: str = Field(
+        default=DEFAULT_BGE_RERANKER_MODEL_NAME,
+        min_length=1,
+    )
+    rag_reranker_device: str | None = None
+    rag_reranker_batch_size: int = Field(
+        default=8,
+        ge=1,
+        le=128,
+    )
+    rag_reranker_candidate_k: int = Field(
+        default=20,
+        ge=5,
+        le=100,
+    )
+    rag_vector_store_provider: VectorStoreProviderName = VectorStoreProviderName.MEMORY
+    rag_index_pipeline_version: str = Field(
+        default="policy-index-v1",
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+    )
+    rag_pgvector_dsn: SecretStr = SecretStr(
+        "postgresql://policy_agent:local-development-only@127.0.0.1:5432/policy_agent"
+    )
+    rag_pgvector_collection: str = Field(
+        default="enterprise-policy-bge-small-zh-v1",
+        min_length=1,
+        max_length=96,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+    )
+    rag_pgvector_min_pool_size: int = Field(
+        default=1,
+        ge=1,
+        le=16,
+    )
+    rag_pgvector_max_pool_size: int = Field(
+        default=4,
+        ge=1,
+        le=64,
+    )
+    rag_pgvector_connect_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=60,
+    )
     sqlite_database_path: Path = Path("data/runtime/enterprise_policy_agent.db")
 
     @field_validator("redis_url")
@@ -141,6 +193,26 @@ class Settings(BaseSettings):
     @classmethod
     def normalize_log_level(cls, value: object) -> object:
         return value.strip().upper() if isinstance(value, str) else value
+
+    @field_validator("rag_reranker_device", mode="before")
+    @classmethod
+    def normalize_optional_reranker_device(cls, value: object) -> object:
+        if isinstance(value, str):
+            normalized = value.strip()
+            return normalized or None
+        return value
+
+    @field_validator("rag_pgvector_dsn", mode="before")
+    @classmethod
+    def validate_pgvector_dsn(cls, value: object) -> object:
+        raw_value = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if not isinstance(raw_value, str):
+            return value
+        normalized = raw_value.strip()
+        parsed = urlsplit(normalized)
+        if parsed.scheme not in {"postgres", "postgresql"} or not parsed.hostname:
+            raise ValueError("rag_pgvector_dsn must use postgres:// or postgresql:// with a host")
+        return normalized
 
     @model_validator(mode="after")
     def validate_agent_retry_wait_range(self) -> Self:
@@ -161,6 +233,15 @@ class Settings(BaseSettings):
             )
             if not api_key:
                 raise ValueError("tavily_api_key is required when web_search_provider is tavily")
+        return self
+
+    @model_validator(mode="after")
+    def validate_pgvector_pool_range(self) -> Self:
+        if self.rag_pgvector_max_pool_size < self.rag_pgvector_min_pool_size:
+            raise ValueError(
+                "rag_pgvector_max_pool_size must be greater than or equal to "
+                "rag_pgvector_min_pool_size"
+            )
         return self
 
 

@@ -52,13 +52,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
         serde: SerializerProtocol | None = None,
     ) -> None:
         super().__init__(
-            serde=(
-                serde
-                if serde is not None
-                else JsonPlusSerializer(
-                    allowed_msgpack_modules=()
-                )
-            )
+            serde=(serde if serde is not None else JsonPlusSerializer(allowed_msgpack_modules=()))
         )
         self.database_path = initialize_database(database_path)
 
@@ -90,9 +84,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             ).fetchone()
             if row is None or row["value_type"] == "empty":
                 continue
-            values[channel] = self.serde.loads_typed(
-                (row["value_type"], bytes(row["value"]))
-            )
+            values[channel] = self.serde.loads_typed((row["value_type"], bytes(row["value"])))
         return values
 
     def _checkpoint_tuple(self, connection, row) -> CheckpointTuple:
@@ -111,9 +103,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
                 versions=checkpoint["channel_versions"],
             ),
         }
-        metadata = self.serde.loads_typed(
-            (row["metadata_type"], bytes(row["metadata"]))
-        )
+        metadata = self.serde.loads_typed((row["metadata_type"], bytes(row["metadata"])))
         write_rows = connection.execute(
             """
             SELECT task_id, channel, value_type, value
@@ -219,15 +209,11 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             parameters.append(str(configurable["thread_id"]))
             if "checkpoint_ns" in configurable:
                 where.append("checkpoint_ns = ?")
-                parameters.append(
-                    str(configurable.get("checkpoint_ns", ""))
-                )
+                parameters.append(str(configurable.get("checkpoint_ns", "")))
             if checkpoint_id := get_checkpoint_id(config):
                 where.append("checkpoint_id = ?")
                 parameters.append(checkpoint_id)
-        if before is not None and (
-            before_id := get_checkpoint_id(before)
-        ):
+        if before is not None and (before_id := get_checkpoint_id(before)):
             where.append("checkpoint_id < ?")
             parameters.append(before_id)
 
@@ -243,8 +229,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             for row in rows:
                 item = self._checkpoint_tuple(connection, row)
                 if filter and not all(
-                    item.metadata.get(key) == value
-                    for key, value in filter.items()
+                    item.metadata.get(key) == value for key, value in filter.items()
                 ):
                     continue
                 yield item
@@ -266,12 +251,8 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
         checkpoint_ns = str(configurable.get("checkpoint_ns", ""))
         parent_checkpoint_id = configurable.get("checkpoint_id")
         checkpoint_copy = checkpoint.copy()
-        values: dict[str, Any] = checkpoint_copy.pop(
-            "channel_values"
-        )  # type: ignore[misc]
-        checkpoint_type, checkpoint_blob = self.serde.dumps_typed(
-            checkpoint_copy
-        )
+        values: dict[str, Any] = checkpoint_copy.pop("channel_values")  # type: ignore[misc]
+        checkpoint_type, checkpoint_blob = self.serde.dumps_typed(checkpoint_copy)
         metadata_type, metadata_blob = self.serde.dumps_typed(
             get_checkpoint_metadata(config, metadata)
         )
@@ -281,9 +262,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             connection.execute("BEGIN IMMEDIATE")
             for channel, version in new_versions.items():
                 value_type, value_blob = (
-                    self.serde.dumps_typed(values[channel])
-                    if channel in values
-                    else ("empty", b"")
+                    self.serde.dumps_typed(values[channel]) if channel in values else ("empty", b"")
                 )
                 connection.execute(
                     """
@@ -361,11 +340,7 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             for index, (channel, value) in enumerate(writes):
                 write_index = WRITES_IDX_MAP.get(channel, index)
                 value_type, value_blob = self.serde.dumps_typed(value)
-                verb = (
-                    "INSERT OR REPLACE"
-                    if write_index < 0
-                    else "INSERT OR IGNORE"
-                )
+                verb = "INSERT OR REPLACE" if write_index < 0 else "INSERT OR IGNORE"
                 connection.execute(
                     f"""
                     {verb} INTO langgraph_writes (
@@ -490,7 +465,4 @@ class SQLiteCheckpointSaver(BaseCheckpointSaver[str]):
             current_value = current
         else:
             current_value = int(current.split(".")[0])
-        return (
-            f"{current_value + 1:032}."
-            f"{random.random():016}"
-        )
+        return f"{current_value + 1:032}.{random.random():016}"

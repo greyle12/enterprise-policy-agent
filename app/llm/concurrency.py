@@ -274,10 +274,7 @@ class ConcurrencyLimitedLLMClient:
                 state = ProviderLimiterStateName.CLOSED
             elif not self._enabled:
                 state = ProviderLimiterStateName.DISABLED
-            elif (
-                self._in_flight >= self._max_concurrency
-                and queued >= self._max_queue
-            ):
+            elif self._in_flight >= self._max_concurrency and queued >= self._max_queue:
                 state = ProviderLimiterStateName.SATURATED
             elif queued:
                 state = ProviderLimiterStateName.QUEUING
@@ -304,8 +301,6 @@ class ConcurrencyLimitedLLMClient:
             async with self._condition:
                 self._closed = True
                 self._condition.notify_all()
-                await self._condition.wait_for(
-                    lambda: self._in_flight == 0 and not self._waiters
-                )
+                await self._condition.wait_for(lambda: self._in_flight == 0 and not self._waiters)
             await self._upstream.close()
             self._upstream_closed = True

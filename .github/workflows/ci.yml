@@ -53,6 +53,9 @@ jobs:
       - name: Lint source and tests
         run: python -m ruff check .
 
+      - name: Verify Ruff formatting
+        run: python -m ruff format --check .
+
       - name: Run the complete pytest suite
         run: python -m pytest --junitxml=artifacts/test-results/pytest.xml
 
@@ -76,6 +79,39 @@ jobs:
 
       - name: Verify policy authorization and prompt-injection defenses
         run: python -X utf8 -m scripts.verify_rag_security
+
+      - name: Verify the Phase 22 document-loader boundary
+        run: python -X utf8 -m scripts.verify_document_loader
+
+      - name: Verify Phase 23 native PDF parsing and provenance
+        run: python -X utf8 -m scripts.verify_pdf_document_parsing
+
+      - name: Verify Phase 24 DOCX parsing and block provenance
+        run: python -X utf8 -m scripts.verify_docx_document_parsing
+
+      - name: Verify Phase 25 OCR fallback and quality boundaries
+        run: python -X utf8 -m scripts.verify_ocr_fallback
+
+      - name: Verify Phase 26 authorized BM25 lexical retrieval
+        run: python -X utf8 -m scripts.verify_bm25_retrieval
+
+      - name: Verify Phase 27 authorized Hybrid Search and RRF
+        run: python -X utf8 -m scripts.verify_hybrid_search
+
+      - name: Verify Phase 28 authorized Reranker integration
+        run: python -X utf8 -m scripts.verify_reranker_integration
+
+      - name: Verify Phase 29 pgvector storage and authorization contract
+        run: python -X utf8 -m scripts.verify_pgvector_store
+
+      - name: Verify Phase 30 incremental document indexing contract
+        run: python -X utf8 -m scripts.verify_document_indexing
+
+      - name: Run the Phase 31 offline retrieval evaluation
+        run: python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+
+      - name: Verify the Phase 31 retrieval evaluation contract
+        run: python -X utf8 -m scripts.verify_retrieval_evaluation
 
       - name: Generate the offline portfolio demonstration evidence
         run: >-
@@ -108,6 +144,8 @@ jobs:
             artifacts/test-results/pytest.xml
             artifacts/evaluation/golden-evaluation-report.json
             artifacts/evaluation/golden-evaluation-report.md
+            artifacts/evaluation/retrieval-evaluation-report.json
+            artifacts/evaluation/retrieval-evaluation-report.md
             artifacts/performance/agent-performance-report.json
             artifacts/performance/agent-performance-report.md
             artifacts/performance/agent-concurrency-load-report.json

@@ -82,9 +82,7 @@ class IntentClassifier:
         min_confidence: float = 0.60,
     ) -> None:
         if not 0.0 <= min_confidence <= 1.0:
-            raise ValueError(
-                "min_confidence must be between zero and one"
-            )
+            raise ValueError("min_confidence must be between zero and one")
 
         self._llm_client = llm_client
         self._min_confidence = min_confidence
@@ -111,10 +109,7 @@ class IntentClassifier:
             },
             {
                 "role": "user",
-                "content": (
-                    "请分类下面 JSON 中 request 字段的文本：\n"
-                    f"{request_payload}"
-                ),
+                "content": (f"请分类下面 JSON 中 request 字段的文本：\n{request_payload}"),
             },
         ]
 
@@ -125,33 +120,22 @@ class IntentClassifier:
             return _unknown_classification()
 
         try:
-            classification = (
-                IntentClassification.model_validate_json(
-                    json_payload
-                )
-            )
+            classification = IntentClassification.model_validate_json(json_payload)
         except ValidationError:
             return _unknown_classification()
 
         if classification.intent not in _LLM_CLASSIFIABLE_INTENTS:
             return _unknown_classification(
-                reason=(
-                    "模型返回了仅允许由会话工作流判定的意图，"
-                    "已安全降级为 unknown。"
-                )
+                reason=("模型返回了仅允许由会话工作流判定的意图，已安全降级为 unknown。")
             )
 
         if (
             classification.intent is not IntentType.UNKNOWN
-            and classification.confidence
-            < self._min_confidence
+            and classification.confidence < self._min_confidence
         ):
             return _unknown_classification(
                 confidence=classification.confidence,
-                reason=(
-                    "模型分类置信度低于阈值，"
-                    "已安全降级为 unknown。"
-                ),
+                reason=("模型分类置信度低于阈值，已安全降级为 unknown。"),
             )
 
         return classification

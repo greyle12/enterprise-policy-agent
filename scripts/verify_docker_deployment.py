@@ -58,6 +58,25 @@ def _probe_command(
     ]
 
 
+def _pgvector_probe_command(
+    compose: list[str],
+    operation: str,
+    probe_id: str,
+) -> list[str]:
+    return [
+        *compose,
+        "exec",
+        "-T",
+        "agent",
+        "python",
+        "-m",
+        "scripts.pgvector_persistence_probe",
+        operation,
+        "--probe-id",
+        probe_id,
+    ]
+
+
 def verify_deployment(
     *,
     compose_file: Path,
@@ -88,13 +107,19 @@ def verify_deployment(
         expected_status="ready",
     )
 
-    probe_written = False
+    sqlite_probe_written = False
+    pgvector_probe_written = False
     try:
         _run(
             _probe_command(compose, "write", probe_id),
             capture_output=True,
         )
-        probe_written = True
+        sqlite_probe_written = True
+        _run(
+            _pgvector_probe_command(compose, "write", probe_id),
+            capture_output=True,
+        )
+        pgvector_probe_written = True
         _run(
             [
                 *compose,
@@ -104,6 +129,7 @@ def verify_deployment(
                 "--wait",
                 "--wait-timeout",
                 str(wait_timeout_seconds),
+                "postgres",
                 "agent",
             ]
         )
@@ -112,10 +138,21 @@ def verify_deployment(
             capture_output=True,
         )
         probe_payload = json.loads(read_result.stdout)
+        pgvector_read_result = _run(
+            _pgvector_probe_command(compose, "read", probe_id),
+            capture_output=True,
+        )
+        pgvector_probe_payload = json.loads(pgvector_read_result.stdout)
     finally:
-        if probe_written:
+        if sqlite_probe_written:
             _run(
                 _probe_command(compose, "delete", probe_id),
+                capture_output=True,
+                check=False,
+            )
+        if pgvector_probe_written:
+            _run(
+                _pgvector_probe_command(compose, "delete", probe_id),
                 capture_output=True,
                 check=False,
             )
@@ -124,17 +161,16 @@ def verify_deployment(
         "compose_config_valid": True,
         "container_ready": True,
         "health_url": health_url,
-        "sqlite_volume_survived_recreation": bool(
-            probe_payload.get("persisted")
-        ),
+        "sqlite_volume_survived_recreation": bool(probe_payload.get("persisted")),
+        "pgvector_volume_survived_recreation": bool(pgvector_probe_payload.get("persisted")),
     }
 
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Build the Day 17 Compose service and verify health plus "
-            "SQLite persistence across container recreation."
+            "Build the Compose services and verify health plus SQLite/pgvector "
+            "persistence across container recreation."
         ),
     )
     parser.add_argument(

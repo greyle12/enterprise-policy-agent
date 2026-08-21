@@ -6,6 +6,10 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from pathlib import Path
 
+from app.rag.document_loader import (
+    DEFAULT_DOCUMENT_LOADER_REGISTRY,
+    DocumentLoaderRegistry,
+)
 from app.rag.policy_parser import (
     parse_policy_directory,
     parse_policy_file,
@@ -13,9 +17,7 @@ from app.rag.policy_parser import (
 from app.schemas.chunk import PolicyChunk
 from app.schemas.policy import PolicyDocument
 
-CHINESE_NUMBER_PATTERN = (
-    r"[一二三四五六七八九十百千零〇两0-9]+"
-)
+CHINESE_NUMBER_PATTERN = r"[一二三四五六七八九十百千零〇两0-9]+"
 
 CHAPTER_HEADING_PATTERN = re.compile(
     rf"^##\s+"
@@ -71,15 +73,9 @@ def _build_chunk_id(
     document: PolicyDocument,
     chunk_index: int,
 ) -> str:
-    version = _normalize_version(
-        document.metadata.version
-    )
+    version = _normalize_version(document.metadata.version)
 
-    return (
-        f"{document.metadata.document_id}"
-        f"__v{version}"
-        f"__article_{chunk_index:03d}"
-    )
+    return f"{document.metadata.document_id}__v{version}__article_{chunk_index:03d}"
 
 
 def _trim_article_lines(
@@ -121,6 +117,77 @@ def _build_retrieval_text(
     ).strip()
 
 
+def _source_page_range(
+    document: PolicyDocument,
+    *,
+    source_line_start: int,
+    source_line_end: int,
+) -> tuple[int | None, int | None]:
+    if not document.content_page_numbers:
+        return None, None
+
+    page_numbers = document.content_page_numbers[source_line_start - 1 : source_line_end]
+    if not page_numbers:
+        raise PolicyChunkingError("PDF Chunk 没有对应的页码映射")
+    return min(page_numbers), max(page_numbers)
+
+
+def _source_block_range(
+    document: PolicyDocument,
+    *,
+    source_line_start: int,
+    source_line_end: int,
+) -> tuple[int | None, int | None]:
+    if not document.content_block_numbers:
+        return None, None
+
+    block_numbers = document.content_block_numbers[source_line_start - 1 : source_line_end]
+    if not block_numbers:
+        raise PolicyChunkingError("DOCX Chunk 没有对应的来源块序号映射")
+    return min(block_numbers), max(block_numbers)
+
+
+def _source_ocr_provenance(
+    document: PolicyDocument,
+    *,
+    source_page_start: int | None,
+    source_page_end: int | None,
+    source_block_start: int | None,
+    source_block_end: int | None,
+) -> tuple[str | None, str | None, tuple[int, ...], float | None]:
+    if not document.source_ocr_unit_numbers:
+        return None, None, (), None
+
+    if document.source_ocr_unit_kind == "page":
+        range_start, range_end = source_page_start, source_page_end
+    else:
+        range_start, range_end = source_block_start, source_block_end
+    if range_start is None or range_end is None:
+        raise PolicyChunkingError("OCR 来源单元没有对应的 Chunk 范围")
+
+    confidences_by_unit: dict[int, float] = {}
+    for unit_number, confidence in zip(
+        document.source_ocr_unit_numbers,
+        document.source_ocr_unit_confidences,
+        strict=True,
+    ):
+        if range_start <= unit_number <= range_end:
+            previous = confidences_by_unit.get(unit_number)
+            confidences_by_unit[unit_number] = (
+                confidence if previous is None else min(previous, confidence)
+            )
+
+    if not confidences_by_unit:
+        return None, None, (), None
+    unit_numbers = tuple(sorted(confidences_by_unit))
+    return (
+        document.source_ocr_engine,
+        document.source_ocr_unit_kind,
+        unit_numbers,
+        min(confidences_by_unit.values()),
+    )
+
+
 def _finalize_article(
     *,
     document: PolicyDocument,
@@ -128,27 +195,17 @@ def _finalize_article(
     source_line_end: int,
     chunk_index: int,
 ) -> PolicyChunk:
-    article_lines = _trim_article_lines(
-        buffer.lines
-    )
+    article_lines = _trim_article_lines(buffer.lines)
 
     if not article_lines:
-        raise PolicyChunkingError(
-            f"{buffer.article_label} 没有条款内容"
-        )
+        raise PolicyChunkingError(f"{buffer.article_label} 没有条款内容")
 
     content = "\n".join(article_lines).strip()
 
     if not content:
-        raise PolicyChunkingError(
-            f"{buffer.article_label} 的正文为空"
-        )
+        raise PolicyChunkingError(f"{buffer.article_label} 的正文为空")
 
-    actual_line_end = (
-        buffer.source_line_start
-        + len(article_lines)
-        - 1
-    )
+    actual_line_end = buffer.source_line_start + len(article_lines) - 1
 
     actual_line_end = min(
         actual_line_end,
@@ -164,6 +221,28 @@ def _finalize_article(
     )
 
     metadata = document.metadata
+    source_page_start, source_page_end = _source_page_range(
+        document,
+        source_line_start=buffer.source_line_start,
+        source_line_end=actual_line_end,
+    )
+    source_block_start, source_block_end = _source_block_range(
+        document,
+        source_line_start=buffer.source_line_start,
+        source_line_end=actual_line_end,
+    )
+    (
+        source_ocr_engine,
+        source_ocr_unit_kind,
+        source_ocr_unit_numbers,
+        source_ocr_confidence_min,
+    ) = _source_ocr_provenance(
+        document,
+        source_page_start=source_page_start,
+        source_page_end=source_page_end,
+        source_block_start=source_block_start,
+        source_block_end=source_block_end,
+    )
 
     return PolicyChunk(
         chunk_id=_build_chunk_id(
@@ -184,22 +263,26 @@ def _finalize_article(
         content=content,
         retrieval_text=retrieval_text,
         source_path=document.source_path,
+        source_media_type=document.source_media_type,
+        metadata_source_path=document.metadata_source_path,
         source_line_start=buffer.source_line_start,
         source_line_end=actual_line_end,
+        source_page_start=source_page_start,
+        source_page_end=source_page_end,
+        source_block_start=source_block_start,
+        source_block_end=source_block_end,
+        source_ocr_engine=source_ocr_engine,
+        source_ocr_unit_kind=source_ocr_unit_kind,
+        source_ocr_unit_numbers=source_ocr_unit_numbers,
+        source_ocr_confidence_min=source_ocr_confidence_min,
         effective_date=metadata.effective_date,
         expiry_date=metadata.expiry_date,
-        allowed_departments=list(
-            metadata.allowed_departments
-        ),
-        allowed_roles=list(
-            metadata.allowed_roles
-        ),
+        allowed_departments=list(metadata.allowed_departments),
+        allowed_roles=list(metadata.allowed_roles),
         security_level=metadata.security_level,
         region=metadata.region,
         char_count=len(content),
-        content_hash=sha256(
-            content.encode("utf-8")
-        ).hexdigest(),
+        content_hash=sha256(content.encode("utf-8")).hexdigest(),
     )
 
 
@@ -222,9 +305,7 @@ def chunk_policy_document(
     ):
         stripped = line.strip()
 
-        chapter_match = CHAPTER_HEADING_PATTERN.match(
-            stripped
-        )
+        chapter_match = CHAPTER_HEADING_PATTERN.match(stripped)
 
         if chapter_match:
             if current_article is not None:
@@ -239,23 +320,14 @@ def chunk_policy_document(
                 current_article = None
 
             current_chapter_index += 1
-            current_chapter_title = (
-                chapter_match.group(
-                    "chapter_title"
-                ).strip()
-            )
+            current_chapter_title = chapter_match.group("chapter_title").strip()
             continue
 
-        article_match = ARTICLE_HEADING_PATTERN.match(
-            stripped
-        )
+        article_match = ARTICLE_HEADING_PATTERN.match(stripped)
 
         if article_match:
             if current_chapter_title is None:
-                raise PolicyChunkingError(
-                    "发现条款标题，但条款之前没有章节标题："
-                    f"{stripped}"
-                )
+                raise PolicyChunkingError(f"发现条款标题，但条款之前没有章节标题：{stripped}")
 
             if current_article is not None:
                 chunks.append(
@@ -267,14 +339,9 @@ def chunk_policy_document(
                     )
                 )
 
-            article_label = article_match.group(
-                "article_label"
-            ).strip()
+            article_label = article_match.group("article_label").strip()
 
-            article_title = (
-                article_match.group("article_title")
-                or article_label
-            ).strip()
+            article_title = (article_match.group("article_title") or article_label).strip()
 
             current_article = _ArticleBuffer(
                 chapter_index=current_chapter_index,
@@ -300,67 +367,51 @@ def chunk_policy_document(
         )
 
     if not chunks:
-        raise PolicyChunkingError(
-            "制度中没有找到可切分的三级条款标题"
-        )
+        raise PolicyChunkingError("制度中没有找到可切分的三级条款标题")
 
-    article_labels = [
-        chunk.article_label
-        for chunk in chunks
-    ]
+    article_labels = [chunk.article_label for chunk in chunks]
 
     duplicate_labels = sorted(
-        label
-        for label, count in Counter(
-            article_labels
-        ).items()
-        if count > 1
+        label for label, count in Counter(article_labels).items() if count > 1
     )
 
     if duplicate_labels:
-        raise PolicyChunkingError(
-            "同一制度中发现重复条款编号："
-            + ", ".join(duplicate_labels)
-        )
+        raise PolicyChunkingError("同一制度中发现重复条款编号：" + ", ".join(duplicate_labels))
 
     return chunks
 
 
 def chunk_policy_file(
     path: str | Path,
+    *,
+    loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
 ) -> list[PolicyChunk]:
-    document = parse_policy_file(path)
+    document = parse_policy_file(
+        path,
+        loader_registry=loader_registry,
+    )
     return chunk_policy_document(document)
 
 
 def chunk_policy_directory(
     directory: str | Path,
+    *,
+    loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
 ) -> list[PolicyChunk]:
-    documents = parse_policy_directory(directory)
+    documents = parse_policy_directory(
+        directory,
+        loader_registry=loader_registry,
+    )
 
-    chunks = [
-        chunk
-        for document in documents
-        for chunk in chunk_policy_document(document)
-    ]
+    chunks = [chunk for document in documents for chunk in chunk_policy_document(document)]
 
-    chunk_ids = [
-        chunk.chunk_id
-        for chunk in chunks
-    ]
+    chunk_ids = [chunk.chunk_id for chunk in chunks]
 
     duplicate_chunk_ids = sorted(
-        chunk_id
-        for chunk_id, count in Counter(
-            chunk_ids
-        ).items()
-        if count > 1
+        chunk_id for chunk_id, count in Counter(chunk_ids).items() if count > 1
     )
 
     if duplicate_chunk_ids:
-        raise PolicyChunkingError(
-            "发现重复 chunk_id："
-            + ", ".join(duplicate_chunk_ids)
-        )
+        raise PolicyChunkingError("发现重复 chunk_id：" + ", ".join(duplicate_chunk_ids))
 
     return chunks

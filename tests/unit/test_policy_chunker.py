@@ -43,10 +43,7 @@ region: CN
 
 
 def test_chunk_single_policy() -> None:
-    chunks = chunk_policy_file(
-        POLICY_DIR
-        / "travel_reimbursement_policy_v1.md"
-    )
+    chunks = chunk_policy_file(POLICY_DIR / "travel_reimbursement_policy_v1.md")
 
     assert len(chunks) == 26
 
@@ -60,10 +57,7 @@ def test_chunk_all_policy_files() -> None:
 def test_chunk_count_per_document() -> None:
     chunks = chunk_policy_directory(POLICY_DIR)
 
-    counts = Counter(
-        chunk.document_id
-        for chunk in chunks
-    )
+    counts = Counter(chunk.document_id for chunk in chunks)
 
     assert counts == {
         "EXPENSE_REIMBURSEMENT_GUIDE_001": 47,
@@ -75,10 +69,7 @@ def test_chunk_count_per_document() -> None:
 
 
 def test_first_travel_chunk_metadata() -> None:
-    chunks = chunk_policy_file(
-        POLICY_DIR
-        / "travel_reimbursement_policy_v1.md"
-    )
+    chunks = chunk_policy_file(POLICY_DIR / "travel_reimbursement_policy_v1.md")
 
     first = chunks[0]
 
@@ -95,10 +86,7 @@ def test_first_travel_chunk_metadata() -> None:
 def test_chunk_ids_are_unique() -> None:
     chunks = chunk_policy_directory(POLICY_DIR)
 
-    chunk_ids = [
-        chunk.chunk_id
-        for chunk in chunks
-    ]
+    chunk_ids = [chunk.chunk_id for chunk in chunks]
 
     assert len(chunk_ids) == len(set(chunk_ids))
 
@@ -107,20 +95,11 @@ def test_chunk_ids_are_stable() -> None:
     first_run = chunk_policy_directory(POLICY_DIR)
     second_run = chunk_policy_directory(POLICY_DIR)
 
-    assert [
-        chunk.chunk_id
-        for chunk in first_run
-    ] == [
-        chunk.chunk_id
-        for chunk in second_run
-    ]
+    assert [chunk.chunk_id for chunk in first_run] == [chunk.chunk_id for chunk in second_run]
 
 
 def test_article_boundaries_do_not_overlap() -> None:
-    chunks = chunk_policy_file(
-        POLICY_DIR
-        / "travel_reimbursement_policy_v1.md"
-    )
+    chunks = chunk_policy_file(POLICY_DIR / "travel_reimbursement_policy_v1.md")
 
     first = chunks[0]
 
@@ -129,10 +108,7 @@ def test_article_boundaries_do_not_overlap() -> None:
 
 
 def test_retrieval_text_contains_context() -> None:
-    chunks = chunk_policy_file(
-        POLICY_DIR
-        / "travel_reimbursement_policy_v1.md"
-    )
+    chunks = chunk_policy_file(POLICY_DIR / "travel_reimbursement_policy_v1.md")
 
     first = chunks[0]
 
@@ -147,33 +123,18 @@ def test_source_line_range_is_valid() -> None:
 
     for chunk in chunks:
         assert chunk.source_line_start >= 1
-        assert (
-            chunk.source_line_end
-            >= chunk.source_line_start
-        )
+        assert chunk.source_line_end >= chunk.source_line_start
 
 
 def test_security_metadata_is_inherited() -> None:
-    document = parse_policy_file(
-        POLICY_DIR
-        / "information_security_policy_v1.md"
-    )
+    document = parse_policy_file(POLICY_DIR / "information_security_policy_v1.md")
 
     chunks = chunk_policy_document(document)
 
     for chunk in chunks:
-        assert (
-            chunk.security_level
-            == document.metadata.security_level
-        )
-        assert (
-            chunk.allowed_roles
-            == document.metadata.allowed_roles
-        )
-        assert (
-            chunk.allowed_departments
-            == document.metadata.allowed_departments
-        )
+        assert chunk.security_level == document.metadata.security_level
+        assert chunk.allowed_roles == document.metadata.allowed_roles
+        assert chunk.allowed_departments == document.metadata.allowed_departments
 
 
 def test_content_hash_and_char_count() -> None:
@@ -181,9 +142,7 @@ def test_content_hash_and_char_count() -> None:
 
     for chunk in chunks:
         assert chunk.char_count == len(chunk.content)
-        assert chunk.content_hash == sha256(
-            chunk.content.encode("utf-8")
-        ).hexdigest()
+        assert chunk.content_hash == sha256(chunk.content.encode("utf-8")).hexdigest()
 
 
 def test_reject_article_before_chapter() -> None:

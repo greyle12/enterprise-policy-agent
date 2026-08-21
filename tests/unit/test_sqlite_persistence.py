@@ -26,9 +26,7 @@ from app.tools.draft_models import (
 from app.tools.material_check import RequiredMaterialsChecker
 from app.tools.submission_models import SubmissionAuditEvent
 
-_POLICY_DIRECTORY = (
-    Path(__file__).resolve().parents[2] / "data" / "policies"
-)
+_POLICY_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "policies"
 _USER_CONTEXT = DraftUserContext(
     employee_id="DEMO-EMP-001",
     employee_name="演示用户",
@@ -76,12 +74,8 @@ class StubPolicyAnswerService:
 
 
 def _build_router(database_path: Path) -> AgentRouter:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     return AgentRouter(
         intent_classifier=DeterministicIntentClassifier(),
         policy_answer_service=StubPolicyAnswerService(),
@@ -199,12 +193,8 @@ async def test_submission_and_idempotent_replay_survive_restart(
     assert replay.submission.submission_result.submission_id == (
         submitted.submission.submission_result.submission_id
     )
-    assert replay.submission.audit_record.event is (
-        SubmissionAuditEvent.IDEMPOTENT_REPLAY
-    )
-    records = await SQLiteMockApprovalSubmitter(
-        database_path
-    ).list_audit_records()
+    assert replay.submission.audit_record.event is (SubmissionAuditEvent.IDEMPOTENT_REPLAY)
+    records = await SQLiteMockApprovalSubmitter(database_path).list_audit_records()
     assert [record.event for record in records] == [
         SubmissionAuditEvent.SUBMITTED,
         SubmissionAuditEvent.IDEMPOTENT_REPLAY,
@@ -300,15 +290,11 @@ async def test_concurrent_submitters_share_database_idempotency(
         ),
     )
 
-    assert first.submission_result.submission_id == (
-        second.submission_result.submission_id
+    assert first.submission_result.submission_id == (second.submission_result.submission_id)
+    assert sum(result.duplicate_submission for result in (first, second)) == 1
+    records = await SQLiteMockApprovalSubmitter(database_path).list_audit_records(
+        draft_id=draft.draft_id
     )
-    assert sum(
-        result.duplicate_submission for result in (first, second)
-    ) == 1
-    records = await SQLiteMockApprovalSubmitter(
-        database_path
-    ).list_audit_records(draft_id=draft.draft_id)
     assert len(records) == 2
 
 

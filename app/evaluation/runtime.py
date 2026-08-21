@@ -84,12 +84,8 @@ class OfflineIntentClassifier:
         if not normalized:
             raise ValueError("user_input must not be blank")
 
-        has_draft_action = (
-            "草稿" in normalized
-            and any(
-                action in normalized
-                for action in ("生成", "填写", "创建", "新建")
-            )
+        has_draft_action = "草稿" in normalized and any(
+            action in normalized for action in ("生成", "填写", "创建", "新建")
         )
         if has_draft_action or any(cue in normalized for cue in _DRAFT_CUES):
             intent = IntentType.DRAFT_GENERATION
@@ -123,10 +119,7 @@ class _OfflinePolicyAnswerer:
             raise ValueError("question must not be blank")
         return PolicyAnswer(
             question=normalized,
-            answer=(
-                "离线评测已选择制度检索工具；"
-                "本用例只评分意图和工具选择。"
-            ),
+            answer=("离线评测已选择制度检索工具；本用例只评分意图和工具选择。"),
             citations=(),
         )
 
@@ -147,12 +140,8 @@ def build_evaluation_runtime(
 ) -> EvaluationRuntime:
     """构建不连接正式数据库、不会提交审批的评测运行时。"""
 
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        policy_directory
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        policy_directory
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(policy_directory)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(policy_directory)
     draft_generator = ApplicationDraftGenerator.from_policy_directory(
         policy_directory,
         material_checker=material_checker,

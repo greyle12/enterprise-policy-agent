@@ -11,9 +11,7 @@ def normalize_database_path(database_path: str | Path) -> Path:
 
     normalized = Path(database_path).expanduser()
     if str(normalized).strip() in {"", ":memory:"}:
-        raise ValueError(
-            "database_path must reference an on-disk SQLite database"
-        )
+        raise ValueError("database_path must reference an on-disk SQLite database")
     if normalized.exists() and normalized.is_dir():
         raise ValueError("database_path must not reference a directory")
     return normalized
@@ -43,9 +41,7 @@ def initialize_database(database_path: str | Path) -> Path:
     try:
         connection.execute("PRAGMA journal_mode = WAL")
         connection.execute("BEGIN IMMEDIATE")
-        current_version = int(
-            connection.execute("PRAGMA user_version").fetchone()[0]
-        )
+        current_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
         if current_version > SQLITE_SCHEMA_VERSION:
             raise RuntimeError(
                 "SQLite schema version is newer than this application supports: "
@@ -186,9 +182,7 @@ def initialize_database(database_path: str | Path) -> Path:
                 );
             """
         )
-        connection.execute(
-            f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION}"
-        )
+        connection.execute(f"PRAGMA user_version = {SQLITE_SCHEMA_VERSION}")
         connection.commit()
     except BaseException:
         connection.rollback()

@@ -20,8 +20,7 @@ class CacheValueRejectedError(CacheBackendError):
 class AsyncRedisClient(Protocol):
     """Small redis-py surface used by the cache backend and unit tests."""
 
-    async def get(self, name: str) -> object:
-        ...
+    async def get(self, name: str) -> object: ...
 
     async def set(
         self,
@@ -29,14 +28,11 @@ class AsyncRedisClient(Protocol):
         value: str,
         *,
         ex: int,
-    ) -> object:
-        ...
+    ) -> object: ...
 
-    async def ping(self) -> object:
-        ...
+    async def ping(self) -> object: ...
 
-    async def aclose(self) -> None:
-        ...
+    async def aclose(self) -> None: ...
 
 
 class LLMCacheBackend(Protocol):
@@ -45,8 +41,7 @@ class LLMCacheBackend(Protocol):
     provider: CacheProviderName
     enabled: bool
 
-    async def get(self, digest: str) -> str | None:
-        ...
+    async def get(self, digest: str) -> str | None: ...
 
     async def set(
         self,
@@ -54,14 +49,11 @@ class LLMCacheBackend(Protocol):
         value: str,
         *,
         ttl_seconds: int,
-    ) -> None:
-        ...
+    ) -> None: ...
 
-    async def ping(self) -> bool:
-        ...
+    async def ping(self) -> bool: ...
 
-    async def aclose(self) -> None:
-        ...
+    async def aclose(self) -> None: ...
 
 
 class DisabledLLMCache:

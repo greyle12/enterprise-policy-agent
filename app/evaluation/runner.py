@@ -133,9 +133,7 @@ def _citation_dimension(
     expected: Sequence[ExpectedCitation],
 ) -> CaseDimensionResult:
     actual_source_ids = [item.source_id for item in actual]
-    expected_source_ids = [
-        f"S{index}" for index in range(1, len(actual) + 1)
-    ]
+    expected_source_ids = [f"S{index}" for index in range(1, len(actual) + 1)]
     actual_chunk_ids = [item.chunk_id for item in actual]
     assertions = (
         _assertion(
@@ -265,24 +263,12 @@ class GoldenEvaluationRunner:
             answer = await self._material_checker.check(case.query)
             result = answer.result
             required = {
-                item.material_type: item.required_count
-                for item in result.required_materials
+                item.material_type: item.required_count for item in result.required_materials
             }
-            missing = {
-                item.material_type: item.missing_count
-                for item in result.missing_materials
-            }
+            missing = {item.material_type: item.missing_count for item in result.missing_materials}
             sensitive = sorted(
-                {
-                    item.material_type
-                    for item in result.required_materials
-                    if item.sensitive
-                }
-                | {
-                    item.material_type
-                    for item in result.missing_materials
-                    if item.sensitive
-                }
+                {item.material_type for item in result.required_materials if item.sensitive}
+                | {item.material_type for item in result.missing_materials if item.sensitive}
             )
             assertions = (
                 _assertion(
@@ -365,9 +351,7 @@ class GoldenEvaluationRunner:
                     "approval_level",
                     expected=case.expected_approval_level.value,
                     actual=(
-                        result.approval_level.value
-                        if result.approval_level is not None
-                        else None
+                        result.approval_level.value if result.approval_level is not None else None
                     ),
                 ),
                 _assertion(
@@ -475,22 +459,16 @@ class GoldenEvaluationRunner:
         """按文件顺序执行全部用例，单条失败不会中止剩余评测。"""
 
         started = self._timer()
-        results = tuple(
-            [await self._evaluate_case(case) for case in cases]
-        )
+        results = tuple([await self._evaluate_case(case) for case in cases])
         metrics = self._metric_summaries(results)
         passed_cases = sum(item.passed for item in results)
-        failed_case_ids = tuple(
-            item.case_id for item in results if not item.passed
-        )
+        failed_case_ids = tuple(item.case_id for item in results if not item.passed)
         duration_ms = max((self._timer() - started) * 1000, 0.0)
 
         return EvaluationReport(
             evaluation_mode=self._evaluation_mode,
             intent_provider=self._intent_provider,
-            live_intent_llm_calls=(
-                self._evaluation_mode is EvaluationMode.LIVE
-            ),
+            live_intent_llm_calls=(self._evaluation_mode is EvaluationMode.LIVE),
             generated_at=self._clock(),
             dataset_sha256=self._dataset_sha256,
             duration_ms=round(duration_ms, 3),

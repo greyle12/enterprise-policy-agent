@@ -111,9 +111,7 @@ async def _run_verification() -> dict[str, object]:
         max_queue=1,
         queue_timeout_seconds=1,
     )
-    cancellation_active = asyncio.create_task(
-        cancellation_client.chat(_messages("active"))
-    )
+    cancellation_active = asyncio.create_task(cancellation_client.chat(_messages("active")))
     await _wait_for_started(cancellation_provider, 1)
     cancelled = asyncio.create_task(cancellation_client.chat(_messages("cancelled")))
     await _wait_for_queued(cancellation_client, 1)
@@ -147,18 +145,14 @@ async def _run_verification() -> dict[str, object]:
 
     checks = {
         "active_calls_are_bounded": (
-            capacity_provider.peak_active == 2
-            and capacity_status.metrics.peak_in_flight == 2
+            capacity_provider.peak_active == 2 and capacity_status.metrics.peak_in_flight == 2
         ),
         "fifo_queue_is_bounded": (
             saturated_status.state is ProviderLimiterStateName.SATURATED
             and saturated_status.queued == 2
-            and capacity_provider.started
-            == ["active-1", "active-2", "queued-1", "queued-2"]
+            and capacity_provider.started == ["active-1", "active-2", "queued-1", "queued-2"]
         ),
-        "overflow_is_rejected": (
-            overflow_rejected and capacity_status.metrics.rejected == 1
-        ),
+        "overflow_is_rejected": (overflow_rejected and capacity_status.metrics.rejected == 1),
         "admitted_work_completes": (
             capacity_answers
             == [

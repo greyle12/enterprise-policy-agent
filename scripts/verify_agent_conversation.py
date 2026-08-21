@@ -36,11 +36,7 @@ class DeterministicIntentClassifier:
         self,
         user_input: str,
     ) -> IntentClassification:
-        intent = (
-            IntentType.DRAFT_GENERATION
-            if "草稿" in user_input
-            else IntentType.UNKNOWN
-        )
+        intent = IntentType.DRAFT_GENERATION if "草稿" in user_input else IntentType.UNKNOWN
         return IntentClassification(
             intent=intent,
             confidence=1.0,
@@ -58,16 +54,8 @@ class StubPolicyAnswerService:
 
 
 def _build_router() -> AgentRouter:
-    material_checker = (
-        RequiredMaterialsChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
-    approval_checker = (
-        ApprovalRuleChecker.from_policy_directory(
-            _POLICY_DIRECTORY
-        )
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     return AgentRouter(
         intent_classifier=DeterministicIntentClassifier(),
         policy_answer_service=StubPolicyAnswerService(),
@@ -92,20 +80,13 @@ def _build_router() -> AgentRouter:
 
 
 def _draft(result):
-    if (
-        result.application_draft is None
-        or result.application_draft.draft is None
-    ):
+    if result.application_draft is None or result.application_draft.draft is None:
         raise RuntimeError("verification expected a draft")
     return result.application_draft.draft
 
 
 def _field_value(draft, field_name: str):
-    return next(
-        field.value
-        for field in draft.fields
-        if field.field_name == field_name
-    )
+    return next(field.value for field in draft.fields if field.field_name == field_name)
 
 
 def _print_result(
@@ -114,51 +95,23 @@ def _print_result(
     *,
     passed: bool,
 ) -> None:
-    draft = (
-        result.application_draft.draft
-        if result.application_draft is not None
-        else None
-    )
+    draft = result.application_draft.draft if result.application_draft is not None else None
     print(
         json.dumps(
             {
                 "name": name,
                 "status": result.status,
                 "intent": result.classification.intent,
-                "session_id": (
-                    result.session.session_id
-                    if result.session is not None
-                    else None
-                ),
-                "turn_number": (
-                    result.session.turn_number
-                    if result.session is not None
-                    else None
-                ),
-                "phase": (
-                    result.session.phase
-                    if result.session is not None
-                    else None
-                ),
+                "session_id": (result.session.session_id if result.session is not None else None),
+                "turn_number": (result.session.turn_number if result.session is not None else None),
+                "phase": (result.session.phase if result.session is not None else None),
                 "pending_confirmation": (
-                    result.session.pending_confirmation
-                    if result.session is not None
-                    else None
+                    result.session.pending_confirmation if result.session is not None else None
                 ),
-                "draft_id": (
-                    draft.draft_id if draft is not None else None
-                ),
-                "revision": (
-                    draft.revision if draft is not None else None
-                ),
-                "user_confirmed": (
-                    draft.user_confirmed
-                    if draft is not None
-                    else None
-                ),
-                "submitted": (
-                    draft.submitted if draft is not None else None
-                ),
+                "draft_id": (draft.draft_id if draft is not None else None),
+                "revision": (draft.revision if draft is not None else None),
+                "user_confirmed": (draft.user_confirmed if draft is not None else None),
+                "submitted": (draft.submitted if draft is not None else None),
                 "workflow_nodes": (
                     [step.node for step in result.workflow.steps]
                     if result.workflow is not None
@@ -182,11 +135,9 @@ async def _main() -> None:
     )
     first_draft = _draft(first)
     passed = (
-        first.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
+        first.status is AgentResponseStatus.NEEDS_CLARIFICATION
         and first.session is not None
-        and first.session.phase
-        is AgentSessionPhase.COLLECTING_INFORMATION
+        and first.session.phase is AgentSessionPhase.COLLECTING_INFORMATION
         and first_draft.revision == 1
     )
     _print_result("incomplete_first_turn", first, passed=passed)
@@ -199,8 +150,7 @@ async def _main() -> None:
     )
     completed_draft = _draft(completed)
     passed = (
-        completed.status
-        is AgentResponseStatus.AWAITING_CONFIRMATION
+        completed.status is AgentResponseStatus.AWAITING_CONFIRMATION
         and completed.session is not None
         and completed.session.pending_confirmation
         and completed_draft.draft_id == first_draft.draft_id
@@ -216,8 +166,7 @@ async def _main() -> None:
         session_id=session_id,
     )
     passed = (
-        ambiguous.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
+        ambiguous.status is AgentResponseStatus.NEEDS_CLARIFICATION
         and ambiguous.session is not None
         and ambiguous.session.pending_confirmation
         and ambiguous.session.turn_number == 2
@@ -232,8 +181,7 @@ async def _main() -> None:
     )
     revised_draft = _draft(revised)
     passed = (
-        revised.status
-        is AgentResponseStatus.AWAITING_CONFIRMATION
+        revised.status is AgentResponseStatus.AWAITING_CONFIRMATION
         and revised_draft.draft_id == first_draft.draft_id
         and revised_draft.revision == 3
         and _field_value(
@@ -241,8 +189,7 @@ async def _main() -> None:
             "estimated_total_amount",
         )
         == Decimal(6600)
-        and revised_draft.approval_check.amount
-        == Decimal(6600)
+        and revised_draft.approval_check.amount == Decimal(6600)
     )
     _print_result("revise_and_reinterrupt", revised, passed=passed)
     if not passed:
@@ -259,8 +206,7 @@ async def _main() -> None:
         and not confirmed_draft.submitted
         and confirmed.session is not None
         and not confirmed.session.pending_confirmation
-        and confirmed.session.phase
-        is AgentSessionPhase.CONFIRMED
+        and confirmed.session.phase is AgentSessionPhase.CONFIRMED
     )
     _print_result("confirm_without_submit", confirmed, passed=passed)
     if not passed:
@@ -273,8 +219,7 @@ async def _main() -> None:
     repeated_draft = _draft(repeated)
     passed = (
         repeated.status is AgentResponseStatus.CONFIRMED
-        and repeated_draft.confirmed_at
-        == confirmed_draft.confirmed_at
+        and repeated_draft.confirmed_at == confirmed_draft.confirmed_at
         and repeated_draft.revision == confirmed_draft.revision
         and not repeated_draft.submitted
     )
@@ -307,10 +252,8 @@ async def _main() -> None:
     )
     rejected_draft = _draft(rejected)
     passed = (
-        incomplete.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
-        and rejected.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
+        incomplete.status is AgentResponseStatus.NEEDS_CLARIFICATION
+        and rejected.status is AgentResponseStatus.NEEDS_CLARIFICATION
         and not rejected_draft.user_confirmed
         and not rejected_draft.submitted
     )
@@ -319,10 +262,7 @@ async def _main() -> None:
         failures.append("reject_incomplete_confirmation")
 
     if failures:
-        raise RuntimeError(
-            "Day 13 conversation verification failed: "
-            + " | ".join(failures)
-        )
+        raise RuntimeError("Day 13 conversation verification failed: " + " | ".join(failures))
 
 
 if __name__ == "__main__":

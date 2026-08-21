@@ -85,8 +85,8 @@ scores = provider.score(query, candidate_documents)
 `BGERerankingProvider` 默认模型名为 `BAAI/bge-reranker-v2-m3`，但只有显式创建真实 Provider
 时才加载模型。Day 26 测试和 CI 全部注入离线 cross-encoder 替身，不下载真实模型。
 
-本阶段建立了 Reranker Provider、候选模型与稳定排序契约，尚未把真实 reranker 自动接入
-`PolicyRetriever.search()`。后续接入时还需用黄金评测确定候选池大小、top-k 和相关性收益，
+本阶段建立了 Reranker Provider、候选模型与稳定排序契约；Phase 27 已产生 RRF Hybrid 候选，
+Phase 28 已将可选 Reranker 接入正式问答链路。候选池大小、top-k 和真实相关性收益仍需评测，
 不能仅凭离线吞吐报告改变线上排序。
 
 ## 5. 离线对照实验

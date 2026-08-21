@@ -14,7 +14,7 @@ class FakeRetriever:
     def __init__(self) -> None:
         self.calls: list[str] = []
 
-    def search(
+    def search_reranked(
         self,
         query: str,
         *,

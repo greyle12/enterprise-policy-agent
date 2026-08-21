@@ -1,0 +1,892 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
+from dataclasses import dataclass
+from pathlib import Path
+import re
+from types import MappingProxyType
+from typing import Protocol
+
+from app.rag.ocr import (
+    OCRError,
+    OCRImage,
+    OCRProvider,
+    OCRQualityGate,
+)
+
+
+class DocumentLoadError(ValueError):
+    """A source document could not be converted into trusted plain text."""
+
+
+class DocumentNotFoundError(DocumentLoadError):
+    """The requested source path does not exist."""
+
+
+class DocumentPathError(DocumentLoadError):
+    """The requested source path is not a regular file."""
+
+
+class UnsupportedDocumentFormatError(DocumentLoadError):
+    """No registered loader owns the source file extension."""
+
+
+class DocumentDecodingError(DocumentLoadError):
+    """The source bytes cannot be decoded by the selected loader."""
+
+
+class EmptyDocumentError(DocumentLoadError):
+    """The selected loader produced no usable text."""
+
+
+class DocumentDependencyError(DocumentLoadError):
+    """A format-specific runtime dependency is unavailable."""
+
+
+class DocumentMetadataError(DocumentLoadError):
+    """Trusted ingestion metadata is missing or unreadable."""
+
+
+class EncryptedDocumentError(DocumentLoadError):
+    """The document cannot be opened without a password."""
+
+
+class InvalidDocumentError(DocumentLoadError):
+    """The file is not a valid instance of its registered format."""
+
+
+class OCRRequiredError(DocumentLoadError):
+    """The document does not contain enough native text for safe parsing."""
+
+
+@dataclass(frozen=True, slots=True)
+class LoadedDocument:
+    """Format-neutral text returned by a document loader."""
+
+    source_path: Path
+    text: str
+    media_type: str
+    loader_name: str
+    metadata_text: str | None = None
+    metadata_source_path: Path | None = None
+    page_count: int | None = None
+    line_page_numbers: tuple[int, ...] = ()
+    block_count: int | None = None
+    line_block_numbers: tuple[int, ...] = ()
+    ocr_engine: str | None = None
+    ocr_unit_kind: str | None = None
+    ocr_unit_numbers: tuple[int, ...] = ()
+    ocr_unit_confidences: tuple[float, ...] = ()
+
+    def __post_init__(self) -> None:
+        if not self.text.strip():
+            raise EmptyDocumentError(f"document contains no usable text: {self.source_path}")
+        if not self.media_type.strip():
+            raise ValueError("media_type must not be blank")
+        if not self.loader_name.strip():
+            raise ValueError("loader_name must not be blank")
+        if self.metadata_text is not None and not self.metadata_text.strip():
+            raise DocumentMetadataError("metadata_text must not be blank")
+        if self.metadata_source_path is not None and self.metadata_text is None:
+            raise ValueError("metadata_source_path requires metadata_text")
+        if self.page_count is not None and self.page_count < 1:
+            raise ValueError("page_count must be greater than zero")
+        if self.line_page_numbers:
+            if self.page_count is None:
+                raise ValueError("line_page_numbers require page_count")
+            if len(self.line_page_numbers) != len(self.text.splitlines()):
+                raise ValueError("line_page_numbers must align with text lines")
+            if any(page < 1 or page > self.page_count for page in self.line_page_numbers):
+                raise ValueError("line_page_numbers must be within page_count")
+        if self.block_count is not None and self.block_count < 1:
+            raise ValueError("block_count must be greater than zero")
+        if self.line_block_numbers:
+            if self.block_count is None:
+                raise ValueError("line_block_numbers require block_count")
+            if len(self.line_block_numbers) != len(self.text.splitlines()):
+                raise ValueError("line_block_numbers must align with text lines")
+            if any(block < 1 or block > self.block_count for block in self.line_block_numbers):
+                raise ValueError("line_block_numbers must be within block_count")
+        if self.ocr_unit_numbers:
+            if self.ocr_engine is None or self.ocr_unit_kind is None:
+                raise ValueError("OCR units require ocr_engine and ocr_unit_kind")
+            if self.ocr_unit_kind not in {"page", "block"}:
+                raise ValueError("ocr_unit_kind must be 'page' or 'block'")
+            if len(self.ocr_unit_numbers) != len(self.ocr_unit_confidences):
+                raise ValueError("OCR unit numbers and confidences must align")
+            if any(unit < 1 for unit in self.ocr_unit_numbers):
+                raise ValueError("OCR unit numbers must be greater than zero")
+            if any(not 0.0 <= confidence <= 1.0 for confidence in self.ocr_unit_confidences):
+                raise ValueError("OCR confidences must be between zero and one")
+        elif self.ocr_engine is not None or self.ocr_unit_kind is not None:
+            raise ValueError("OCR engine and kind require OCR units")
+
+    @property
+    def ocr_applied(self) -> bool:
+        return bool(self.ocr_unit_numbers)
+
+
+class DocumentLoader(Protocol):
+    """Extension point that converts one source format into normalized text."""
+
+    @property
+    def name(self) -> str:
+        """Stable implementation name used for diagnostics."""
+
+    @property
+    def media_type(self) -> str:
+        """Media type produced by this loader."""
+
+    @property
+    def supported_extensions(self) -> frozenset[str]:
+        """Lower-case file extensions owned by this loader, including the dot."""
+
+    def load(self, path: Path) -> LoadedDocument:
+        """Extract normalized text from one regular file."""
+
+
+def _normalize_extension(extension: str) -> str:
+    normalized = extension.strip().lower()
+    if not normalized.startswith(".") or len(normalized) == 1:
+        raise ValueError("document extensions must start with '.' and contain a suffix")
+    return normalized
+
+
+def _validate_source_path(path: Path) -> None:
+    if not path.exists():
+        raise DocumentNotFoundError(f"document file does not exist: {path}")
+    if not path.is_file():
+        raise DocumentPathError(f"document path is not a file: {path}")
+
+
+class MarkdownDocumentLoader:
+    """Load UTF-8 Markdown while accepting an optional byte-order mark."""
+
+    name = "markdown"
+    media_type = "text/markdown"
+    supported_extensions = frozenset({".md"})
+
+    def load(self, path: Path) -> LoadedDocument:
+        source_path = Path(path)
+        _validate_source_path(source_path)
+
+        if source_path.suffix.lower() not in self.supported_extensions:
+            raise UnsupportedDocumentFormatError(
+                f"markdown loader does not support extension: {source_path.suffix.lower()}"
+            )
+
+        try:
+            text = source_path.read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise DocumentDecodingError(f"document is not valid UTF-8 text: {source_path}") from exc
+        except OSError as exc:
+            raise DocumentLoadError(f"cannot read document: {source_path}: {exc}") from exc
+
+        return LoadedDocument(
+            source_path=source_path,
+            text=text,
+            media_type=self.media_type,
+            loader_name=self.name,
+        )
+
+
+_CHINESE_NUMBER_PATTERN = r"[一二三四五六七八九十百千零〇两0-9]+"
+_PLAIN_CHAPTER_PATTERN = re.compile(
+    rf"^(?P<heading>第{_CHINESE_NUMBER_PATTERN}章(?:[ \u3000]+.*?)?)$"
+)
+_PLAIN_ARTICLE_PATTERN = re.compile(
+    rf"^(?P<label>第{_CHINESE_NUMBER_PATTERN}条)(?:[ \u3000]+(?P<remainder>.*?))?$"
+)
+_SENTENCE_PUNCTUATION = frozenset("。！？；;!?.")
+PDF_METADATA_SIDECAR_SUFFIX = ".metadata.yaml"
+DEFAULT_PDF_MIN_TEXT_CHARACTERS = 20
+DOCX_METADATA_SIDECAR_SUFFIX = ".metadata.yaml"
+DEFAULT_DOCX_MIN_TEXT_CHARACTERS = 20
+
+
+class _PDFPage(Protocol):
+    def get_text(self, option: str, *, sort: bool) -> str:
+        """Extract page text."""
+
+    def get_pixmap(self, *, dpi: int, alpha: bool) -> object:
+        """Render a page for configured OCR fallback."""
+
+
+class _PDFDocument(Protocol):
+    page_count: int
+    needs_pass: bool
+
+    def __getitem__(self, page_number: int) -> _PDFPage:
+        """Load a zero-based page."""
+
+    def close(self) -> None:
+        """Release native PDF resources."""
+
+
+class _PDFBackend(Protocol):
+    def open(self, filename: str) -> _PDFDocument:
+        """Open one PDF document."""
+
+
+def pdf_metadata_sidecar_path(path: str | Path) -> Path:
+    """Return the trusted sidecar path for one PDF source."""
+
+    source_path = Path(path)
+    return source_path.with_name(f"{source_path.stem}{PDF_METADATA_SIDECAR_SUFFIX}")
+
+
+def docx_metadata_sidecar_path(path: str | Path) -> Path:
+    """Return the trusted sidecar path for one DOCX source."""
+
+    source_path = Path(path)
+    return source_path.with_name(f"{source_path.stem}{DOCX_METADATA_SIDECAR_SUFFIX}")
+
+
+def _load_metadata_sidecar(
+    source_path: Path,
+    *,
+    format_name: str,
+    metadata_path: Path,
+) -> tuple[str, Path]:
+    if not metadata_path.exists():
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar does not exist: {metadata_path}"
+        )
+    if not metadata_path.is_file():
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar is not a file: {metadata_path}"
+        )
+    try:
+        metadata_text = metadata_path.read_text(encoding="utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise DocumentMetadataError(
+            f"{format_name} metadata sidecar is not valid UTF-8: {metadata_path}"
+        ) from exc
+    except OSError as exc:
+        raise DocumentMetadataError(
+            f"cannot read {format_name} metadata sidecar: {metadata_path}: {exc}"
+        ) from exc
+    if not metadata_text.strip():
+        raise DocumentMetadataError(f"{format_name} metadata sidecar is empty: {metadata_path}")
+    return metadata_text, metadata_path
+
+
+def _looks_like_article_title(text: str) -> bool:
+    return len(text) <= 24 and not any(mark in text for mark in _SENTENCE_PUNCTUATION)
+
+
+def _normalize_pdf_line(line: str) -> tuple[str, ...]:
+    normalized = " ".join(line.replace("\u3000", " ").split())
+    if not normalized:
+        return ("",)
+    if normalized.startswith("#"):
+        return (normalized,)
+
+    chapter_match = _PLAIN_CHAPTER_PATTERN.fullmatch(normalized)
+    if chapter_match is not None:
+        return (f"## {chapter_match.group('heading')}",)
+
+    article_match = _PLAIN_ARTICLE_PATTERN.fullmatch(normalized)
+    if article_match is None:
+        return (normalized,)
+
+    label = article_match.group("label")
+    remainder = (article_match.group("remainder") or "").strip()
+    if not remainder:
+        return (f"### {label}",)
+    if _looks_like_article_title(remainder):
+        return (f"### {label} {remainder}",)
+    return (f"### {label}", remainder)
+
+
+def _append_pdf_line(
+    lines: list[str],
+    page_numbers: list[int],
+    *,
+    line: str,
+    page_number: int,
+) -> None:
+    if not line and (not lines or not lines[-1]):
+        return
+    lines.append(line)
+    page_numbers.append(page_number)
+
+
+def _trim_pdf_lines(lines: list[str], page_numbers: list[int]) -> None:
+    while lines and not lines[0]:
+        lines.pop(0)
+        page_numbers.pop(0)
+    while lines and not lines[-1]:
+        lines.pop()
+        page_numbers.pop()
+
+
+class PDFDocumentLoader:
+    """Extract native PDF text and attach trusted sidecar metadata."""
+
+    name = "pymupdf"
+    media_type = "application/pdf"
+    supported_extensions = frozenset({".pdf"})
+
+    def __init__(
+        self,
+        *,
+        minimum_text_characters: int = DEFAULT_PDF_MIN_TEXT_CHARACTERS,
+        backend: _PDFBackend | None = None,
+        ocr_provider: OCRProvider | None = None,
+        ocr_quality_gate: OCRQualityGate | None = None,
+        ocr_dpi: int = 200,
+        max_ocr_pages: int = 20,
+    ) -> None:
+        if minimum_text_characters < 1:
+            raise ValueError("minimum_text_characters must be greater than zero")
+        self._minimum_text_characters = minimum_text_characters
+        self._configured_backend = backend
+        if ocr_dpi < 72 or ocr_dpi > 600:
+            raise ValueError("ocr_dpi must be between 72 and 600")
+        if max_ocr_pages < 1:
+            raise ValueError("max_ocr_pages must be greater than zero")
+        self._ocr_provider = ocr_provider
+        self._ocr_quality_gate = ocr_quality_gate or OCRQualityGate()
+        self._ocr_dpi = ocr_dpi
+        self._max_ocr_pages = max_ocr_pages
+
+    @property
+    def minimum_text_characters(self) -> int:
+        return self._minimum_text_characters
+
+    def _backend(self) -> _PDFBackend:
+        if self._configured_backend is not None:
+            return self._configured_backend
+        try:
+            import pymupdf
+        except ModuleNotFoundError as exc:
+            raise DocumentDependencyError(
+                "PDF parsing requires PyMuPDF; install the project dependencies"
+            ) from exc
+        return pymupdf
+
+    def _load_metadata(self, source_path: Path) -> tuple[str, Path]:
+        metadata_path = pdf_metadata_sidecar_path(source_path)
+        return _load_metadata_sidecar(
+            source_path,
+            format_name="PDF",
+            metadata_path=metadata_path,
+        )
+
+    def _ocr_page(
+        self, page: _PDFPage, *, source_path: Path, page_number: int
+    ) -> tuple[str, str, float]:
+        if self._ocr_provider is None:
+            raise OCRRequiredError(
+                "PDF page native text is below the configured threshold; "
+                f"OCR fallback is required: page {page_number}"
+            )
+        try:
+            pixmap = page.get_pixmap(dpi=self._ocr_dpi, alpha=False)
+            image_bytes = pixmap.tobytes("png")
+        except Exception as exc:
+            raise InvalidDocumentError(
+                f"cannot render PDF page {page_number} for OCR: {type(exc).__name__}"
+            ) from exc
+        image = OCRImage(
+            data=image_bytes,
+            media_type="image/png",
+            source_path=source_path,
+            container_media_type=self.media_type,
+            unit_kind="page",
+            unit_number=page_number,
+        )
+        result = self._ocr_provider.recognize(image)
+        text = self._ocr_quality_gate.accept(result, image=image)
+        return text, result.engine, result.confidence
+
+    def _extract_text(
+        self, source_path: Path
+    ) -> tuple[str, int, tuple[int, ...], str | None, tuple[int, ...], tuple[float, ...]]:
+        try:
+            document = self._backend().open(str(source_path))
+        except DocumentLoadError:
+            raise
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot open PDF document: {source_path}: {exc}") from exc
+
+        try:
+            if document.needs_pass:
+                raise EncryptedDocumentError(f"PDF document requires a password: {source_path}")
+            if document.page_count < 1:
+                raise InvalidDocumentError(f"PDF document contains no pages: {source_path}")
+
+            lines: list[str] = []
+            page_numbers: list[int] = []
+            ocr_engine: str | None = None
+            ocr_page_numbers: list[int] = []
+            ocr_confidences: list[float] = []
+            for zero_based_page in range(document.page_count):
+                page_number = zero_based_page + 1
+                page = document[zero_based_page]
+                page_text = page.get_text("text", sort=True)
+                if not isinstance(page_text, str):
+                    raise InvalidDocumentError(
+                        f"PDF page extraction returned non-text data: page {page_number}"
+                    )
+                native_character_count = sum(not character.isspace() for character in page_text)
+                if native_character_count < self._minimum_text_characters:
+                    if len(ocr_page_numbers) >= self._max_ocr_pages:
+                        raise OCRRequiredError(
+                            f"PDF exceeds configured OCR page limit: {self._max_ocr_pages}"
+                        )
+                    page_text, result_engine, confidence = self._ocr_page(
+                        page,
+                        source_path=source_path,
+                        page_number=page_number,
+                    )
+                    if ocr_engine is not None and ocr_engine != result_engine:
+                        raise OCRError("one document cannot mix multiple OCR engines")
+                    ocr_engine = result_engine
+                    ocr_page_numbers.append(page_number)
+                    ocr_confidences.append(confidence)
+                if lines and lines[-1]:
+                    _append_pdf_line(
+                        lines,
+                        page_numbers,
+                        line="",
+                        page_number=page_number - 1,
+                    )
+                for raw_line in page_text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+                    for normalized_line in _normalize_pdf_line(raw_line):
+                        _append_pdf_line(
+                            lines,
+                            page_numbers,
+                            line=normalized_line,
+                            page_number=page_number,
+                        )
+
+            _trim_pdf_lines(lines, page_numbers)
+            text = "\n".join(lines)
+            return (
+                text,
+                document.page_count,
+                tuple(page_numbers),
+                ocr_engine,
+                tuple(ocr_page_numbers),
+                tuple(ocr_confidences),
+            )
+        except (DocumentLoadError, OCRError):
+            raise
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot extract PDF text: {source_path}: {exc}") from exc
+        finally:
+            document.close()
+
+    def load(self, path: Path) -> LoadedDocument:
+        source_path = Path(path)
+        _validate_source_path(source_path)
+        if source_path.suffix.lower() not in self.supported_extensions:
+            raise UnsupportedDocumentFormatError(
+                f"PDF loader does not support extension: {source_path.suffix.lower()}"
+            )
+
+        metadata_text, metadata_path = self._load_metadata(source_path)
+        (
+            text,
+            page_count,
+            line_page_numbers,
+            ocr_engine,
+            ocr_page_numbers,
+            ocr_confidences,
+        ) = self._extract_text(source_path)
+        return LoadedDocument(
+            source_path=source_path,
+            text=text,
+            media_type=self.media_type,
+            loader_name=self.name,
+            metadata_text=metadata_text,
+            metadata_source_path=metadata_path,
+            page_count=page_count,
+            line_page_numbers=line_page_numbers,
+            ocr_engine=ocr_engine,
+            ocr_unit_kind="page" if ocr_page_numbers else None,
+            ocr_unit_numbers=ocr_page_numbers,
+            ocr_unit_confidences=ocr_confidences,
+        )
+
+
+_DOCX_HEADING_STYLE_PATTERN = re.compile(r"^(?:heading|标题)\s*(?P<level>[1-9])$", re.IGNORECASE)
+_DOCX_TITLE_STYLES = frozenset({"title", "标题"})
+
+
+def _normalize_docx_text(text: str) -> str:
+    return " ".join(text.replace("\u3000", " ").split())
+
+
+def _docx_heading_level(style_name: str) -> int | None:
+    normalized = _normalize_docx_text(style_name).lower()
+    if normalized in _DOCX_TITLE_STYLES:
+        return 1
+    match = _DOCX_HEADING_STYLE_PATTERN.fullmatch(normalized)
+    if match is None:
+        return None
+    return int(match.group("level")) + 1
+
+
+def _normalize_docx_paragraph(text: str, style_name: str) -> tuple[str, ...]:
+    lines: list[str] = []
+    for raw_line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n"):
+        lines.extend(_normalize_pdf_line(raw_line))
+    normalized_lines = tuple(line for line in lines if line)
+    if not normalized_lines:
+        return ()
+
+    first_line = normalized_lines[0]
+    if first_line.startswith("#"):
+        return normalized_lines
+    heading_level = _docx_heading_level(style_name)
+    if heading_level is None:
+        return normalized_lines
+    return (f"{'#' * heading_level} {first_line}", *normalized_lines[1:])
+
+
+def _escape_docx_table_cell(text: str) -> str:
+    normalized_lines = [
+        _normalize_docx_text(line)
+        for line in text.replace("\r\n", "\n").replace("\r", "\n").split("\n")
+    ]
+    normalized = "<br>".join(line for line in normalized_lines if line)
+    return normalized.replace("|", r"\|")
+
+
+def _render_docx_table(table: object) -> tuple[str, ...]:
+    rows = getattr(table, "rows", ())
+    rendered_rows = [
+        tuple(_escape_docx_table_cell(cell.text) for cell in row.cells) for row in rows
+    ]
+    rendered_rows = [row for row in rendered_rows if any(row)]
+    if not rendered_rows:
+        return ()
+
+    width = max(len(row) for row in rendered_rows)
+
+    def render_row(row: tuple[str, ...]) -> str:
+        padded = (*row, *("" for _ in range(width - len(row))))
+        return "| " + " | ".join(padded) + " |"
+
+    lines = [render_row(rendered_rows[0])]
+    lines.append("| " + " | ".join("---" for _ in range(width)) + " |")
+    lines.extend(render_row(row) for row in rendered_rows[1:])
+    return tuple(lines)
+
+
+def _docx_paragraph_images(paragraph: object) -> tuple[tuple[bytes, str], ...]:
+    element = getattr(paragraph, "_p")
+    part = getattr(paragraph, "part")
+    relationship_ids = element.xpath(".//a:blip/@r:embed")
+    images: list[tuple[bytes, str]] = []
+    seen_relationship_ids: set[str] = set()
+    for relationship_id in relationship_ids:
+        if relationship_id in seen_relationship_ids:
+            continue
+        seen_relationship_ids.add(relationship_id)
+        image_part = part.related_parts[relationship_id]
+        blob = bytes(image_part.blob)
+        content_type = str(image_part.content_type)
+        if blob and content_type.startswith("image/"):
+            images.append((blob, content_type))
+    return tuple(images)
+
+
+class DOCXDocumentLoader:
+    """Extract DOCX paragraphs and tables with trusted sidecar metadata."""
+
+    name = "python-docx"
+    media_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    supported_extensions = frozenset({".docx"})
+
+    def __init__(
+        self,
+        *,
+        minimum_text_characters: int = DEFAULT_DOCX_MIN_TEXT_CHARACTERS,
+        ocr_provider: OCRProvider | None = None,
+        ocr_quality_gate: OCRQualityGate | None = None,
+        max_ocr_images: int = 50,
+    ) -> None:
+        if minimum_text_characters < 1:
+            raise ValueError("minimum_text_characters must be greater than zero")
+        self._minimum_text_characters = minimum_text_characters
+        if max_ocr_images < 1:
+            raise ValueError("max_ocr_images must be greater than zero")
+        self._ocr_provider = ocr_provider
+        self._ocr_quality_gate = ocr_quality_gate or OCRQualityGate()
+        self._max_ocr_images = max_ocr_images
+
+    @property
+    def minimum_text_characters(self) -> int:
+        return self._minimum_text_characters
+
+    def _load_metadata(self, source_path: Path) -> tuple[str, Path]:
+        metadata_path = docx_metadata_sidecar_path(source_path)
+        return _load_metadata_sidecar(
+            source_path,
+            format_name="DOCX",
+            metadata_path=metadata_path,
+        )
+
+    def _open(self, source_path: Path) -> object:
+        try:
+            from docx import Document
+        except ModuleNotFoundError as exc:
+            raise DocumentDependencyError(
+                "DOCX parsing requires python-docx; install the project dependencies"
+            ) from exc
+        try:
+            return Document(str(source_path))
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot open DOCX document: {source_path}: {exc}") from exc
+
+    def _ocr_docx_image(
+        self,
+        data: bytes,
+        media_type: str,
+        *,
+        source_path: Path,
+        block_number: int,
+    ) -> tuple[tuple[str, ...], str, float]:
+        if self._ocr_provider is None:
+            return (), "", 0.0
+        image = OCRImage(
+            data=data,
+            media_type=media_type,
+            source_path=source_path,
+            container_media_type=self.media_type,
+            unit_kind="block",
+            unit_number=block_number,
+        )
+        result = self._ocr_provider.recognize(image)
+        text = self._ocr_quality_gate.accept(result, image=image)
+        return _normalize_docx_paragraph(text, ""), result.engine, result.confidence
+
+    def _extract_text(
+        self, source_path: Path
+    ) -> tuple[str, int, tuple[int, ...], str | None, tuple[int, ...], tuple[float, ...]]:
+        document = self._open(source_path)
+        try:
+            from docx.table import Table
+            from docx.text.paragraph import Paragraph
+        except ModuleNotFoundError as exc:
+            raise DocumentDependencyError(
+                "DOCX parsing requires python-docx; install the project dependencies"
+            ) from exc
+
+        lines: list[str] = []
+        block_numbers: list[int] = []
+        block_count = 0
+        ocr_engine: str | None = None
+        ocr_block_numbers: list[int] = []
+        ocr_confidences: list[float] = []
+        embedded_image_count = 0
+        try:
+            for block_count, block in enumerate(document.iter_inner_content(), start=1):
+                if isinstance(block, Paragraph):
+                    style_name = block.style.name if block.style is not None else ""
+                    block_lines = _normalize_docx_paragraph(block.text, style_name)
+                    images = _docx_paragraph_images(block)
+                    embedded_image_count += len(images)
+                    if embedded_image_count > self._max_ocr_images:
+                        raise OCRRequiredError(
+                            f"DOCX exceeds configured OCR image limit: {self._max_ocr_images}"
+                        )
+                    if images and not block_lines and self._ocr_provider is not None:
+                        recognized_lines: list[str] = []
+                        for image_data, image_media_type in images:
+                            image_lines, result_engine, confidence = self._ocr_docx_image(
+                                image_data,
+                                image_media_type,
+                                source_path=source_path,
+                                block_number=block_count,
+                            )
+                            if ocr_engine is not None and ocr_engine != result_engine:
+                                raise OCRError("one document cannot mix multiple OCR engines")
+                            ocr_engine = result_engine
+                            recognized_lines.extend(image_lines)
+                            ocr_block_numbers.append(block_count)
+                            ocr_confidences.append(confidence)
+                        block_lines = tuple(recognized_lines)
+                elif isinstance(block, Table):
+                    block_lines = _render_docx_table(block)
+                else:
+                    continue
+
+                if not block_lines:
+                    continue
+                if lines and lines[-1]:
+                    lines.append("")
+                    block_numbers.append(block_count)
+                lines.extend(block_lines)
+                block_numbers.extend(block_count for _ in block_lines)
+        except (DocumentLoadError, OCRError):
+            raise
+        except Exception as exc:
+            raise InvalidDocumentError(f"cannot extract DOCX text: {source_path}: {exc}") from exc
+
+        while lines and not lines[-1]:
+            lines.pop()
+            block_numbers.pop()
+        text = "\n".join(lines)
+        native_character_count = sum(not character.isspace() for character in text)
+        if native_character_count < self._minimum_text_characters:
+            raise OCRRequiredError(
+                "DOCX extracted text is below the configured threshold; OCR fallback is required: "
+                f"{native_character_count} < {self._minimum_text_characters}"
+            )
+        if block_count < 1:
+            raise InvalidDocumentError(f"DOCX document contains no body blocks: {source_path}")
+        return (
+            text,
+            block_count,
+            tuple(block_numbers),
+            ocr_engine,
+            tuple(ocr_block_numbers),
+            tuple(ocr_confidences),
+        )
+
+    def load(self, path: Path) -> LoadedDocument:
+        source_path = Path(path)
+        _validate_source_path(source_path)
+        if source_path.suffix.lower() not in self.supported_extensions:
+            raise UnsupportedDocumentFormatError(
+                f"DOCX loader does not support extension: {source_path.suffix.lower()}"
+            )
+
+        metadata_text, metadata_path = self._load_metadata(source_path)
+        (
+            text,
+            block_count,
+            line_block_numbers,
+            ocr_engine,
+            ocr_block_numbers,
+            ocr_confidences,
+        ) = self._extract_text(source_path)
+        return LoadedDocument(
+            source_path=source_path,
+            text=text,
+            media_type=self.media_type,
+            loader_name=self.name,
+            metadata_text=metadata_text,
+            metadata_source_path=metadata_path,
+            block_count=block_count,
+            line_block_numbers=line_block_numbers,
+            ocr_engine=ocr_engine,
+            ocr_unit_kind="block" if ocr_block_numbers else None,
+            ocr_unit_numbers=ocr_block_numbers,
+            ocr_unit_confidences=ocr_confidences,
+        )
+
+
+class DocumentLoaderRegistry:
+    """Immutable extension-to-loader router shared by parsing and indexing."""
+
+    def __init__(self, loaders: Iterable[DocumentLoader]) -> None:
+        loader_list = tuple(loaders)
+        if not loader_list:
+            raise ValueError("at least one document loader is required")
+
+        loaders_by_extension: dict[str, DocumentLoader] = {}
+        for loader in loader_list:
+            if not loader.name.strip():
+                raise ValueError("document loader name must not be blank")
+            if not loader.media_type.strip():
+                raise ValueError("document loader media_type must not be blank")
+            if not loader.supported_extensions:
+                raise ValueError(f"document loader {loader.name!r} has no extensions")
+
+            for extension in loader.supported_extensions:
+                normalized = _normalize_extension(extension)
+                if normalized in loaders_by_extension:
+                    owner = loaders_by_extension[normalized]
+                    raise ValueError(
+                        f"document extension {normalized} is already registered by {owner.name}"
+                    )
+                loaders_by_extension[normalized] = loader
+
+        self._loaders_by_extension = MappingProxyType(loaders_by_extension)
+
+    @property
+    def supported_extensions(self) -> tuple[str, ...]:
+        return tuple(sorted(self._loaders_by_extension))
+
+    def loader_for(self, path: str | Path) -> DocumentLoader:
+        source_path = Path(path)
+        extension = source_path.suffix.lower()
+        loader = self._loaders_by_extension.get(extension)
+        if loader is None:
+            supported = ", ".join(self.supported_extensions)
+            label = extension or "<no extension>"
+            raise UnsupportedDocumentFormatError(
+                f"unsupported document extension {label}; supported extensions: {supported}"
+            )
+        return loader
+
+    def load(self, path: str | Path) -> LoadedDocument:
+        source_path = Path(path)
+        _validate_source_path(source_path)
+        loaded = self.loader_for(source_path).load(source_path)
+        if loaded.source_path != source_path:
+            raise DocumentLoadError(
+                "document loader returned a different source_path than the requested file"
+            )
+        return loaded
+
+    def discover(self, directory: str | Path) -> list[Path]:
+        """Return supported regular files in deterministic filename order."""
+
+        source_directory = Path(directory)
+        if not source_directory.exists():
+            raise DocumentNotFoundError(f"document directory does not exist: {source_directory}")
+        if not source_directory.is_dir():
+            raise DocumentPathError(f"document path is not a directory: {source_directory}")
+
+        return sorted(
+            (
+                path
+                for path in source_directory.iterdir()
+                if path.is_file() and path.suffix.lower() in self._loaders_by_extension
+            ),
+            key=lambda path: path.name,
+        )
+
+
+DEFAULT_DOCUMENT_LOADER_REGISTRY = DocumentLoaderRegistry(
+    [
+        MarkdownDocumentLoader(),
+        PDFDocumentLoader(),
+        DOCXDocumentLoader(),
+    ]
+)
+
+
+__all__ = [
+    "DEFAULT_DOCUMENT_LOADER_REGISTRY",
+    "DEFAULT_DOCX_MIN_TEXT_CHARACTERS",
+    "DEFAULT_PDF_MIN_TEXT_CHARACTERS",
+    "DocumentDecodingError",
+    "DocumentDependencyError",
+    "DocumentLoadError",
+    "DocumentLoader",
+    "DocumentLoaderRegistry",
+    "DocumentMetadataError",
+    "DocumentNotFoundError",
+    "DocumentPathError",
+    "EmptyDocumentError",
+    "EncryptedDocumentError",
+    "InvalidDocumentError",
+    "LoadedDocument",
+    "MarkdownDocumentLoader",
+    "DOCXDocumentLoader",
+    "DOCX_METADATA_SIDECAR_SUFFIX",
+    "OCRRequiredError",
+    "PDFDocumentLoader",
+    "PDF_METADATA_SIDECAR_SUFFIX",
+    "UnsupportedDocumentFormatError",
+    "pdf_metadata_sidecar_path",
+    "docx_metadata_sidecar_path",
+]

@@ -33,28 +33,21 @@ def check_health(
             status_code = response.status
             raw_body = response.read()
     except (HTTPError, URLError, TimeoutError, OSError) as error:
-        raise HealthProbeError(
-            f"health endpoint is unavailable: {type(error).__name__}"
-        ) from error
+        raise HealthProbeError(f"health endpoint is unavailable: {type(error).__name__}") from error
 
     if status_code != 200:
-        raise HealthProbeError(
-            f"health endpoint returned HTTP {status_code}"
-        )
+        raise HealthProbeError(f"health endpoint returned HTTP {status_code}")
 
     try:
         payload = json.loads(raw_body.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
-        raise HealthProbeError(
-            "health endpoint did not return valid UTF-8 JSON"
-        ) from error
+        raise HealthProbeError("health endpoint did not return valid UTF-8 JSON") from error
 
     if not isinstance(payload, dict):
         raise HealthProbeError("health response must be a JSON object")
     if payload.get("status") != expected_status:
         raise HealthProbeError(
-            "health endpoint did not report the expected status: "
-            f"{expected_status}"
+            f"health endpoint did not report the expected status: {expected_status}"
         )
     return payload
 

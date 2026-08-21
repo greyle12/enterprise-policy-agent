@@ -108,10 +108,7 @@ def main() -> None:
             policy_name = result.record.metadata["policy_name"]
             article = result.record.metadata["article"]
 
-            print(
-                f"{rank}. score={result.score:.6f} "
-                f"source={policy_name} {article}"
-            )
+            print(f"{rank}. score={result.score:.6f} source={policy_name} {article}")
             print(f"   {result.record.text}")
 
         assert results

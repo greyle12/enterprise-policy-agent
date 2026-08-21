@@ -35,10 +35,7 @@ def render_evaluation_markdown(report: EvaluationReport) -> str:
         "",
         f"- 运行模式：`{report.evaluation_mode.value}`",
         f"- 意图识别来源：`{report.intent_provider}`",
-        (
-            "- 意图识别是否调用真实 LLM："
-            f"`{str(report.live_intent_llm_calls).lower()}`"
-        ),
+        (f"- 意图识别是否调用真实 LLM：`{str(report.live_intent_llm_calls).lower()}`"),
         f"- 数据集 SHA-256：`{report.dataset_sha256}`",
         f"- 生成时间：`{report.generated_at.isoformat()}`",
         f"- 总用例：{report.total_cases}",
@@ -98,8 +95,7 @@ def render_evaluation_markdown(report: EvaluationReport) -> str:
             expected = str(assertion.expected).replace("|", "\\|")
             actual = str(assertion.actual).replace("|", "\\|")
             lines.append(
-                f"| `{case_id}` | `{metric}` | `{assertion.name}` | "
-                f"`{expected}` | `{actual}` |"
+                f"| `{case_id}` | `{metric}` | `{assertion.name}` | `{expected}` | `{actual}` |"
             )
 
     lines.extend(

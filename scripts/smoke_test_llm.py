@@ -18,9 +18,7 @@ async def main() -> None:
     """发送最小测试请求并输出结果。"""
 
     settings = get_settings()
-    client = OpenAICompatibleLLMClient.from_settings(
-        settings
-    )
+    client = OpenAICompatibleLLMClient.from_settings(settings)
 
     messages: list[ChatMessage] = [
         {

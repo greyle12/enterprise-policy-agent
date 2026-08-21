@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
@@ -6,6 +6,18 @@ from typing import Any
 import yaml
 from pydantic import ValidationError
 
+from app.rag.document_loader import (
+    DEFAULT_DOCUMENT_LOADER_REGISTRY,
+    DocumentDecodingError,
+    DocumentLoadError,
+    DocumentLoaderRegistry,
+    DocumentNotFoundError,
+    DocumentPathError,
+    EmptyDocumentError,
+    LoadedDocument,
+    UnsupportedDocumentFormatError,
+)
+from app.rag.ocr import OCRError
 from app.schemas.policy import PolicyDocument, PolicyMetadata
 
 
@@ -29,9 +41,7 @@ def _split_front_matter(raw_text: str) -> tuple[str, str]:
     normalized = raw_text.replace("\r\n", "\n").replace("\r", "\n")
 
     if not normalized.startswith("---\n"):
-        raise PolicyParseError(
-            "制度文件必须以 YAML front matter 分隔符 '---' 开头"
-        )
+        raise PolicyParseError("制度文件必须以 YAML front matter 分隔符 '---' 开头")
 
     closing_marker = "\n---\n"
     closing_index = normalized.find(
@@ -40,14 +50,10 @@ def _split_front_matter(raw_text: str) -> tuple[str, str]:
     )
 
     if closing_index == -1:
-        raise PolicyParseError(
-            "没有找到 YAML front matter 的结束分隔符 '---'"
-        )
+        raise PolicyParseError("没有找到 YAML front matter 的结束分隔符 '---'")
 
-    yaml_text = normalized[len("---\n"):closing_index].strip()
-    markdown_content = normalized[
-        closing_index + len(closing_marker):
-    ].strip()
+    yaml_text = normalized[len("---\n") : closing_index].strip()
+    markdown_content = normalized[closing_index + len(closing_marker) :].strip()
 
     if not yaml_text:
         raise PolicyParseError("YAML 元数据不能为空")
@@ -64,14 +70,10 @@ def _parse_yaml_metadata(yaml_text: str) -> dict[str, Any]:
     try:
         parsed = yaml.safe_load(yaml_text)
     except yaml.YAMLError as exc:
-        raise PolicyParseError(
-            f"YAML 元数据解析失败：{exc}"
-        ) from exc
+        raise PolicyParseError(f"YAML 元数据解析失败：{exc}") from exc
 
     if not isinstance(parsed, dict):
-        raise PolicyParseError(
-            "YAML 元数据必须解析为键值对象"
-        )
+        raise PolicyParseError("YAML 元数据必须解析为键值对象")
 
     return parsed
 
@@ -80,116 +82,173 @@ def parse_policy_text(
     raw_text: str,
     *,
     source_path: Path,
+    metadata_text: str | None = None,
+    metadata_source_path: Path | None = None,
+    source_media_type: str = "text/markdown",
+    source_loader_name: str = "markdown",
+    source_page_count: int | None = None,
+    content_page_numbers: tuple[int, ...] = (),
+    source_block_count: int | None = None,
+    content_block_numbers: tuple[int, ...] = (),
+    source_ocr_engine: str | None = None,
+    source_ocr_unit_kind: str | None = None,
+    source_ocr_unit_numbers: tuple[int, ...] = (),
+    source_ocr_unit_confidences: tuple[float, ...] = (),
 ) -> PolicyDocument:
-    """解析已经读取到内存中的制度文本。"""
+    """Parse normalized policy text with inline or trusted external metadata."""
 
     if not raw_text.strip():
         raise PolicyParseError("制度文件内容为空")
 
-    yaml_text, markdown_content = _split_front_matter(raw_text)
+    if metadata_text is None:
+        yaml_text, markdown_content = _split_front_matter(raw_text)
+        normalized_page_numbers: tuple[int, ...] = ()
+        normalized_block_numbers: tuple[int, ...] = ()
+    else:
+        if not metadata_text.strip():
+            raise PolicyParseError("制度元数据不能为空")
+        normalized_text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+        lines = normalized_text.splitlines()
+        page_numbers = list(content_page_numbers)
+        block_numbers = list(content_block_numbers)
+        if page_numbers and len(page_numbers) != len(lines):
+            raise PolicyParseError("PDF 页码映射必须与 Loader 文本行数一致")
+        if block_numbers and len(block_numbers) != len(lines):
+            raise PolicyParseError("DOCX 块序号映射必须与 Loader 文本行数一致")
+        while lines and not lines[0].strip():
+            lines.pop(0)
+            if page_numbers:
+                page_numbers.pop(0)
+            if block_numbers:
+                block_numbers.pop(0)
+        while lines and not lines[-1].strip():
+            lines.pop()
+            if page_numbers:
+                page_numbers.pop()
+            if block_numbers:
+                block_numbers.pop()
+        markdown_content = "\n".join(lines)
+        if not markdown_content.strip():
+            raise PolicyParseError("制度正文不能为空")
+        yaml_text = metadata_text.strip()
+        normalized_page_numbers = tuple(page_numbers)
+        normalized_block_numbers = tuple(block_numbers)
+
     metadata_dict = _parse_yaml_metadata(yaml_text)
 
     try:
         metadata = PolicyMetadata.model_validate(metadata_dict)
     except ValidationError as exc:
-        raise PolicyParseError(
-            f"制度元数据校验失败：{exc}"
-        ) from exc
+        raise PolicyParseError(f"制度元数据校验失败：{exc}") from exc
 
     return PolicyDocument(
         metadata=metadata,
         content=markdown_content,
         source_path=source_path,
+        source_media_type=source_media_type,
+        source_loader_name=source_loader_name,
+        metadata_source_path=metadata_source_path,
+        source_page_count=source_page_count,
+        content_page_numbers=normalized_page_numbers,
+        source_block_count=source_block_count,
+        content_block_numbers=normalized_block_numbers,
+        source_ocr_engine=source_ocr_engine,
+        source_ocr_unit_kind=source_ocr_unit_kind,
+        source_ocr_unit_numbers=source_ocr_unit_numbers,
+        source_ocr_unit_confidences=source_ocr_unit_confidences,
         raw_text=raw_text,
     )
 
 
-def parse_policy_file(path: str | Path) -> PolicyDocument:
-    """读取并解析一份 Markdown 制度文件。"""
+def parse_loaded_policy(loaded: LoadedDocument) -> PolicyDocument:
+    """Convert one format-neutral Loader result into a policy document."""
+
+    return parse_policy_text(
+        loaded.text,
+        source_path=loaded.source_path,
+        metadata_text=loaded.metadata_text,
+        metadata_source_path=loaded.metadata_source_path,
+        source_media_type=loaded.media_type,
+        source_loader_name=loaded.loader_name,
+        source_page_count=loaded.page_count,
+        content_page_numbers=loaded.line_page_numbers,
+        source_block_count=loaded.block_count,
+        content_block_numbers=loaded.line_block_numbers,
+        source_ocr_engine=loaded.ocr_engine,
+        source_ocr_unit_kind=loaded.ocr_unit_kind,
+        source_ocr_unit_numbers=loaded.ocr_unit_numbers,
+        source_ocr_unit_confidences=loaded.ocr_unit_confidences,
+    )
+
+
+def parse_policy_file(
+    path: str | Path,
+    *,
+    loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
+) -> PolicyDocument:
+    """Load and parse one policy file through the configured document loaders."""
 
     source_path = Path(path)
 
-    if not source_path.exists():
-        raise PolicyParseError(
-            f"制度文件不存在：{source_path}"
-        )
-
-    if not source_path.is_file():
-        raise PolicyParseError(
-            f"制度路径不是文件：{source_path}"
-        )
-
-    if source_path.suffix.lower() != ".md":
-        raise PolicyParseError(
-            f"制度文件必须是 .md 文件：{source_path}"
-        )
-
     try:
-        raw_text = source_path.read_text(
-            encoding="utf-8-sig"
-        )
-    except UnicodeDecodeError as exc:
+        loaded = loader_registry.load(source_path)
+    except DocumentNotFoundError as exc:
+        raise PolicyParseError(f"制度文件不存在：{source_path}") from exc
+    except DocumentPathError as exc:
+        raise PolicyParseError(f"制度路径不是文件：{source_path}") from exc
+    except UnsupportedDocumentFormatError as exc:
+        supported = ", ".join(loader_registry.supported_extensions)
         raise PolicyParseError(
-            f"制度文件不是有效的 UTF-8 文本：{source_path}"
+            f"不支持的制度文件格式：{source_path.suffix.lower()}，已注册：{supported}"
         ) from exc
-    except OSError as exc:
-        raise PolicyParseError(
-            f"读取制度文件失败：{source_path}，原因：{exc}"
-        ) from exc
+    except DocumentDecodingError as exc:
+        raise PolicyParseError(f"制度文件不是有效的 UTF-8 文本：{source_path}") from exc
+    except EmptyDocumentError as exc:
+        raise PolicyParseError("制度文件内容为空") from exc
+    except DocumentLoadError as exc:
+        raise PolicyParseError(f"读取制度文件失败：{source_path}，原因：{exc}") from exc
+    except OCRError as exc:
+        raise PolicyParseError(f"制度 OCR 失败：{source_path}，原因：{exc}") from exc
 
-    return parse_policy_text(
-        raw_text,
-        source_path=source_path,
-    )
+    return parse_loaded_policy(loaded)
 
 
 def parse_policy_directory(
     directory: str | Path,
+    *,
+    loader_registry: DocumentLoaderRegistry = DEFAULT_DOCUMENT_LOADER_REGISTRY,
 ) -> list[PolicyDocument]:
-    """解析目录中的全部 Markdown 制度文件。"""
+    """Parse every supported policy file in a directory."""
 
     policy_directory = Path(directory)
 
     if not policy_directory.exists():
-        raise PolicyParseError(
-            f"制度目录不存在：{policy_directory}"
-        )
+        raise PolicyParseError(f"制度目录不存在：{policy_directory}")
 
     if not policy_directory.is_dir():
-        raise PolicyParseError(
-            f"制度路径不是目录：{policy_directory}"
-        )
+        raise PolicyParseError(f"制度路径不是目录：{policy_directory}")
 
-    policy_paths = sorted(
-        policy_directory.glob("*.md"),
-        key=lambda path: path.name,
-    )
+    policy_paths = loader_registry.discover(policy_directory)
 
     if not policy_paths:
-        raise PolicyParseError(
-            f"制度目录中没有 Markdown 文件：{policy_directory}"
-        )
+        supported = ", ".join(loader_registry.supported_extensions)
+        raise PolicyParseError(f"制度目录中没有受支持的制度文件（{supported}）：{policy_directory}")
 
     documents = [
-        parse_policy_file(path)
+        parse_policy_file(
+            path,
+            loader_registry=loader_registry,
+        )
         for path in policy_paths
     ]
 
-    document_ids = [
-        document.metadata.document_id
-        for document in documents
-    ]
+    document_ids = [document.metadata.document_id for document in documents]
 
     duplicate_ids = {
-        document_id
-        for document_id in document_ids
-        if document_ids.count(document_id) > 1
+        document_id for document_id in document_ids if document_ids.count(document_id) > 1
     }
 
     if duplicate_ids:
-        raise PolicyParseError(
-            "发现重复制度编号："
-            + ", ".join(sorted(duplicate_ids))
-        )
+        raise PolicyParseError("发现重复制度编号：" + ", ".join(sorted(duplicate_ids)))
 
     return documents

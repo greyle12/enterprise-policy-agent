@@ -19,9 +19,7 @@ from app.tools.material_check import RequiredMaterialsChecker
 from app.tools.mock_approval_submission import MockApprovalSubmitter
 from app.tools.submission_models import SubmissionAuditEvent
 
-_POLICY_DIRECTORY = (
-    Path(__file__).resolve().parents[2] / "data" / "policies"
-)
+_POLICY_DIRECTORY = Path(__file__).resolve().parents[2] / "data" / "policies"
 _COMPLETE_PURCHASE = (
     "帮我生成采购申请草稿，采购3台27英寸办公显示器，每台2000元，"
     "采购目的为给新员工配置办公设备，采购类别为IT设备，规格为27英寸2K，"
@@ -67,12 +65,8 @@ def _build_router() -> tuple[
     DeterministicIntentClassifier,
 ]:
     classifier = DeterministicIntentClassifier()
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     submission_service = MockApprovalSubmitter()
     router = AgentRouter(
         intent_classifier=classifier,
@@ -137,9 +131,7 @@ async def test_confirmed_draft_can_be_submitted_in_separate_turn() -> None:
     assert draft.submitted_at is not None
     assert submitted.submission is not None
     assert submitted.submission.duplicate_submission is False
-    assert submitted.submission.submission_result.submission_id == (
-        draft.submission_id
-    )
+    assert submitted.submission.submission_result.submission_id == (draft.submission_id)
     assert submitted.session is not None
     assert submitted.session.phase is AgentSessionPhase.SUBMITTED
     assert submitted.session.pending_confirmation is False
@@ -172,9 +164,7 @@ async def test_submit_before_confirmation_is_rejected_and_reinterrupts() -> None
     assert rejected.session.pending_confirmation is True
     assert rejected.workflow is not None
     assert rejected.workflow.interrupted is True
-    assert AgentWorkflowNode.SUBMIT_APPROVAL in {
-        step.node for step in rejected.workflow.steps
-    }
+    assert AgentWorkflowNode.SUBMIT_APPROVAL in {step.node for step in rejected.workflow.steps}
     assert await service.list_audit_records() == ()
 
     confirmed = await router.route(
@@ -197,12 +187,8 @@ async def test_repeated_submission_is_idempotent() -> None:
     assert replay.submission is not None
     assert replay.status is AgentResponseStatus.SUBMITTED
     assert replay.submission.duplicate_submission is True
-    assert replay.submission.submission_result == (
-        first.submission.submission_result
-    )
-    assert replay.submission.audit_record.event is (
-        SubmissionAuditEvent.IDEMPOTENT_REPLAY
-    )
+    assert replay.submission.submission_result == (first.submission.submission_result)
+    assert replay.submission.audit_record.event is (SubmissionAuditEvent.IDEMPOTENT_REPLAY)
     records = await service.list_audit_records()
     assert [record.event for record in records] == [
         SubmissionAuditEvent.SUBMITTED,
@@ -224,9 +210,7 @@ async def test_submit_without_active_draft_does_not_call_classifier() -> None:
     assert result.application_draft is None
     assert classifier.calls == []
     assert result.workflow is not None
-    assert result.workflow.terminal_node is (
-        AgentWorkflowNode.SUBMIT_APPROVAL
-    )
+    assert result.workflow.terminal_node is (AgentWorkflowNode.SUBMIT_APPROVAL)
     assert await service.list_audit_records() == ()
 
 

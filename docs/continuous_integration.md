@@ -8,7 +8,18 @@ Day 26 再增加 Embedding/Reranker 逐条与批量处理的等价性和调用�
 LLM Provider 有界并发、FIFO 排队、超时和取消清理的完全离线背压契约；Day 28 增加请求
 关联、脱敏日志、低基数 HTTP 指标、安全 500 和 Prometheus 格式的进程内可观测性契约；
 Day 29 增加检索前权限过滤、提示注入拒绝、污染证据隔离和零 Provider 调用断言；Day 30
-增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据。
+增加六场景作品集演示、发布契约和可下载的 JSON / Markdown 演示证据；Advanced RAG
+Phase 22 增加统一 Document Loader、原有 Parser/Chunker 兼容性和 5 文档/199 Chunk 契约。
+Advanced RAG Phase 23 增加真实 PDF 动态生成、原生文本、sidecar、页码和 OCR handoff 契约。
+Advanced RAG Phase 24 增加真实 DOCX 动态生成、段落/表格顺序、sidecar、块定位和 OCR handoff
+契约。
+Advanced RAG Phase 25 增加扫描 PDF、图片型 DOCX、OCR provenance、低置信度拒绝和安全边界契约。
+Advanced RAG Phase 26 增加 BM25 词面排序、企业编号检索、授权范围统计和原有向量通道回归契约。
+Advanced RAG Phase 27 增加 Vector/BM25 候选融合、RRF 贡献、单通道降级和正式问答链路契约。
+Advanced RAG Phase 28 增加 RRF 候选批量精排、授权前置、配置回退和正式 Reranker 入口契约。
+Advanced RAG Phase 29 增加 VectorIndex、pgvector schema/upsert、授权 SQL CTE、持久卷和 Compose 契约。
+Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk 原子删除和预索引复用契约。
+Advanced RAG Phase 31 增加 20 条检索标注、四通道消融、Recall@K、MRR@5 和报告质量门禁。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -78,6 +89,7 @@ timeout 30 分钟
 → pip 依赖一致性检查
 → CI 配置契约检查
 → Ruff 静态检查
+→ Ruff 格式检查
 → 全量 pytest
 → 30 条离线黄金评测
 → 五场景离线性能预算
@@ -86,6 +98,16 @@ timeout 30 分钟
 → LLM Provider 并发与背压离线契约
 → 请求关联与运行时可观测性离线契约
 → RAG 权限与提示注入防护离线契约
+→ Phase 22 Document Loader 离线契约
+→ Phase 23 PDF 原生文本与页码离线契约
+→ Phase 24 DOCX 段落/表格与块定位离线契约
+→ Phase 25 PDF/DOCX OCR fallback 与质量门禁离线契约
+→ Phase 26 authorization-scoped BM25 关键词检索离线契约
+→ Phase 27 authorization-scoped Hybrid Search 与 RRF 离线契约
+→ Phase 28 authorization-scoped Reranker 正式接入离线契约
+→ Phase 29 pgvector 存储、持久化和 authorization-before-distance 离线契约
+→ Phase 30 Document Indexing Pipeline 幂等、增量更新与 stale deletion 离线契约
+→ Phase 31 Vector/BM25/Hybrid/Reranker Recall@1/3/5 与 MRR@5 离线门禁
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -95,10 +117,18 @@ timeout 30 分钟
 任意一步返回非零退出码，Job 即失败。
 
 离线黄金评测、性能基准、缓存契约、single-flight、Provider 背压、运行时可观测性、RAG 安全、
-作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，也不会发送外部模型请求。缓存与负载
-专项使用内存协议替身，不连接真实 Redis。可观测性专项使用进程内 TestClient；安全专项使用
-固定身份、制度和攻击夹具，不调用 Provider。因此来自 Fork 的 Pull Request 可以在没有密钥、
-不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
+Document Loader、PDF/DOCX/OCR、BM25/Hybrid/Reranker/pgvector/Document Indexing/Retrieval Evaluation 契约、作品集演示、并发负载和批处理对照都不使用 `.env` 中的模型配置，
+也不会发送外部模型请求。缓存与负载专项使用内存协议替身，不连接真实 Redis。Loader 专项读取
+仓库中的 Markdown；PDF/DOCX/OCR 专项在临时目录动态生成真实文档和 sidecar，不保存用户文档。
+OCR CI 使用确定性进程内 Provider，不安装或调用系统 Tesseract。可观测性
+专项使用进程内 TestClient；安全专项使用固定身份、制度和攻击夹具，不调用 Provider。Phase 29
+使用进程内 SQL/连接池替身，不连接真实 PostgreSQL；真实具名卷恢复由本机 Docker 验收脚本负责。因此来自
+Fork 的 Pull Request 可以在没有密钥、不启动端口且不部署 Prometheus 的情况下执行相同质量门禁。
+Phase 30 使用确定性内存 Embedding/Vector Store 边界，验证第二次运行零 Embedding、单 Chunk 更新、
+源删除和授权前置，不下载真实模型。
+Phase 31 CI 使用确定性哈希词法向量与词项重排，对相同授权 Retriever 的四个检索入口计算
+Recall@1/3/5 和 MRR@5；它不下载 BGE，也不调用 LLM。真实语义质量由开发者在固定环境显式运行
+`scripts.run_retrieval_evaluation --mode bge` 测量。
 
 ### 3.1 构建证据
 
@@ -106,7 +136,7 @@ CI 保存两组 14 天构建证据：
 
 | Artifact | 内容 | 失败时行为 |
 |---|---|---|
-| `quality-evidence-<run_id>` | pytest JUnit XML、黄金评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
+| `quality-evidence-<run_id>` | pytest JUnit XML、黄金/检索评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
 | `python-wheel-<run_id>` | 可安装 `.whl` | 仅全部质量门禁通过后保存 |
 
 JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；性能报告
@@ -202,6 +232,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -m pip check
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_ci_configuration
 & .\.venv\Scripts\python.exe -m ruff check .
+& .\.venv\Scripts\python.exe -m ruff format --check .
 & .\.venv\Scripts\python.exe -m pytest
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_golden_evaluation `
@@ -215,6 +246,17 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_provider_backpressure
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_runtime_observability
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_rag_security
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_loader
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_pdf_document_parsing
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_docx_document_parsing
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_ocr_fallback
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_bm25_retrieval
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_hybrid_search
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_reranker_integration
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_pgvector_store
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_indexing
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_retrieval_evaluation
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -253,6 +295,16 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Provider 背压契约失败 | 单独运行 `scripts.verify_provider_backpressure`，检查执行峰值、FIFO、溢出、超时和取消清理 |
 | 运行时可观测性契约失败 | 单独运行 `scripts.verify_runtime_observability`，检查请求 ID、路由模板、500 脱敏、指标和 Prometheus 格式 |
 | RAG 安全契约失败 | 单独运行 `scripts.verify_rag_security`，检查可信身份、7 类权限边界、攻击/正常用例、证据隔离和 Provider 调用数 |
+| Document Loader 契约失败 | 单独运行 `scripts.verify_document_loader`，检查扩展名注册、5 份制度、199 个 Chunk 和稳定来源路径 |
+| PDF 解析契约失败 | 单独运行 `scripts.verify_pdf_document_parsing`，检查 PyMuPDF、sidecar、页码、OCR handoff 和加密/损坏拒绝 |
+| DOCX 解析契约失败 | 单独运行 `scripts.verify_docx_document_parsing`，检查 python-docx、sidecar、段落/表格顺序、块定位和 OCR handoff |
+| OCR fallback 契约失败 | 单独运行 `scripts.verify_ocr_fallback`，检查 PDF 页渲染、DOCX 图片、置信度门禁、provenance 和安全顺序 |
+| BM25 检索契约失败 | 单独运行 `scripts.verify_bm25_retrieval`，检查 199 Chunk、词面命中、企业编号、授权候选和 scope-local 统计 |
+| Hybrid/RRF 契约失败 | 单独运行 `scripts.verify_hybrid_search`，检查两路候选、RRF 贡献、去重、单通道降级和融合前授权 |
+| Reranker 接入契约失败 | 单独运行 `scripts.verify_reranker_integration`，检查候选池、单次批量调用、原始 RRF 诊断、禁用回退和 Provider 前授权 |
+| pgvector 契约失败 | 单独运行 `scripts.verify_pgvector_store`，检查 schema、upsert、collection、授权 CTE、Compose 镜像和具名卷 |
+| Document Indexing 契约失败 | 单独运行 `scripts.verify_document_indexing`，检查稳定指纹、零变更跳过、单 Chunk 更新、stale 删除和授权前置 |
+| Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5、Provider identity 和授权标签预检 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -269,12 +321,15 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不运行真实 LLM 评测；
 - 不把离线性能预算解释为真实模型或公网 SLA；
 - 不运行生产级持续压测、py-spy 或 Scalene；Day 25 只执行短时、确定性的离线 load shape；
-- 不运行真实 BGE Reranker；Day 26 只执行固定离线模型替身；
+- 不运行真实 BGE Reranker；Day 26 的批处理对照与 Advanced RAG Phase 28 的主链路验收都只执行固定离线模型替身；
 - 不调用真实 LLM 验证容量；Day 27 只执行固定离线 Provider 替身；
 - 不启动 Prometheus、Grafana 或日志采集器；Day 28 只验证进程内指标、格式和脱敏契约；
 - 不连接真实身份系统或调用模型执行红队；Day 29 只使用固定离线身份、制度和攻击夹具；
 - 不用作品集 6/6 代替真实模型评测；Day 30 使用确定性词法向量、LLM 和 Web 夹具；
 - 不验证 BGE 首次模型下载；
+- 不在 GitHub-hosted Runner 启动真实 PostgreSQL；Phase 29 CI 只验证离线 SQL/安全契约，真实卷恢复由本机 Docker 脚本验证；
+- 不下载真实 BGE 验证增量同步；Phase 30 使用确定性 Embedding 替身证明调用数量和索引状态转换；
+- 不把 Phase 31 Offline 分数解释为真实 BGE 质量；CI 只验证指标、四通道接线、权限和回归门禁；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 

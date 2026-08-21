@@ -29,9 +29,7 @@ from app.tools.submission_models import (
 )
 
 _DRAFT_RESULT_ADAPTER = TypeAdapter(DraftGenerationResult)
-_SUBMISSION_RESULT_ADAPTER = TypeAdapter(
-    MockApprovalSubmissionResult
-)
+_SUBMISSION_RESULT_ADAPTER = TypeAdapter(MockApprovalSubmissionResult)
 _AUDIT_RECORD_ADAPTER = TypeAdapter(SubmissionAuditRecord)
 
 
@@ -82,9 +80,7 @@ class SQLiteAgentStateStore:
             if result is None or int(result[0]) != 1:
                 raise RuntimeError("SQLite readiness query returned no result")
 
-            schema_version = int(
-                connection.execute("PRAGMA user_version").fetchone()[0]
-            )
+            schema_version = int(connection.execute("PRAGMA user_version").fetchone()[0])
             if schema_version != SQLITE_SCHEMA_VERSION:
                 raise RuntimeError(
                     "SQLite schema version does not match the application: "
@@ -216,9 +212,7 @@ class SQLiteAgentStateStore:
                 phase=AgentSessionPhase(row["phase"]),
                 active_draft_id=row["active_draft_id"],
                 draft_revision=row["draft_revision"],
-                pending_confirmation=bool(
-                    row["pending_confirmation"]
-                ),
+                pending_confirmation=bool(row["pending_confirmation"]),
                 checkpoint_backend=row["checkpoint_backend"],
                 updated_at=datetime.fromisoformat(row["updated_at"]),
             )
@@ -266,9 +260,7 @@ class SQLiteAgentStateStore:
                 ).fetchone()
             if row is None:
                 return None
-            return _DRAFT_RESULT_ADAPTER.validate_json(
-                bytes(row["payload_json"])
-            )
+            return _DRAFT_RESULT_ADAPTER.validate_json(bytes(row["payload_json"]))
         finally:
             connection.close()
 
@@ -384,8 +376,7 @@ class SQLiteMockApprovalSubmitter(MockApprovalSubmitter):
             if existing_row is not None:
                 if (
                     existing_row["draft_id"] != draft.draft_id
-                    or existing_row["employee_id"]
-                    != user_context.employee_id
+                    or existing_row["employee_id"] != user_context.employee_id
                     or existing_row["session_id"] != session_id
                 ):
                     raise SubmissionConflictError(
@@ -414,9 +405,7 @@ class SQLiteMockApprovalSubmitter(MockApprovalSubmitter):
                 (draft.draft_id,),
             ).fetchone()
             if draft_row is not None:
-                raise SubmissionConflictError(
-                    "draft is already bound to another submission"
-                )
+                raise SubmissionConflictError("draft is already bound to another submission")
 
             result = replace(
                 self._first_submission_result(
@@ -483,9 +472,7 @@ class SQLiteMockApprovalSubmitter(MockApprovalSubmitter):
             user_context=user_context,
             session_id=session_id,
             request_id=request_id,
-            submission_idempotency_key=(
-                submission_idempotency_key
-            ),
+            submission_idempotency_key=(submission_idempotency_key),
         )
         async with self._lock:
             return await asyncio.to_thread(
@@ -534,10 +521,7 @@ class SQLiteMockApprovalSubmitter(MockApprovalSubmitter):
                     (draft_id,),
                 ).fetchall()
             return tuple(
-                _AUDIT_RECORD_ADAPTER.validate_json(
-                    bytes(row["payload_json"])
-                )
-                for row in rows
+                _AUDIT_RECORD_ADAPTER.validate_json(bytes(row["payload_json"])) for row in rows
             )
         finally:
             connection.close()
@@ -568,8 +552,6 @@ class SQLiteMockApprovalSubmitter(MockApprovalSubmitter):
             ).fetchone()
             if row is None:
                 return None
-            return _SUBMISSION_RESULT_ADAPTER.validate_json(
-                bytes(row["payload_json"])
-            )
+            return _SUBMISSION_RESULT_ADAPTER.validate_json(bytes(row["payload_json"]))
         finally:
             connection.close()

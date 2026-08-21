@@ -25,6 +25,17 @@ class FakeWebSearchProvider:
         self.closed = True
 
 
+class FakeVectorIndex:
+    def __init__(self) -> None:
+        self.closed = False
+
+    def ping(self) -> None:
+        return None
+
+    def close(self) -> None:
+        self.closed = True
+
+
 def test_lifespan_configures_and_closes_service(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
@@ -33,6 +44,7 @@ def test_lifespan_configures_and_closes_service(
     llm_client = FakeLLMClient()
     provider_limiter = object()
     web_search_provider = FakeWebSearchProvider()
+    vector_index = FakeVectorIndex()
 
     def build_fake_service(
         *, prompt_guard=None
@@ -40,9 +52,10 @@ def test_lifespan_configures_and_closes_service(
         object,
         FakeLLMClient,
         object,
+        FakeVectorIndex,
     ]:
         assert prompt_guard is application.state.prompt_security_guard
-        return service, llm_client, provider_limiter
+        return service, llm_client, provider_limiter, vector_index
 
     monkeypatch.setattr(
         main_module,
@@ -74,12 +87,15 @@ def test_lifespan_configures_and_closes_service(
         assert application.state.policy_research_assistant is not None
         assert application.state.llm_cache is llm_client
         assert application.state.llm_provider_limiter is provider_limiter
+        assert application.state.policy_vector_index is vector_index
         assert llm_client.closed is False
         assert web_search_provider.closed is False
+        assert vector_index.closed is False
         assert application.state.agent_state_store.backend_name == "sqlite"
 
     assert llm_client.closed is True
     assert web_search_provider.closed is True
+    assert vector_index.closed is True
     assert not hasattr(
         application.state,
         "policy_answer_service",
@@ -99,4 +115,8 @@ def test_lifespan_configures_and_closes_service(
     assert not hasattr(
         application.state,
         "llm_provider_limiter",
+    )
+    assert not hasattr(
+        application.state,
+        "policy_vector_index",
     )

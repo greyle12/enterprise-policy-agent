@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import json
 import sys
@@ -12,9 +12,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 POLICY_DIR = PROJECT_ROOT / "data" / "policies"
 APPLICATION_DIR = PROJECT_ROOT / "data" / "samples" / "applications"
 CONTRACT_DIR = PROJECT_ROOT / "docs" / "tool_contracts"
-GOLDEN_TEST_PATH = (
-    PROJECT_ROOT / "tests" / "evaluation" / "golden_test_cases.jsonl"
-)
+GOLDEN_TEST_PATH = PROJECT_ROOT / "tests" / "evaluation" / "golden_test_cases.jsonl"
 README_PATH = PROJECT_ROOT / "README.md"
 GITIGNORE_PATH = PROJECT_ROOT / ".gitignore"
 PYPROJECT_PATH = PROJECT_ROOT / "pyproject.toml"
@@ -114,9 +112,7 @@ def validate_policies(errors: list[str]) -> None:
     if not names_passed:
         missing = EXPECTED_POLICY_FILES - actual_names
         unexpected = actual_names - EXPECTED_POLICY_FILES
-        errors.append(
-            f"制度文件不一致，缺少={sorted(missing)}，多出={sorted(unexpected)}"
-        )
+        errors.append(f"制度文件不一致，缺少={sorted(missing)}，多出={sorted(unexpected)}")
 
     required_metadata = [
         "document_id:",
@@ -130,9 +126,8 @@ def validate_policies(errors: list[str]) -> None:
 
     for path in policy_files:
         text = path.read_text(encoding="utf-8-sig")
-        metadata_passed = (
-            text.startswith("---")
-            and all(field in text for field in required_metadata)
+        metadata_passed = text.startswith("---") and all(
+            field in text for field in required_metadata
         )
 
         print_result(
@@ -160,9 +155,7 @@ def validate_applications(errors: list[str]) -> None:
     if not names_passed:
         missing = EXPECTED_APPLICATION_FILES - actual_names
         unexpected = actual_names - EXPECTED_APPLICATION_FILES
-        errors.append(
-            f"申请样例不一致，缺少={sorted(missing)}，多出={sorted(unexpected)}"
-        )
+        errors.append(f"申请样例不一致，缺少={sorted(missing)}，多出={sorted(unexpected)}")
 
     for path in application_files:
         try:
@@ -214,9 +207,7 @@ def validate_contracts(errors: list[str]) -> None:
 
     if not tools_passed:
         errors.append(
-            "工具名称不一致，"
-            f"期望={sorted(EXPECTED_CONTRACT_TOOLS)}，"
-            f"实际={sorted(tool_names)}"
+            f"工具名称不一致，期望={sorted(EXPECTED_CONTRACT_TOOLS)}，实际={sorted(tool_names)}"
         )
 
 
@@ -229,9 +220,7 @@ def validate_golden_tests(errors: list[str]) -> None:
     cases: list[dict[str, Any]] = []
 
     for line_number, line in enumerate(
-        GOLDEN_TEST_PATH.read_text(
-            encoding="utf-8-sig"
-        ).splitlines(),
+        GOLDEN_TEST_PATH.read_text(encoding="utf-8-sig").splitlines(),
         start=1,
     ):
         if not line.strip():
@@ -272,8 +261,7 @@ def validate_golden_tests(errors: list[str]) -> None:
 
         if missing_fields:
             invalid_structures.append(
-                f"{case.get('case_id', 'UNKNOWN')}缺少"
-                f"{sorted(missing_fields)}"
+                f"{case.get('case_id', 'UNKNOWN')}缺少{sorted(missing_fields)}"
             )
 
     structure_passed = not invalid_structures
@@ -282,10 +270,7 @@ def validate_golden_tests(errors: list[str]) -> None:
     if invalid_structures:
         errors.extend(invalid_structures)
 
-    category_counts = Counter(
-        case.get("category")
-        for case in cases
-    )
+    category_counts = Counter(case.get("category") for case in cases)
 
     categories_passed = dict(category_counts) == EXPECTED_TEST_CATEGORIES
 
@@ -297,20 +282,12 @@ def validate_golden_tests(errors: list[str]) -> None:
 
     if not categories_passed:
         errors.append(
-            "测试类别数量不正确，"
-            f"期望={EXPECTED_TEST_CATEGORIES}，"
-            f"实际={dict(category_counts)}"
+            f"测试类别数量不正确，期望={EXPECTED_TEST_CATEGORIES}，实际={dict(category_counts)}"
         )
 
-    covered_tools = {
-        tool
-        for case in cases
-        for tool in case.get("expected_tools", [])
-    }
+    covered_tools = {tool for case in cases for tool in case.get("expected_tools", [])}
 
-    tool_coverage_passed = EXPECTED_CONTRACT_TOOLS.issubset(
-        covered_tools
-    )
+    tool_coverage_passed = EXPECTED_CONTRACT_TOOLS.issubset(covered_tools)
 
     print_result(
         "4个工具测试覆盖",
@@ -319,16 +296,9 @@ def validate_golden_tests(errors: list[str]) -> None:
     )
 
     if not tool_coverage_passed:
-        errors.append(
-            "黄金测试没有覆盖全部工具，"
-            f"实际覆盖={sorted(covered_tools)}"
-        )
+        errors.append(f"黄金测试没有覆盖全部工具，实际覆盖={sorted(covered_tools)}")
 
-    submit_case_ids = [
-        case["case_id"]
-        for case in cases
-        if case.get("should_submit") is True
-    ]
+    submit_case_ids = [case["case_id"] for case in cases if case.get("should_submit") is True]
 
     submit_rule_passed = submit_case_ids == ["TC020"]
 
@@ -339,9 +309,7 @@ def validate_golden_tests(errors: list[str]) -> None:
     )
 
     if not submit_rule_passed:
-        errors.append(
-            f"只有TC020应允许首次提交，实际为{submit_case_ids}"
-        )
+        errors.append(f"只有TC020应允许首次提交，实际为{submit_case_ids}")
 
 
 def validate_readme(errors: list[str]) -> None:
@@ -353,9 +321,7 @@ def validate_readme(errors: list[str]) -> None:
     text = README_PATH.read_text(encoding="utf-8-sig")
 
     missing_sections = sorted(
-        section
-        for section in REQUIRED_README_SECTIONS
-        if section not in text
+        section for section in REQUIRED_README_SECTIONS if section not in text
     )
 
     readme_passed = not missing_sections
@@ -363,11 +329,7 @@ def validate_readme(errors: list[str]) -> None:
     print_result(
         "README关键章节",
         readme_passed,
-        (
-            "完整"
-            if readme_passed
-            else f"缺少={missing_sections}"
-        ),
+        ("完整" if readme_passed else f"缺少={missing_sections}"),
     )
 
     if missing_sections:
@@ -389,9 +351,7 @@ def validate_readme(errors: list[str]) -> None:
 
 def validate_project_config(errors: list[str]) -> None:
     try:
-        pyproject_data = tomllib.loads(
-            PYPROJECT_PATH.read_text(encoding="utf-8-sig")
-        )
+        pyproject_data = tomllib.loads(PYPROJECT_PATH.read_text(encoding="utf-8-sig"))
         pyproject_passed = isinstance(pyproject_data, dict)
     except (OSError, tomllib.TOMLDecodeError) as exc:
         pyproject_passed = False
@@ -399,9 +359,7 @@ def validate_project_config(errors: list[str]) -> None:
 
     print_result("pyproject.toml", pyproject_passed)
 
-    gitignore_text = GITIGNORE_PATH.read_text(
-        encoding="utf-8-sig"
-    )
+    gitignore_text = GITIGNORE_PATH.read_text(encoding="utf-8-sig")
     gitignore_lines = {
         line.strip()
         for line in gitignore_text.splitlines()
@@ -414,17 +372,11 @@ def validate_project_config(errors: list[str]) -> None:
     print_result(
         ".gitignore关键规则",
         gitignore_passed,
-        (
-            "完整"
-            if gitignore_passed
-            else f"缺少={sorted(missing_rules)}"
-        ),
+        ("完整" if gitignore_passed else f"缺少={sorted(missing_rules)}"),
     )
 
     if missing_rules:
-        errors.append(
-            f".gitignore缺少规则：{sorted(missing_rules)}"
-        )
+        errors.append(f".gitignore缺少规则：{sorted(missing_rules)}")
 
 
 def main() -> int:

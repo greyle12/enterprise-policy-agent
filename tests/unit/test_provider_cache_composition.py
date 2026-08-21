@@ -8,9 +8,7 @@ from app.cache import CacheProviderName, CachedLLMClient
 from app.llm import ConcurrencyLimitedLLMClient
 from app.llm.client import ChatMessage
 
-_MESSAGES: tuple[ChatMessage, ...] = (
-    {"role": "user", "content": "差旅住宿标准是多少？"},
-)
+_MESSAGES: tuple[ChatMessage, ...] = ({"role": "user", "content": "差旅住宿标准是多少？"},)
 
 
 @dataclass

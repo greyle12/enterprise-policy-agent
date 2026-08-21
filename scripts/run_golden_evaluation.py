@@ -26,19 +26,13 @@ _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description=(
-            "运行企业制度 Agent 的 30 条黄金用例，"
-            "并输出 JSON 与 Markdown 评测报告。"
-        )
+        description=("运行企业制度 Agent 的 30 条黄金用例，并输出 JSON 与 Markdown 评测报告。")
     )
     parser.add_argument(
         "--mode",
         choices=[item.value for item in EvaluationMode],
         default=EvaluationMode.OFFLINE.value,
-        help=(
-            "offline 使用确定性意图基线且不联网；"
-            "live 使用 .env 中配置的真实 LLM 进行意图识别。"
-        ),
+        help=("offline 使用确定性意图基线且不联网；live 使用 .env 中配置的真实 LLM 进行意图识别。"),
     )
     parser.add_argument(
         "--dataset",

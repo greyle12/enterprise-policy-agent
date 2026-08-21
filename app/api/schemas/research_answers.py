@@ -38,6 +38,14 @@ class InternalPolicySourceResponse(BaseModel):
     article_label: str
     article_title: str
     score: float = Field(ge=-1.0, le=1.0)
+    source_page_start: int | None = Field(default=None, ge=1)
+    source_page_end: int | None = Field(default=None, ge=1)
+    source_block_start: int | None = Field(default=None, ge=1)
+    source_block_end: int | None = Field(default=None, ge=1)
+    source_ocr_engine: str | None = None
+    source_ocr_unit_kind: str | None = None
+    source_ocr_unit_numbers: tuple[int, ...] = ()
+    source_ocr_confidence_min: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
 class ExternalWebSourceResponse(BaseModel):

@@ -1,10 +1,10 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 from datetime import date
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class PolicyStatus(StrEnum):
@@ -81,11 +81,7 @@ class PolicyMetadata(BaseModel):
             return [value.strip()]
 
         if isinstance(value, list):
-            normalized = [
-                str(item).strip()
-                for item in value
-                if str(item).strip()
-            ]
+            normalized = [str(item).strip() for item in value if str(item).strip()]
             return normalized
 
         raise ValueError("必须是字符串或字符串列表")
@@ -97,13 +93,75 @@ class PolicyDocument(BaseModel):
     metadata: PolicyMetadata
     content: str = Field(
         min_length=1,
-        description="删除 YAML 头后的 Markdown 正文",
+        description="移除元数据后的规范化制度正文",
     )
     source_path: Path
+    source_media_type: str = Field(
+        default="text/markdown",
+        min_length=1,
+    )
+    source_loader_name: str = Field(
+        default="markdown",
+        min_length=1,
+    )
+    metadata_source_path: Path | None = None
+    source_page_count: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    content_page_numbers: tuple[int, ...] = ()
+    source_block_count: int | None = Field(
+        default=None,
+        ge=1,
+    )
+    content_block_numbers: tuple[int, ...] = ()
+    source_ocr_engine: str | None = None
+    source_ocr_unit_kind: str | None = None
+    source_ocr_unit_numbers: tuple[int, ...] = ()
+    source_ocr_unit_confidences: tuple[float, ...] = ()
     raw_text: str = Field(
         min_length=1,
-        description="原始制度全文",
+        description="Document Loader 输出的规范化全文",
     )
+
+    @model_validator(mode="after")
+    def validate_page_mapping(self) -> PolicyDocument:
+        if self.content_page_numbers:
+            if self.source_page_count is None:
+                raise ValueError("content_page_numbers 需要 source_page_count")
+            if len(self.content_page_numbers) != len(self.content.splitlines()):
+                raise ValueError("content_page_numbers 必须与 content 行数一致")
+            if any(
+                page_number < 1 or page_number > self.source_page_count
+                for page_number in self.content_page_numbers
+            ):
+                raise ValueError("content_page_numbers 必须位于 PDF 页码范围内")
+        if self.content_block_numbers:
+            if self.source_block_count is None:
+                raise ValueError("content_block_numbers 需要 source_block_count")
+            if len(self.content_block_numbers) != len(self.content.splitlines()):
+                raise ValueError("content_block_numbers 必须与 content 行数一致")
+            if any(
+                block_number < 1 or block_number > self.source_block_count
+                for block_number in self.content_block_numbers
+            ):
+                raise ValueError("content_block_numbers 必须位于 DOCX 块序号范围内")
+        if self.source_ocr_unit_numbers:
+            if self.source_ocr_engine is None or self.source_ocr_unit_kind is None:
+                raise ValueError("OCR 来源单元需要 engine 和 unit kind")
+            if self.source_ocr_unit_kind not in {"page", "block"}:
+                raise ValueError("OCR unit kind 必须是 page 或 block")
+            if len(self.source_ocr_unit_numbers) != len(self.source_ocr_unit_confidences):
+                raise ValueError("OCR 来源单元与置信度必须一一对应")
+            if any(not 0.0 <= confidence <= 1.0 for confidence in self.source_ocr_unit_confidences):
+                raise ValueError("OCR 置信度必须位于 0 到 1")
+        elif self.source_ocr_engine is not None or self.source_ocr_unit_kind is not None:
+            raise ValueError("OCR engine 和 unit kind 需要 OCR 来源单元")
+        return self
+
+    @property
+    def source_ocr_applied(self) -> bool:
+        return bool(self.source_ocr_unit_numbers)
 
     @property
     def document_id(self) -> str:

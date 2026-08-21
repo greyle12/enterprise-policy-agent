@@ -107,6 +107,80 @@ def test_index_rejects_duplicate_record_ids() -> None:
         index.add([record])
 
 
+def test_upsert_replaces_existing_record() -> None:
+    index = InMemoryVectorIndex(dimension=3)
+    index.upsert([make_records()[0]])
+    index.upsert(
+        [
+            VectorRecord(
+                record_id="travel",
+                text="更新后的差旅规则",
+                vector=[1.0, 0.0, 0.0],
+            )
+        ]
+    )
+
+    assert index.size == 1
+    assert index.search([1.0, 0.0, 0.0])[0].record.text == "更新后的差旅规则"
+
+
+def test_lists_entries_without_exposing_vector_payloads() -> None:
+    index = InMemoryVectorIndex(dimension=3)
+    index.upsert(make_records())
+
+    entries = index.list_entries()
+
+    assert [entry.record_id for entry in entries] == ["purchase", "security", "travel"]
+    assert entries[2].metadata == {"policy_name": "差旅报销制度"}
+
+
+def test_apply_changes_upserts_and_deletes_as_one_validated_snapshot() -> None:
+    index = InMemoryVectorIndex(dimension=3)
+    index.upsert(make_records())
+
+    index.apply_changes(
+        [
+            VectorRecord(
+                record_id="travel",
+                text="更新后的差旅规则",
+                vector=[1.0, 0.0, 0.0],
+            )
+        ],
+        delete_record_ids={"purchase"},
+    )
+
+    assert [entry.record_id for entry in index.list_entries()] == ["security", "travel"]
+    assert index.search([1.0, 0.0, 0.0], top_k=1)[0].record.text == "更新后的差旅规则"
+
+
+def test_apply_changes_rejects_overlapping_upsert_and_delete_without_mutation() -> None:
+    index = InMemoryVectorIndex(dimension=3)
+    index.upsert(make_records())
+
+    with pytest.raises(ValueError, match="upserted and deleted"):
+        index.apply_changes(
+            [make_records()[0]],
+            delete_record_ids={"travel"},
+        )
+
+    assert index.size == 3
+
+
+def test_index_rejects_non_finite_vectors() -> None:
+    index = InMemoryVectorIndex(dimension=3)
+
+    with pytest.raises(ValueError, match="finite"):
+        index.upsert(
+            [
+                VectorRecord(
+                    record_id="invalid",
+                    text="非法向量",
+                    vector=[float("inf"), 0.0, 0.0],
+                )
+            ]
+        )
+
+
 def test_search_rejects_non_positive_top_k() -> None:
     index = InMemoryVectorIndex(dimension=3)
 

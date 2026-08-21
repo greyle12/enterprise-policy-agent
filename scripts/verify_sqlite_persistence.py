@@ -63,12 +63,8 @@ class StubPolicyAnswerService:
 
 
 def _build_router(database_path: Path) -> AgentRouter:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     return AgentRouter(
         intent_classifier=DeterministicIntentClassifier(),
         policy_answer_service=StubPolicyAnswerService(),
@@ -94,62 +90,33 @@ def _build_router(database_path: Path) -> AgentRouter:
 
 
 def _draft(result):
-    if (
-        result.application_draft is None
-        or result.application_draft.draft is None
-    ):
+    if result.application_draft is None or result.application_draft.draft is None:
         raise RuntimeError("verification expected an application draft")
     return result.application_draft.draft
 
 
 def _field_value(draft, field_name: str):
-    return next(
-        field.value
-        for field in draft.fields
-        if field.field_name == field_name
-    )
+    return next(field.value for field in draft.fields if field.field_name == field_name)
 
 
 def _print_result(name: str, result, *, passed: bool) -> None:
-    draft = (
-        result.application_draft.draft
-        if result.application_draft is not None
-        else None
-    )
+    draft = result.application_draft.draft if result.application_draft is not None else None
     print(
         json.dumps(
             {
                 "name": name,
                 "status": result.status,
-                "phase": (
-                    result.session.phase
-                    if result.session is not None
-                    else None
-                ),
-                "turn_number": (
-                    result.session.turn_number
-                    if result.session is not None
-                    else None
-                ),
+                "phase": (result.session.phase if result.session is not None else None),
+                "turn_number": (result.session.turn_number if result.session is not None else None),
                 "checkpoint_backend": (
-                    result.session.checkpoint_backend
-                    if result.session is not None
-                    else None
+                    result.session.checkpoint_backend if result.session is not None else None
                 ),
                 "survives_process_restart": (
-                    result.session.survives_process_restart
-                    if result.session is not None
-                    else None
+                    result.session.survives_process_restart if result.session is not None else None
                 ),
-                "draft_id": (
-                    draft.draft_id if draft is not None else None
-                ),
-                "revision": (
-                    draft.revision if draft is not None else None
-                ),
-                "draft_status": (
-                    draft.status if draft is not None else None
-                ),
+                "draft_id": (draft.draft_id if draft is not None else None),
+                "revision": (draft.revision if draft is not None else None),
+                "draft_status": (draft.status if draft is not None else None),
                 "submission_id": (
                     result.submission.submission_result.submission_id
                     if result.submission is not None
@@ -181,9 +148,7 @@ def _print_projection(
                 "name": "query_persisted_records",
                 "phase": session.phase if session is not None else None,
                 "draft_status": (
-                    draft.draft.status
-                    if draft is not None and draft.draft is not None
-                    else None
+                    draft.draft.status if draft is not None and draft.draft is not None else None
                 ),
                 "revisions": revisions,
                 "audit_events": audit_events,
@@ -221,8 +186,7 @@ async def _main() -> None:
             session_id=session_id,
         )
         passed = (
-            completed.status
-            is AgentResponseStatus.AWAITING_CONFIRMATION
+            completed.status is AgentResponseStatus.AWAITING_CONFIRMATION
             and _draft(completed).draft_id == first_draft.draft_id
             and _draft(completed).revision == 2
         )
@@ -235,13 +199,10 @@ async def _main() -> None:
             session_id=session_id,
         )
         passed = (
-            modified.status
-            is AgentResponseStatus.AWAITING_CONFIRMATION
+            modified.status is AgentResponseStatus.AWAITING_CONFIRMATION
             and _draft(modified).revision == 3
-            and _field_value(_draft(modified), "estimated_unit_price")
-            == Decimal(2200)
-            and _field_value(_draft(modified), "estimated_total_amount")
-            == Decimal(6600)
+            and _field_value(_draft(modified), "estimated_unit_price") == Decimal(2200)
+            and _field_value(_draft(modified), "estimated_total_amount") == Decimal(6600)
         )
         _print_result("resume_draft_update", modified, passed=passed)
         if not passed:
@@ -287,10 +248,8 @@ async def _main() -> None:
         passed = (
             replay.submission is not None
             and replay.submission.duplicate_submission
-            and replay.submission.submission_result.submission_id
-            == submitted_id
-            and replay.submission.audit_record.event
-            is SubmissionAuditEvent.IDEMPOTENT_REPLAY
+            and replay.submission.submission_result.submission_id == submitted_id
+            and replay.submission.audit_record.event is SubmissionAuditEvent.IDEMPOTENT_REPLAY
         )
         _print_result("restart_safe_idempotent_replay", replay, passed=passed)
         if not passed:
@@ -300,14 +259,10 @@ async def _main() -> None:
         submitter = SQLiteMockApprovalSubmitter(database_path)
         stored_session = await store.get_session(session_id)
         stored_draft = await store.get_draft(first_draft.draft_id)
-        revisions = await store.list_draft_revisions(
-            first_draft.draft_id
-        )
+        revisions = await store.list_draft_revisions(first_draft.draft_id)
         audit_events = [
             record.event
-            for record in await submitter.list_audit_records(
-                draft_id=first_draft.draft_id
-            )
+            for record in await submitter.list_audit_records(draft_id=first_draft.draft_id)
         ]
         passed = (
             stored_session is not None
@@ -337,8 +292,7 @@ async def _main() -> None:
             session_id=session_id,
         )
         passed = (
-            immutable.status
-            is AgentResponseStatus.NEEDS_CLARIFICATION
+            immutable.status is AgentResponseStatus.NEEDS_CLARIFICATION
             and _draft(immutable).status is DraftStatus.SUBMITTED
             and _draft(immutable).submission_id == submitted_id
         )
@@ -351,10 +305,7 @@ async def _main() -> None:
             failures.append("restart_safe_post_submit_immutability")
 
     if failures:
-        raise RuntimeError(
-            "Day 15 SQLite verification failed: "
-            + " | ".join(failures)
-        )
+        raise RuntimeError("Day 15 SQLite verification failed: " + " | ".join(failures))
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # 企业制度问答与流程办理 Agent：系统架构
 
-本文描述 Day 30 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
+本文描述 Advanced RAG Phase 30 仓库中已经实现并有测试证据的架构，不把规划中的能力画成现状。
 
 ## 1. 运行时架构
 
@@ -14,13 +14,13 @@ flowchart TD
     Agent --> Rules["确定性业务规则"]
     Agent --> State["SQLite 状态与审计"]
     Agent --> Research["Research Assistant"]
-    RAG --> Policies["制度文档与向量索引"]
+    RAG --> Policies["Loader / Hybrid / Optional Reranker"]
     Research --> External["外部系统边界"]
     Services --> Observe["日志 / 指标 / Request ID"]
 ```
 
 请求首先经过 FastAPI 输入校验、请求 ID 和提示注入检查。制度问答在可信身份允许的 Chunk
-范围内进行向量评分，构建带 `S1/S2` 映射的 JSON 证据，再交给 LLM。业务办理由 LangGraph
+范围内分别进行 Vector 与 BM25 检索，再用 RRF 融合候选；启用时由 BGE Cross-Encoder 精排，随后构建带 `S1/S2` 映射的 JSON 证据并交给 LLM。业务办理由 LangGraph
 编排，但材料、金额、审批路线、草稿状态和提交幂等性由确定性代码负责。
 
 ## 2. 一次请求的关键顺序
@@ -52,10 +52,10 @@ sequenceDiagram
 | FastAPI | Schema 校验、依赖注入、错误映射、Request ID | 业务规则计算 |
 | Prompt Guard | 高信号输入攻击阻断、污染证据隔离 | 完整开放世界攻击识别 |
 | Policy Access | 状态、日期、等级、部门、角色、区域授权 | 登录和员工目录 |
-| Policy RAG | 解析、Chunk、Embedding、检索、上下文、引用 | 决定审批路线 |
+| Policy RAG | Loader、增量索引、Embedding、检索、上下文、引用 | 决定审批路线 |
 | LangGraph | 意图分支、多轮状态、确认节点、工具编排 | 自行创造业务规则 |
 | Rule Tools | 材料检查、审批路线、草稿字段计算 | 生成开放式自然语言 |
-| Persistence | SQLite checkpoint、会话、提交和审计 | 多节点分布式一致性 |
+| Persistence | SQLite 业务状态、可选 pgvector 向量存储 | 多节点分布式一致性 |
 | Research | 内部制度优先、显式外部检索、S/W 来源分区 | 用外部资料驱动审批 |
 | Observability | 脱敏日志、低基数指标、安全错误关联 | 集中式 Trace 和全局指标 |
 
@@ -88,20 +88,36 @@ sequenceDiagram
 
 ```mermaid
 flowchart LR
-    Policies["5 份制度"] --> Chunks["结构化 Chunk"]
-    Chunks --> Index["内存向量索引"]
+    Policies["Markdown / PDF / DOCX + sidecar"] --> Loader["Document Loader"]
+    Loader --> Chunks["结构化 Chunk"]
+    Chunks --> Indexer["Fingerprint + Incremental Indexer"]
+    Indexer --> Vector["VectorIndex: memory / pgvector"]
+    Chunks --> BM25["内存 BM25"]
+    Vector --> Fusion["RRF Hybrid Fusion"]
+    BM25 --> Fusion
+    Fusion --> Reranker["可选 BGE Reranker"]
     AgentState["Agent 状态"] --> SQLite["SQLite"]
     Audit["提交审计"] --> SQLite
     Cache["LLM 精确缓存"] --> Redis["可选 Redis"]
 ```
 
-- 制度索引目前为单进程内存结构，正式 BGE 默认维度为 512；
+- Vector Index 可选进程内精确索引或 PostgreSQL/pgvector 持久化精确索引；正式 BGE 维度为 512；
+- Indexer 比较稳定 Chunk 指纹，只为新增/变化记录生成 Embedding，并原子删除陈旧记录；
+- BM25 仍是单进程内存结构，并与 Vector 使用同一批 `retrieval_text`；
+- 可信身份先产生授权 Chunk 白名单；pgvector 先物化授权 SQL 候选，向量相似度与 BM25 候选、DF、平均长度和评分都只能查看该白名单；
+- Vector 与 BM25 分别召回授权候选，RRF 只按名次融合并保留每路诊断信号；
+- 制度问答正式使用统一 Reranked 入口；Provider disabled 时返回 RRF，配置 bge 时批量 Cross-Encoder 精排；
+- Reranker 只接收已经授权的 RRF 候选，并保留原始融合分数、名次和两路诊断信号；
+- Loader Registry 注册 Markdown、PyMuPDF 和 python-docx Loader；PDF/DOCX 可显式注入 OCR Provider；
+- PDF/DOCX 权限元数据来自受控 sidecar；PDF 保留页码，DOCX 保留顶层块范围；
+- OCR 低置信度结果在 Parser/索引前拒绝，通过结果保留 engine、单元与置信度来源；
 - 会话、checkpoint、提交和审计可以使用 SQLite 跨重启恢复；
 - Redis 只用于可选 LLM 精确请求缓存，不是当前会话主存储；
 - HTTP 指标、Provider 指标和安全计数是进程内状态。
 
 ## 6. 部署拓扑
 
-当前 Compose 是单个 Agent 容器、可选 Redis 容器和具名卷。该拓扑适合作品集演示和单机验收，
-不代表多实例生产架构。生产化至少还需要真实认证、集中策略服务、PostgreSQL/pgvector、集中
-日志指标、OpenTelemetry、密钥管理、备份恢复和跨实例容量协调。
+当前 Compose 是单个 Agent、临时 Redis、PostgreSQL/pgvector 和三个具名卷。SQLite 继续保存
+Agent 会话、草稿与审计，pgvector 只保存制度向量。该拓扑适合作品集演示和单机验收，不代表
+PostgreSQL 高可用或多实例生产架构。生产化至少还需要真实认证、集中策略服务、数据库迁移与
+备份恢复、集中日志指标、OpenTelemetry、密钥管理和跨实例容量协调。

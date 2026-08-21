@@ -35,9 +35,7 @@ _SMOKE_CASES = (
 
 
 async def _main() -> None:
-    client = OpenAICompatibleLLMClient.from_settings(
-        get_settings()
-    )
+    client = OpenAICompatibleLLMClient.from_settings(get_settings())
     classifier = IntentClassifier(llm_client=client)
     failures: list[str] = []
 
@@ -59,19 +57,13 @@ async def _main() -> None:
             )
 
             if not passed:
-                failures.append(
-                    f"{user_input}: expected "
-                    f"{expected_intent}, got {result.intent}"
-                )
+                failures.append(f"{user_input}: expected {expected_intent}, got {result.intent}")
     finally:
         await client.close()
 
     if failures:
         failure_text = "\n".join(failures)
-        raise RuntimeError(
-            "Intent classifier smoke test failed:\n"
-            f"{failure_text}"
-        )
+        raise RuntimeError(f"Intent classifier smoke test failed:\n{failure_text}")
 
 
 if __name__ == "__main__":

@@ -97,9 +97,7 @@ class FakeSentenceTransformer:
         if isinstance(sentences, str):
             return FakeArray([float(len(sentences)), 0.0, 0.0])
 
-        return FakeArray(
-            [[float(len(text)), 0.0, 0.0] for text in sentences]
-        )
+        return FakeArray([[float(len(text)), 0.0, 0.0] for text in sentences])
 
 
 def test_bge_provider_reports_model_dimension() -> None:
@@ -131,9 +129,7 @@ def test_bge_provider_adds_instruction_to_query() -> None:
     provider.embed_query("差旅住宿标准是多少？")
 
     call = model.calls[0]
-    assert call["sentences"] == (
-        f"{BGE_QUERY_INSTRUCTION}差旅住宿标准是多少？"
-    )
+    assert call["sentences"] == (f"{BGE_QUERY_INSTRUCTION}差旅住宿标准是多少？")
     assert call["normalize_embeddings"] is True
 
 

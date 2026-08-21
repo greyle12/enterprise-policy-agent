@@ -121,14 +121,10 @@ async def test_bounds_active_calls_and_rejects_a_full_fifo_queue() -> None:
         queue_timeout_seconds=1,
     )
 
-    tasks = [
-        asyncio.create_task(client.chat(_messages(label)))
-        for label in ("first", "second")
-    ]
+    tasks = [asyncio.create_task(client.chat(_messages(label))) for label in ("first", "second")]
     await _wait_for_started(upstream, 2)
     tasks.extend(
-        asyncio.create_task(client.chat(_messages(label)))
-        for label in ("third", "fourth")
+        asyncio.create_task(client.chat(_messages(label))) for label in ("third", "fourth")
     )
     await _wait_for_queue(client, 2)
 

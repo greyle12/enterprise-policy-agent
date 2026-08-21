@@ -1,6 +1,32 @@
 name: enterprise-policy-agent
 
 services:
+  postgres:
+    image: pgvector/pgvector:0.8.6-pg17-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-policy_agent}
+      POSTGRES_USER: ${POSTGRES_USER:-policy_agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - type: volume
+        source: pgvector_data
+        target: /var/lib/postgresql/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    shm_size: 256mb
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    stop_grace_period: 30s
+
   redis:
     image: redis:8.10.0-alpine
     command:
@@ -46,12 +72,20 @@ services:
     image: enterprise-policy-agent:day30
     env_file:
       - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       APP_ENV: container
       APP_HOST: 0.0.0.0
       APP_PORT: "8000"
       LLM_CACHE_PROVIDER: redis
       REDIS_URL: redis://redis:6379/0
+      RAG_VECTOR_STORE_PROVIDER: pgvector
+      RAG_INDEX_PIPELINE_VERSION: ${RAG_INDEX_PIPELINE_VERSION:-policy-index-v1}
+      RAG_PGVECTOR_DSN: "postgresql://${POSTGRES_USER:-policy_agent}:${POSTGRES_PASSWORD:-local-development-only}@postgres:5432/${POSTGRES_DB:-policy_agent}"
       SQLITE_DATABASE_PATH: /app/data/runtime/enterprise_policy_agent.db
       HF_HOME: /app/data/model-cache/huggingface
       SENTENCE_TRANSFORMERS_HOME: /app/data/model-cache/sentence-transformers
@@ -94,3 +128,4 @@ services:
 volumes:
   agent_runtime:
   model_cache:
+  pgvector_data:

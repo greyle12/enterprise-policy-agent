@@ -36,11 +36,7 @@ async def main() -> None:
     )
 
     settings = get_settings()
-    llm_client = (
-        OpenAICompatibleLLMClient.from_settings(
-            settings
-        )
-    )
+    llm_client = OpenAICompatibleLLMClient.from_settings(settings)
 
     service = PolicyAnswerService(
         retriever=retriever,
@@ -52,10 +48,7 @@ async def main() -> None:
     finally:
         await llm_client.close()
 
-    citation_ids = ", ".join(
-        citation.source_id
-        for citation in result.citations
-    )
+    citation_ids = ", ".join(citation.source_id for citation in result.citations)
 
     _LOGGER.info("Question: %s", _QUESTION)
     _LOGGER.info("Answer:\n%s", result.answer)

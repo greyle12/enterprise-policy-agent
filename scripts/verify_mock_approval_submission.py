@@ -58,12 +58,8 @@ class StubPolicyAnswerService:
 
 
 def _build_router() -> tuple[AgentRouter, MockApprovalSubmitter]:
-    material_checker = RequiredMaterialsChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
-    approval_checker = ApprovalRuleChecker.from_policy_directory(
-        _POLICY_DIRECTORY
-    )
+    material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
+    approval_checker = ApprovalRuleChecker.from_policy_directory(_POLICY_DIRECTORY)
     submitter = MockApprovalSubmitter()
     return (
         AgentRouter(
@@ -93,20 +89,13 @@ def _build_router() -> tuple[AgentRouter, MockApprovalSubmitter]:
 
 
 def _draft(result):
-    if (
-        result.application_draft is None
-        or result.application_draft.draft is None
-    ):
+    if result.application_draft is None or result.application_draft.draft is None:
         raise RuntimeError("verification expected a draft")
     return result.application_draft.draft
 
 
 def _print_result(name: str, result, *, passed: bool) -> None:
-    draft = (
-        result.application_draft.draft
-        if result.application_draft is not None
-        else None
-    )
+    draft = result.application_draft.draft if result.application_draft is not None else None
     submission = result.submission
     print(
         json.dumps(
@@ -114,23 +103,13 @@ def _print_result(name: str, result, *, passed: bool) -> None:
                 "name": name,
                 "status": result.status,
                 "intent": result.classification.intent,
-                "phase": (
-                    result.session.phase
-                    if result.session is not None
-                    else None
-                ),
-                "draft_status": (
-                    draft.status if draft is not None else None
-                ),
+                "phase": (result.session.phase if result.session is not None else None),
+                "draft_status": (draft.status if draft is not None else None),
                 "submission_id": (
-                    submission.submission_result.submission_id
-                    if submission is not None
-                    else None
+                    submission.submission_result.submission_id if submission is not None else None
                 ),
                 "duplicate_submission": (
-                    submission.duplicate_submission
-                    if submission is not None
-                    else None
+                    submission.duplicate_submission if submission is not None else None
                 ),
                 "workflow_nodes": (
                     [step.node for step in result.workflow.steps]
@@ -155,8 +134,7 @@ async def _main() -> None:
     )
     passed = (
         created.status is AgentResponseStatus.AWAITING_CONFIRMATION
-        and _draft(created).status
-        is DraftStatus.WAITING_FOR_CONFIRMATION
+        and _draft(created).status is DraftStatus.WAITING_FOR_CONFIRMATION
     )
     _print_result("create_confirmable_draft", created, passed=passed)
     if not passed:
@@ -167,8 +145,7 @@ async def _main() -> None:
         session_id=session_id,
     )
     passed = (
-        premature.status
-        is AgentResponseStatus.AWAITING_CONFIRMATION
+        premature.status is AgentResponseStatus.AWAITING_CONFIRMATION
         and premature.session is not None
         and premature.session.pending_confirmation
         and not _draft(premature).submitted
@@ -219,8 +196,7 @@ async def _main() -> None:
         and replay.submission.duplicate_submission
         and replay.submission.submission_result.submission_id
         == submitted.submission.submission_result.submission_id
-        and replay.submission.audit_record.event
-        is SubmissionAuditEvent.IDEMPOTENT_REPLAY
+        and replay.submission.audit_record.event is SubmissionAuditEvent.IDEMPOTENT_REPLAY
     )
     _print_result("idempotent_replay", replay, passed=passed)
     if not passed:
@@ -231,11 +207,9 @@ async def _main() -> None:
         session_id=session_id,
     )
     passed = (
-        immutable.status
-        is AgentResponseStatus.NEEDS_CLARIFICATION
+        immutable.status is AgentResponseStatus.NEEDS_CLARIFICATION
         and _draft(immutable).status is DraftStatus.SUBMITTED
-        and _draft(immutable).submission_id
-        == submitted_draft.submission_id
+        and _draft(immutable).submission_id == submitted_draft.submission_id
     )
     _print_result("reject_post_submission_update", immutable, passed=passed)
     if not passed:
@@ -271,10 +245,7 @@ async def _main() -> None:
         failures.append("isolated_submission")
 
     if failures:
-        raise RuntimeError(
-            "Day 14 submission verification failed: "
-            + " | ".join(failures)
-        )
+        raise RuntimeError("Day 14 submission verification failed: " + " | ".join(failures))
 
 
 if __name__ == "__main__":

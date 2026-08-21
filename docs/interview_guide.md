@@ -5,7 +5,7 @@
 ## 1. 90 秒项目介绍
 
 > 我独立开发了一个企业制度问答与流程办理 Agent。它不是普通 PDF 问答：系统先解析带版本、
-> 有效期和权限元数据的企业制度，通过 BGE 向量检索构建带条款引用的上下文；然后使用
+> 有效期和权限元数据的企业制度，通过 BGE Vector 与 BM25 双路召回、RRF 融合，并可用 BGE Cross-Encoder 精排后构建带条款引用的上下文；然后使用
 > LangGraph 对制度问答、材料检查、审批路线、申请草稿、人工确认和模拟提交进行编排。
 > 金额、材料和审批规则由确定性 Python 代码计算，LLM 只负责意图理解和自然语言生成。
 > 工程侧实现了 SQLite 重启恢复、幂等提交、受限会话记忆、Redis LLM 缓存、single-flight、
@@ -18,8 +18,8 @@
 
 **企业制度问答与流程办理 Agent｜Python、FastAPI、LangGraph、RAG、SQLite、Redis、Docker**
 
-- 设计企业制度 RAG：Markdown/YAML 解析、条款级 Chunk、BGE Embedding、向量检索、结构化
-  Context 与 `S1/S2` 可验证引用；加入制度生命周期、等级、部门、角色和区域检索前授权。
+- 设计企业制度 RAG：Markdown/PDF/DOCX/OCR、条款级 Chunk、BGE Vector、BM25、RRF Hybrid 与可选 BGE Reranker、
+  结构化 Context 和 `S1/S2` 引用；加入生命周期、等级、部门、角色和区域检索前授权。
 - 使用 LangGraph 编排制度问答、材料检查、审批路线、申请草稿、人工确认与模拟提交；金额、
   材料、审批链和幂等性由确定性代码执行，SQLite 支持会话与审计跨重启恢复。
 - 实现 Redis 精确 LLM 缓存、异步 single-flight、Provider 有界并发/FIFO 背压、超时重试、
@@ -56,8 +56,8 @@
 
 ### 权限过滤发生在哪里？
 
-服务端先根据可信身份和制度元数据计算允许的 Chunk ID，再把 ID 集合交给向量索引；索引只对
-允许集合计算相似度。未授权 Chunk 可以存在于进程的启动索引中，但不会进入用户特定的评分结果
+服务端先根据可信身份和制度元数据计算允许的 Chunk ID，再把同一集合交给 Vector 与 BM25；
+RRF 只融合两路授权排名。未授权 Chunk 可以存在于进程的启动索引中，但不会进入用户特定的评分结果
 或 Prompt。这里不能偷换概念成“未授权内容从未加载进进程”。
 
 ### 缓存、single-flight 和背压的顺序是什么？
@@ -85,8 +85,10 @@
 当前不能宣称已经达到生产级，原因包括：
 
 - 运行时使用固定可信演示身份，未接 JWT/OIDC、员工目录和集中策略服务；
-- 制度索引是内存向量索引，未接 PostgreSQL/pgvector、BM25 和正式 Hybrid Search；
-- Reranker 已有批量契约，但尚未接入正式检索主链路；
+- Vector 已支持内存与 PostgreSQL/pgvector 双实现，Phase 30 已按稳定指纹只 Embedding 变化 Chunk，并
+  原子删除陈旧记录；BM25 仍会在每个进程启动时重建，且尚无蓝绿 collection 发布指针；
+- 文档加载已支持 Markdown、PDF、DOCX 和显式 OCR fallback，但缺复杂 layout/table parser 和真实企业扫描集；
+- Reranker 已接入正式检索主链路，但默认关闭，尚无真实模型相关性与延迟消融；
 - 指标和 single-flight 是单进程状态，未做跨实例聚合与协调；
 - 尚无 OpenTelemetry、集中日志、Grafana 告警和真实流量 SLO；
 - Day 30 演示不调用真实 BGE、LLM 或 Web Provider，只证明编排与工程契约。
@@ -97,7 +99,7 @@
 
 1. `app/main.py`：依赖组合和运行时边界；
 2. `app/agent/workflow.py`：LangGraph 节点、确认与副作用；
-3. `app/rag/policy_retriever.py`：授权 ID 与向量评分；
+3. `app/rag/policy_retriever.py`、`fusion.py`、`reranking.py`：授权、双路召回、RRF 与 Cross-Encoder；
 4. `app/rag/policy_answer_service.py`：JSON 上下文和引用校验；
 5. `app/security/`：身份授权和提示注入；
 6. `app/cache/`、`app/llm/concurrency.py`：缓存、防击穿和背压；

@@ -196,7 +196,8 @@ Agent 应当：
 当前处于：
 
 ```text
-Phase 21：项目收尾与作品集发布（Day 30 已完成）
+Advanced RAG Phase 31：Retrieval Evaluation（已完成）
+基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
 ### 已完成
@@ -281,7 +282,7 @@ Phase 21：项目收尾与作品集发布（Day 30 已完成）
 - [x] 路由模板、固定直方图和 64 键上限的进程内 HTTP 指标；
 - [x] 安全关联 500、JSON 状态、Prometheus Provider/HTTP 指标和离线验收。
 - [x] 可信身份、制度生命周期、等级、部门、角色和区域授权；
-- [x] 未授权 Chunk 在向量评分前排除且不进入 Prompt；
+- [x] 未授权 Chunk 在 Vector/BM25 候选与评分前排除且不进入 RRF 或 Prompt；
 - [x] 中英文提示注入、权限提升、工具绕过和编码指令检测；
 - [x] 污染制度证据隔离、JSON 数据边界和安全关联 400；
 - [x] 无内容安全状态、Prometheus 指标与完全离线 CI 评测。
@@ -289,14 +290,54 @@ Phase 21：项目收尾与作品集发布（Day 30 已完成）
 - [x] 真实解析、检索、LangGraph、业务规则和安全边界的集成演示；
 - [x] Day 30 发布契约、CI 自动运行和证据 Artifact；
 - [x] 已实现架构图、可重复演示手册、简历描述和面试讲解材料。
+- [x] 统一 Document Loader Protocol、不可变格式注册表与 Markdown Loader；
+- [x] Parser、Chunker、Retriever 复用同一加载入口且保持原有 5 文档/199 Chunk 契约；
+- [x] Phase 22 完全离线 Loader 专项验证与 CI 门禁。
+- [x] PyMuPDF 原生 PDF 文本提取与确定性阅读顺序；
+- [x] PDF 可信 sidecar 元数据、页码 provenance 与 Citation 传递；
+- [x] 加密/损坏/缺少 sidecar 拒绝及扫描件 `OCRRequiredError`；
+- [x] Phase 23 完全离线真实 PDF 专项验证与 CI 门禁。
+- [x] python-docx 段落、标题样式和表格按文档顺序提取；
+- [x] DOCX 可信 sidecar 元数据与顶层块 provenance 传递；
+- [x] 空/图片型 DOCX `OCRRequiredError`、损坏/缺少 sidecar 拒绝；
+- [x] Phase 24 完全离线真实 DOCX 专项验证与 CI 门禁。
+- [x] 可替换 OCR Provider、质量门禁与本机 Tesseract 适配器；
+- [x] 扫描 PDF 页渲染和 DOCX 内嵌图片 OCR fallback；
+- [x] OCR engine、页/块单元和置信度贯穿 Chunk、Citation 与 Research API；
+- [x] 低置信度拒绝、授权前置和 OCR 污染证据隔离专项验证。
+- [x] 依赖无关的中英文/企业编号确定性关键词 Tokenizer；
+- [x] `PolicyRetriever` 内并列的内存 BM25 索引与显式检索通道；
+- [x] 未授权 Chunk 在候选、DF、平均长度和 BM25 评分前排除；
+- [x] 5 文档/199 Chunk 完全离线 BM25 专项验证与 CI 门禁。
+- [x] Vector 与 BM25 的独立候选窗口和标准 RRF 融合；
+- [x] 跨通道 Chunk 去重、来源名次、原始分数和融合贡献诊断；
+- [x] `PolicyAnswerService` 正式切换到授权范围内的 Hybrid Search；
+- [x] RRF、单通道降级、权限前置和 199 Chunk 完全离线 CI 验收。
+- [x] RRF Top-20 候选到 Cross-Encoder 的单次批量重排；
+- [x] Rerank 后保留 Vector/BM25 信号、RRF 分数和原始名次；
+- [x] 可配置 BGE Provider、默认关闭和无 Provider 的 RRF 回退；
+- [x] 授权候选先于 Reranker 输入、正式问答入口和离线 CI 验收。
+- [x] 可替换 `VectorIndex`、内存与 pgvector 双存储实现；
+- [x] Psycopg 连接池、collection 隔离、事务批量 upsert 和精确 cosine search；
+- [x] 授权 ID 先形成 MATERIALIZED SQL 候选集，再执行 `<=>` 相似度排序；
+- [x] PostgreSQL/pgvector Compose 服务、具名卷、readiness 和重建持久化探针；
+- [x] Phase 29 完全离线 SQL/安全契约与 CI 门禁。
+- [x] 内容、检索文本、权限元数据、Embedding identity 和 Pipeline version 稳定指纹；
+- [x] 文档级 added/updated/unchanged/deleted 与 Chunk 级变更统计；
+- [x] 只为新增/变化 Chunk 生成 Embedding，重复运行零 Embedding；
+- [x] Vector Store 原子 upsert + stale Chunk deletion 和独立 indexing CLI；
+- [x] Runtime 复用已同步向量，同时保留现有 BM25、权限过滤、RRF、Reranker 与 Citation；
+- [x] Phase 30 完全离线幂等/增量/删除/安全专项验证与 CI 门禁。
+- [x] 独立于答案生成的 20 条跨领域检索 Judgments；
+- [x] Vector、BM25、Hybrid/RRF、Reranker 四通道消融；
+- [x] Recall@1/3/5、MRR@5、语料/数据集指纹与 JSON/Markdown 报告；
+- [x] 授权标签预检、Offline CI 门禁与可选真实 BGE 运行模式；
+- [x] Phase 31 完全离线检索质量评测与 CI 证据。
 
 ### 尚未实现
 
-- [ ] PDF 文档解析；
-- [ ] PostgreSQL / pgvector；
-- [ ] BM25 关键词检索；
-- [ ] Hybrid Search；
-- [ ] Reranker 接入正式检索链路与黄金相关性评测；
+- [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
+- [ ] 蓝绿 collection 发布指针、回滚和分布式 indexing leader；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -319,6 +360,11 @@ Phase 21：项目收尾与作品集发布（Day 30 已完成）
 同时具备请求 ID、脱敏 JSON 访问日志、低基数 HTTP 指标和 Prometheus 抓取端点，
 并在 RAG 和 Agent 执行前提供可信身份授权、提示注入拒绝与污染证据隔离，
 并能通过六个完全离线场景一键展示引用、业务规则、人工确认、幂等提交、研究边界和安全拒绝，
+同时具备授权范围内的 BM25 关键词检索、企业编号精确匹配和确定性排序，
+并使用 RRF 将 Vector 与 BM25 名次融合为正式制度问答候选，
+并可将授权 RRF 候选批量交给 BGE Cross-Encoder 做第二阶段精排，
+并可将 Vector 分支持久化到 PostgreSQL/pgvector，且 SQL 授权候选先于距离计算，
+并通过稳定指纹只更新变化 Chunk、原子删除陈旧向量并输出文档级同步报告，
 定位仍是可容器化运行的单机个人作品集版本，
 不宣称为多实例生产系统。
 ```
@@ -671,7 +717,7 @@ submission
 即使最终回答没有显示敏感内容，也不应让无权限内容进入模型上下文。
 
 Day 29 已在运行时实现该顺序：固定可信演示身份先检查制度状态、有效期、安全等级、部门、
-角色和地域，只有授权 Chunk ID 才参与向量评分。生产环境仍须用登录认证结果替换演示身份。
+角色和地域，只有授权 Chunk ID 才参与 Vector/BM25 与 RRF。生产环境仍须用登录认证结果替换演示身份。
 
 ---
 
@@ -886,6 +932,8 @@ Push / Pull Request / 手动运行
 → 异步 LLM single-flight 契约
 → LLM Provider 并发与背压契约
 → 请求关联与运行时可观测性契约
+→ RAG 权限、Document Loader、PDF/DOCX/OCR 契约
+→ BM25、RRF Hybrid 与 Reranker 正式接入契约
 → 三种并发 load shape 对照
 → Embedding/Reranker 批处理对照
 → 构建 Python Wheel
@@ -1172,8 +1220,8 @@ Provider 调用降为 1 次，配置 `batch_size=8` 时由模型内部执行 4 �
   --batch-latency-ms 0.25
 ```
 
-当前 Reranker 已具备批量 Provider 和稳定排序契约，但尚未接入正式检索链路。完整指标、
-真实模型边界和 batch size 选择方法见：
+当前 Reranker 已在 Advanced RAG Phase 28 接入正式检索链路；默认 Provider 仍关闭，显式配置
+`RAG_RERANKER_PROVIDER=bge` 后才加载真实模型。完整指标、真实模型边界和 batch size 选择方法见：
 
 ```text
 docs/embedding_reranker_batching.md
@@ -1249,7 +1297,7 @@ docs/runtime_observability.md
 ## 23. RAG 权限过滤与提示注入防护
 
 Day 29 把安全设计变成强制执行边界：服务器固定注入可信演示身份，制度 Chunk 先检查状态、
-有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做向量评分。用户在聊天中自称管理员
+有效期、安全等级、部门、角色和地域，再在授权 ID 范围内做 Vector/BM25 检索和 RRF。用户在聊天中自称管理员
 不能改变该上下文，也不能让无权限内容进入 LLM。
 
 用户输入在意图分类、内部 RAG、Web Search、Agent 工作流和工具执行前检查；疑似污染的制度
@@ -1364,13 +1412,30 @@ Application Services
   └── submit_mock_approval
        │
        ├── RAG Service
-       │   ├── Document Parser
+       │   ├── Document Loader Registry
+       │   │   ├── Markdown Loader
+       │   │   ├── PDF Native-text Loader
+       │   │   ├── DOCX Paragraph/Table Loader
+       │   │   └── Explicit OCR Fallback + Quality Gate
+       │   ├── Policy Parser
        │   ├── Metadata Extractor
        │   ├── Chunker
+       │   ├── Incremental Document Indexer
+       │   │   ├── Stable Chunk / Document Fingerprints
+       │   │   ├── Changed-only Embedding
+       │   │   └── Atomic Upsert + Stale Delete
        │   ├── Embedding
-       │   ├── Vector Search
-       │   ├── BM25 Search
-       │   └── Reranker
+       │   ├── VectorIndex Protocol
+       │   │   ├── In-memory Exact Search
+       │   │   └── PostgreSQL / pgvector Exact Search
+       │   ├── Authorized BM25 Search
+       │   ├── RRF Hybrid Fusion
+       │   └── Optional BGE Cross-Encoder Reranker
+       │
+       ├── Retrieval Evaluation
+       │   ├── Versioned Query / Relevant Chunk Judgments
+       │   ├── Vector / BM25 / Hybrid / Reranker Ablation
+       │   └── Recall@1/3/5 + MRR@5 Quality Gate
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1441,6 +1506,16 @@ demo1/
 │   ├── provider_backpressure.md
 │   ├── runtime_observability.md
 │   ├── rag_security_guardrails.md
+│   ├── document_loader.md
+│   ├── pdf_document_parsing.md
+│   ├── docx_document_parsing.md
+│   ├── ocr_fallback.md
+│   ├── bm25_retrieval.md
+│   ├── hybrid_search_rrf.md
+│   ├── reranker_integration.md
+│   ├── pgvector_store.md
+│   ├── document_indexing_pipeline.md
+│   ├── retrieval_evaluation.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1472,6 +1547,9 @@ demo1/
 Python：3.12.10
 FastAPI：0.140.8
 pytest：9.1.1
+PDF Parser：PyMuPDF 1.26.x
+DOCX Parser：python-docx 1.2.x
+OCR：可选 pytesseract 0.3.13 + 本机 Tesseract
 Tenacity：9.1.x
 Web Search：默认关闭；可选 Tavily HTTP API
 LLM 缓存：本机默认关闭；Compose 使用 Redis 8.10.0
@@ -1507,6 +1585,14 @@ python -m venv .venv
 ```powershell
 python -m pip install -e ".[dev]"
 ```
+
+需要验证本机 Tesseract 适配器时安装可选 Python 依赖：
+
+```powershell
+python -m pip install -e ".[dev,ocr]"
+```
+
+`pytesseract` 不包含 Tesseract 可执行文件和中文语言包，Windows 仍需单独安装并配置。
 
 可选安装 Day 22 采样 profiler：
 
@@ -1624,6 +1710,74 @@ python -X utf8 -m scripts.verify_runtime_observability
 python -X utf8 -m scripts.verify_rag_security
 ```
 
+### 验证 Phase 22 Document Loader
+
+```powershell
+python -X utf8 -m scripts.verify_document_loader
+```
+
+### 验证 Phase 23 PDF 文档解析
+
+```powershell
+python -X utf8 -m scripts.verify_pdf_document_parsing
+```
+
+### 验证 Phase 24 DOCX 文档解析
+
+```powershell
+python -X utf8 -m scripts.verify_docx_document_parsing
+```
+
+### 验证 Phase 25 OCR fallback
+
+```powershell
+python -X utf8 -m scripts.verify_ocr_fallback
+```
+
+### 验证 Phase 26 BM25 关键词检索
+
+```powershell
+python -X utf8 -m scripts.verify_bm25_retrieval
+```
+
+### 验证 Phase 27 Hybrid Search + RRF
+
+```powershell
+python -X utf8 -m scripts.verify_hybrid_search
+```
+
+### 验证 Phase 28 BGE Reranker 正式接入
+
+```powershell
+python -X utf8 -m scripts.verify_reranker_integration
+```
+
+### 验证 Phase 29 PostgreSQL + pgvector 存储契约
+
+```powershell
+python -X utf8 -m scripts.verify_pgvector_store
+```
+
+### 验证 Phase 30 Document Indexing Pipeline
+
+```powershell
+python -X utf8 -m scripts.verify_document_indexing
+python -X utf8 -m scripts.index_policy_documents
+```
+
+### 验证 Phase 31 Retrieval Evaluation
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+python -X utf8 -m scripts.verify_retrieval_evaluation
+```
+
+可选真实 BGE 消融（首次可能下载模型）：
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode bge --device cpu
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -1649,7 +1803,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] YAML 元数据提取；
 - [x] 章节和条款切分；
 - [x] Chunk 数据模型；
-- [ ] 基础关键词检索；
+- [x] 基础关键词检索；
 - [x] 制度引用结构；
 - [x] 单元测试。
 
@@ -1658,9 +1812,9 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] Embedding 接入；
 - [x] 内存向量索引；
 - [x] Reranker 批量 Provider 与稳定排序契约；
-- [ ] BM25；
-- [ ] Hybrid Search；
-- [ ] Reranker 接入正式检索链路；
+- [x] BM25；
+- [x] Hybrid Search + RRF；
+- [x] Reranker 接入正式检索链路；
 - [ ] Query Rewrite；
 - [x] 引用生成；
 - [ ] RAG 评测。
@@ -1771,6 +1925,141 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 简历项目描述；
 - [x] 面试讲解材料。
 
+### Advanced RAG Phase 22：Document Loader 抽象
+
+- [x] 格式无关的 `LoadedDocument` 输出契约；
+- [x] 最小 `DocumentLoader` Protocol；
+- [x] 不可变扩展名 Registry 和冲突拒绝；
+- [x] UTF-8/BOM Markdown Loader；
+- [x] Parser、Chunker、Retriever 增量接入；
+- [x] 原有安全边界和 5 文档/199 Chunk 回归验证；
+- [x] PDF Loader（Phase 23）；
+- [x] DOCX Loader（Phase 24）；
+- [x] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 23：PDF 文档解析
+
+- [x] PyMuPDF 原生文本层与 `sort=True` 阅读顺序；
+- [x] `policy.pdf` + `policy.metadata.yaml` 可信 ingestion 契约；
+- [x] 纯文本章/条标题规范化并复用现有 Chunker；
+- [x] Loader 行到 PDF 页码的稳定映射；
+- [x] `PolicyChunk`、Context、Citation 和 Research API 页码传递；
+- [x] 加密、损坏、缺元数据和 OCR-required 错误边界；
+- [x] 完全离线真实 PDF 生成与 CI 验收；
+- [x] DOCX Loader（Phase 24）；
+- [x] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 24：DOCX 文档解析
+
+- [x] python-docx 顶层段落和表格按原始文档顺序提取；
+- [x] Word Title / Heading 样式转换为现有 Markdown 标题层级；
+- [x] 表格确定性序列化并保留在所属条款中；
+- [x] `policy.docx` + `policy.metadata.yaml` 可信 ingestion 契约；
+- [x] Loader 行到 DOCX 顶层块序号的稳定映射；
+- [x] `PolicyChunk`、Context、Citation、Retriever 元数据和 Research API 块范围传递；
+- [x] 损坏、缺元数据和 OCR-required 错误边界；
+- [x] 完全离线真实 DOCX 生成与 CI 验收；
+- [x] OCR fallback（Phase 25）。
+
+### Advanced RAG Phase 25：OCR fallback
+
+- [x] 最小 `OCRProvider`、`OCRImage`、`OCRResult` 契约；
+- [x] 非空字符数和置信度双质量门禁；
+- [x] PDF 逐页原生文本判定、PyMuPDF rasterize 和 OCR fallback；
+- [x] DOCX 图片段落提取和 block-level OCR fallback；
+- [x] 本机 `TesseractOCRProvider`、超时、字节与像素上限；
+- [x] OCR engine、unit kind、unit number 和 confidence provenance；
+- [x] 低置信度内容在 Parser/索引前拒绝；
+- [x] OCR 证据继续经过 authorization-before-similarity 与 Prompt Guard；
+- [x] 完全离线 Provider 替身、PDF/DOCX 动态夹具与 CI 门禁；
+- [ ] OCR 人工复核队列、异步任务和真实中文扫描集评测。
+
+### Advanced RAG Phase 26：BM25 关键词检索
+
+- [x] `KeywordTokenizer` Protocol 与 NFKC/casefold 规范化；
+- [x] 企业编号保留、短中文词和字符 bigram Token；
+- [x] `InMemoryBM25Index`、`k1=1.2`、`b=0.75` 与确定性排序；
+- [x] 复用 `PolicyChunk.retrieval_text`、Retriever 元数据和结果模型；
+- [x] `PolicyRetriever.search_keywords(...)` 独立通道，不调用 Embedding；
+- [x] authorization-before-candidate/statistics/scoring 安全契约；
+- [x] 查询/文档 Token 上限、重复 ID 和非法输入防护；
+- [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
+- [x] Hybrid Search + RRF（Phase 27）；
+- [ ] 持久化倒排索引、专业中文分词和 Retrieval Evaluation。
+
+### Advanced RAG Phase 27：Hybrid Search + RRF
+
+- [x] 通用 `RankedList`、`RRFContribution` 和 `RRFResult` 契约；
+- [x] 标准 `1 / (k + rank)` 融合，默认 `k=60`；
+- [x] Vector/BM25 每路默认 20 个候选，再输出融合 Top-K；
+- [x] 跨通道 Chunk ID 去重和确定性同分排序；
+- [x] Hybrid 结果保留每路 rank、raw score 和 RRF contribution；
+- [x] `AccessControlledPolicyRetriever` 将同一授权集合传给两个子检索；
+- [x] `PolicyAnswerService` 正式使用 `search_hybrid(...)`；
+- [x] 单通道空结果降级、参数校验和 Prompt Guard 链路回归；
+- [x] 5 文档/199 Chunk 完全离线专项验证与 CI 门禁；
+- [x] BGE Reranker 正式接入（Phase 28）；
+- [x] Recall@K、MRR 和候选窗口消融评测（Phase 31）。
+
+### Advanced RAG Phase 28：BGE Reranker 正式接入
+
+- [x] 复用 `RerankingProvider` 与 `BGERerankingProvider` batch-first 契约；
+- [x] `PolicyRetriever.search_reranked(...)` 统一第二阶段入口；
+- [x] RRF Top-20 候选一次 Provider 调用并输出最终 Top-5；
+- [x] Cross-Encoder 输入使用标题、章节、条款和正文组成的 `retrieval_text`；
+- [x] `RetrievalMethod.RERANKED`、Reranker score、原始 RRF rank/score；
+- [x] Vector/BM25 的 rank、raw score 和 RRF contribution 继续保留；
+- [x] 授权过滤发生在 Reranker Provider 输入前；
+- [x] Provider disabled 时透明回退到 RRF Hybrid；
+- [x] `RAG_RERANKER_PROVIDER=bge` 显式启用和模型/设备/batch/candidate 配置；
+- [x] `PolicyAnswerService` 正式调用统一 Reranked 入口；
+- [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
+- [x] 相同 Judgments 上的真实 BGE Recall@K、MRR 运行入口（Phase 31）；
+- [ ] nDCG、固定硬件延迟和正式 BGE 基准快照。
+
+### Advanced RAG Phase 29：PostgreSQL + pgvector
+
+- [x] `VectorIndex` Protocol 和 `InMemoryVectorIndex.upsert(...)`；
+- [x] `PgVectorIndex`、Psycopg 连接池和延迟导入边界；
+- [x] pgvector extension、`VECTOR(512)`、JSONB 元数据和 collection 复合主键；
+- [x] `ON CONFLICT` 事务批量 upsert 与跨连接池实例持久化；
+- [x] `MATERIALIZED authorized_records` 后再执行 cosine distance；
+- [x] 当前 199 Chunk 默认精确检索，不在无评测数据时引入 HNSW；
+- [x] memory/pgvector Provider、DSN、collection、pool 和 timeout 配置；
+- [x] PostgreSQL/pgvector Compose、healthcheck 与 `pgvector_data` 具名卷；
+- [x] readiness 同时验证 SQLite 与配置的 Vector Store；
+- [x] Docker 重建后的 SQLite/pgvector 双持久化探针；
+- [x] 完全离线 SQL/权限专项验证与 CI 门禁；
+- [x] 增量 Document Indexing Pipeline 与陈旧 Chunk 原子删除（Phase 30）；
+- [x] 精确检索 Recall@K、MRR 四通道评测（Phase 31）；
+- [ ] HNSW ANN 参数与 Recall–Latency 曲线。
+
+### Advanced RAG Phase 30：Document Indexing Pipeline
+
+- [x] 复用 Loader、Parser、Chunker、Embedding Provider 和 VectorIndex；
+- [x] `retrieval_text`、引用/权限元数据、模型 identity 和 pipeline version 稳定指纹；
+- [x] 文档 added/updated/unchanged/deleted 与 Chunk 级统计；
+- [x] unchanged Chunk 不进入 Embedding Provider；
+- [x] `VectorIndex.list_entries()` 不传输向量即可比较当前快照；
+- [x] `VectorIndex.apply_changes()` 原子提交 upsert 和 stale deletion；
+- [x] 应用启动只解析/切分一次，并让 Retriever 复用同步后的向量；
+- [x] 独立 `scripts.index_policy_documents` JSON CLI；
+- [x] 完全离线幂等、单 Chunk 更新、源删除和授权前置专项验证；
+- [ ] 蓝绿 collection 构建、发布指针和一键回滚；
+- [x] Recall@K、MRR、四通道消融与可选真实 BGE 检索评测（Phase 31）。
+
+### Advanced RAG Phase 31：Retrieval Evaluation
+
+- [x] 20 条 JSONL Query / relevant Chunk judgments，覆盖五个制度域和多相关条款；
+- [x] 复用授权绑定 Retriever，对照 Vector、BM25、Hybrid/RRF、Reranked；
+- [x] Recall@1/3/5、截断 MRR@5 与查询级宏平均；
+- [x] Hybrid/Reranked 默认 Recall@5 与 MRR@5 双 0.80 质量门禁；
+- [x] 数据集 SHA-256、语料 Chunk/content SHA-256 与逐查询排名审计；
+- [x] 确定性、无网络 Offline CI 模式和真实 BGE 可选模式；
+- [x] 无权限/不存在相关标签预检，保持 authorization-before-similarity；
+- [x] JSON / Markdown 报告、稳定退出码、专项验证与 CI Artifact；
+- [ ] 扩大真实匿名查询集、双人标注、graded relevance / nDCG 和 ANN 参数实验。
+
 ---
 
 ## 30. 设计原则
@@ -1792,7 +2081,10 @@ LLM 负责理解用户意图和生成自然语言
 Embedding 与 Reranker 可以批量推理，但输出数量、顺序和相关性必须先通过等价性验证
 Provider 容量不足时必须有限排队并安全拒绝，不能用无界 Task 隐藏过载
 运行指标必须使用有界路由模板，日志不得把用户输入或异常正文当作访问字段
-权限过滤必须发生在向量评分和 Prompt 构造之前，聊天自述不能覆盖可信身份
+权限过滤必须发生在 Vector/BM25、RRF 和 Prompt 构造之前，聊天自述不能覆盖可信身份
+Reranker 只能处理已经授权并经过 RRF 去重的有限候选，不能接收全库或未授权正文
+pgvector 必须先物化授权记录集合，再在该集合上计算向量距离，不能全库 Top-K 后过滤
+索引同步必须由稳定指纹驱动；unchanged Chunk 不重复 Embedding，stale 删除与 upsert 必须原子提交
 用户输入和检索证据都是不可信数据，命中攻击时必须在任何外部调用或工具执行前拒绝
 作品集数字必须有可执行证据，离线夹具结果不得冒充真实模型或生产 SLA
 ```

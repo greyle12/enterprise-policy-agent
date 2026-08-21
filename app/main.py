@@ -51,11 +51,19 @@ from app.persistence import (
     SQLiteConversationMemoryStore,
     SQLiteMockApprovalSubmitter,
 )
-from app.rag.embeddings import BGEEmbeddingProvider
+from app.rag.embeddings import BGEEmbeddingProvider, DEFAULT_BGE_MODEL_NAME
+from app.rag.indexing import PolicyDocumentIndexer
 from app.rag.policy_answer_service import (
     PolicyAnswerService,
 )
 from app.rag.policy_retriever import PolicyRetriever
+from app.rag.reranking import (
+    BGERerankingProvider,
+    RerankerProviderName,
+    RerankingProvider,
+)
+from app.rag.vector_index import VectorIndex
+from app.rag.vector_store import build_policy_vector_index
 from app.resilience import ResilientToolExecutor
 from app.research import (
     DisabledWebSearchProvider,
@@ -78,7 +86,7 @@ from app.security import (
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 _POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
-_EMBEDDING_MODEL_NAME = "BAAI/bge-small-zh-v1.5"
+_EMBEDDING_MODEL_NAME = DEFAULT_BGE_MODEL_NAME
 _DEMO_DRAFT_USER_CONTEXT = DraftUserContext(
     employee_id="DEMO-EMP-001",
     employee_name="演示用户",
@@ -104,42 +112,80 @@ def _build_policy_answer_service(
     PolicyAnswerService,
     CachedLLMClient,
     ConcurrencyLimitedLLMClient,
+    VectorIndex,
 ]:
     """创建真实制度问答服务及其 LLM 客户端。"""
 
+    settings = get_settings()
     embedding_provider = BGEEmbeddingProvider(
         model_name=_EMBEDDING_MODEL_NAME,
     )
-    raw_retriever = PolicyRetriever.from_directory(
-        _POLICY_DIRECTORY,
-        embedding_provider=embedding_provider,
+    reranking_provider = _build_reranking_provider(settings)
+    vector_index = build_policy_vector_index(
+        settings,
+        dimension=embedding_provider.dimension,
     )
-    retriever = raw_retriever.restrict(_DEMO_POLICY_ACCESS_CONTEXT)
+    try:
+        indexing_run = PolicyDocumentIndexer(
+            embedding_provider=embedding_provider,
+            vector_index=vector_index,
+            embedding_identity=_EMBEDDING_MODEL_NAME,
+            pipeline_version=settings.rag_index_pipeline_version,
+        ).synchronize_directory(_POLICY_DIRECTORY)
+        raw_retriever = PolicyRetriever(
+            chunks=indexing_run.chunks,
+            embedding_provider=embedding_provider,
+            reranking_provider=reranking_provider,
+            rerank_candidate_k=settings.rag_reranker_candidate_k,
+            vector_index=vector_index,
+            index_vectors=False,
+        )
+        retriever = raw_retriever.restrict(_DEMO_POLICY_ACCESS_CONTEXT)
 
-    settings = get_settings()
-    raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
-    provider_limiter = _build_llm_provider_limiter(settings, raw_llm_client)
-    cache_backend = _build_llm_cache_backend(settings)
-    llm_client = CachedLLMClient(
-        upstream=provider_limiter,
-        backend=cache_backend,
-        identity=build_llm_cache_identity(
-            base_url=settings.llm_base_url,
-            model=settings.llm_model,
-        ),
-        ttl_seconds=settings.llm_cache_ttl_seconds,
-        max_request_bytes=settings.llm_cache_max_request_bytes,
-        singleflight_enabled=settings.llm_singleflight_enabled,
-        singleflight_max_keys=settings.llm_singleflight_max_keys,
+        raw_llm_client = OpenAICompatibleLLMClient.from_settings(settings)
+        provider_limiter = _build_llm_provider_limiter(settings, raw_llm_client)
+        cache_backend = _build_llm_cache_backend(settings)
+        llm_client = CachedLLMClient(
+            upstream=provider_limiter,
+            backend=cache_backend,
+            identity=build_llm_cache_identity(
+                base_url=settings.llm_base_url,
+                model=settings.llm_model,
+            ),
+            ttl_seconds=settings.llm_cache_ttl_seconds,
+            max_request_bytes=settings.llm_cache_max_request_bytes,
+            singleflight_enabled=settings.llm_singleflight_enabled,
+            singleflight_max_keys=settings.llm_singleflight_max_keys,
+        )
+
+        service = PolicyAnswerService(
+            retriever=retriever,
+            llm_client=llm_client,
+            prompt_guard=prompt_guard,
+        )
+    except BaseException:
+        vector_index.close()
+        raise
+
+    return service, llm_client, provider_limiter, vector_index
+
+
+def _build_policy_vector_index(settings: Settings, *, dimension: int) -> VectorIndex:
+    """Backward-compatible wrapper around the shared Vector Store factory."""
+
+    return build_policy_vector_index(settings, dimension=dimension)
+
+
+def _build_reranking_provider(settings: Settings) -> RerankingProvider | None:
+    """Create the explicit optional Cross-Encoder boundary."""
+
+    if settings.rag_reranker_provider is RerankerProviderName.DISABLED:
+        return None
+    return BGERerankingProvider(
+        model_name=settings.rag_reranker_model_name,
+        device=settings.rag_reranker_device,
+        batch_size=settings.rag_reranker_batch_size,
     )
-
-    service = PolicyAnswerService(
-        retriever=retriever,
-        llm_client=llm_client,
-        prompt_guard=prompt_guard,
-    )
-
-    return service, llm_client, provider_limiter
 
 
 def _build_llm_provider_limiter(
@@ -194,7 +240,7 @@ async def _lifespan(
     """初始化并释放应用级共享资源。"""
 
     prompt_guard = application.state.prompt_security_guard
-    service, llm_client, provider_limiter = _build_policy_answer_service(
+    service, llm_client, provider_limiter, vector_index = _build_policy_answer_service(
         prompt_guard=prompt_guard,
     )
     material_checker = RequiredMaterialsChecker.from_policy_directory(_POLICY_DIRECTORY)
@@ -243,6 +289,7 @@ async def _lifespan(
     application.state.agent_state_store = state_store
     application.state.llm_cache = llm_client
     application.state.llm_provider_limiter = provider_limiter
+    application.state.policy_vector_index = vector_index
 
     try:
         yield
@@ -250,13 +297,17 @@ async def _lifespan(
         try:
             await web_search_provider.aclose()
         finally:
-            await llm_client.close()
+            try:
+                await llm_client.close()
+            finally:
+                vector_index.close()
         del application.state.policy_research_assistant
         del application.state.agent_state_store
         del application.state.agent_router
         del application.state.policy_answer_service
         del application.state.llm_cache
         del application.state.llm_provider_limiter
+        del application.state.policy_vector_index
 
 
 def create_app(
