@@ -33,14 +33,15 @@ Trusted Identity → Authorization Filter → Vector/BM25 Scoring → RRF → Re
 
 ## 2. 输入与输出
 
-输入是 `tests/evaluation/retrieval_test_cases.jsonl`。每行包含：
+Phase 32 已将数据集升级为 graded judgments，并新增 nDCG；当前数据格式和公式详见
+`docs/graded_relevance_ndcg.md`。输入仍是 `tests/evaluation/retrieval_test_cases.jsonl`。
 
 | 字段 | 含义 |
 |---|---|
 | `case_id` | 稳定的 `RET-NNN` 用例编号 |
 | `title` | 便于人工审阅的场景名称 |
 | `query` | 用户自然语言问题 |
-| `relevant_chunk_ids` | 人工判断的相关 Chunk 集合，允许多个 |
+| `judgments` | Chunk ID、G1/G2/G3 相关等级和人工理由，允许多个 |
 | `tags` | 领域和单/多相关标签 |
 
 当前 v1 数据集有 20 条查询，覆盖差旅、采购、普通费用、信息安全和请假；其中包含跨条款问题，
@@ -85,8 +86,8 @@ $$
 MRR@K 强调第一个可用证据是否靠前。本项目明确写作 `MRR@5`，不把截断指标模糊地称为 MRR。
 Recall 使用查询级宏平均，让每个业务问题权重相同。
 
-默认记录 Recall@1、Recall@3、Recall@5 和 MRR@5。Hybrid 与 Reranked 是正式链路，因此默认
-门禁要求它们的 Recall@5、MRR@5 都不低于 0.80；Vector 与 BM25 作为消融对照，不单独阻塞 CI。
+默认记录 Recall@1/3/5、MRR@5 和 nDCG@1/3/5。Hybrid 与 Reranked 是正式链路，因此当前
+门禁要求它们的 Recall@5、MRR@5、nDCG@5 都不低于 0.80；Vector 与 BM25 作为消融对照。
 
 ## 4. 两种运行模式
 

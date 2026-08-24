@@ -49,6 +49,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -X utf8 -m scripts.verify_document_indexing",
     "python -X utf8 -m scripts.run_retrieval_evaluation --mode offline",
     "python -X utf8 -m scripts.verify_retrieval_evaluation",
+    "python -X utf8 -m scripts.verify_graded_relevance",
     "python -X utf8 -m scripts.run_portfolio_demo",
     "--output-dir artifacts/portfolio",
     "python -X utf8 -m scripts.verify_portfolio_release",

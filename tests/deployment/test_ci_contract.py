@@ -66,6 +66,7 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_document_indexing" in workflow
     assert "scripts.run_retrieval_evaluation --mode offline" in workflow
     assert "scripts.verify_retrieval_evaluation" in workflow
+    assert "scripts.verify_graded_relevance" in workflow
     assert "retrieval-evaluation-report.json" in workflow
     assert "retrieval-evaluation-report.md" in workflow
     assert "scripts.run_portfolio_demo" in workflow

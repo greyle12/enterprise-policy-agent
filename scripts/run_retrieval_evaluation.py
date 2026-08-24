@@ -30,7 +30,7 @@ _DEFAULT_POLICY_DIRECTORY = _PROJECT_ROOT / "data" / "policies"
 
 def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Measure Recall@K and MRR for Vector, BM25, Hybrid/RRF, and Reranker."
+        description=("Measure Recall@K, MRR, and nDCG for Vector, BM25, Hybrid/RRF, and Reranker.")
     )
     parser.add_argument(
         "--mode",
@@ -44,6 +44,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--candidate-k", type=int, default=DEFAULT_RETRIEVAL_CANDIDATE_K)
     parser.add_argument("--minimum-recall-at-5", type=float, default=0.80)
     parser.add_argument("--minimum-mrr-at-5", type=float, default=0.80)
+    parser.add_argument("--minimum-ndcg-at-5", type=float, default=0.80)
     parser.add_argument("--embedding-model", default=DEFAULT_BGE_MODEL_NAME)
     parser.add_argument("--reranker-model", default=DEFAULT_BGE_RERANKER_MODEL_NAME)
     parser.add_argument("--device", default=None)
@@ -56,6 +57,7 @@ def _run(args: argparse.Namespace) -> int:
     thresholds = RetrievalEvaluationThresholds(
         minimum_recall=args.minimum_recall_at_5,
         minimum_mrr=args.minimum_mrr_at_5,
+        minimum_ndcg=args.minimum_ndcg_at_5,
     )
     runtime = build_retrieval_evaluation_runtime(
         policy_directory=args.policy_dir,
@@ -87,6 +89,7 @@ def _run(args: argparse.Namespace) -> int:
             item.channel.value: {
                 **{f"recall_at_{k}": item.recall_at_k[k] for k in report.ks},
                 f"mrr_at_{report.thresholds.gate_k}": item.mrr_at_k,
+                f"ndcg_at_{report.thresholds.gate_k}": item.ndcg_at_k[report.thresholds.gate_k],
                 "meets_quality_gate": item.meets_quality_gate,
             }
             for item in report.summaries

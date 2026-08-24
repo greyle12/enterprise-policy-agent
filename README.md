@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 31：Retrieval Evaluation（已完成）
+Advanced RAG Phase 32：Graded Relevance + nDCG（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -333,6 +333,10 @@ Advanced RAG Phase 31：Retrieval Evaluation（已完成）
 - [x] Recall@1/3/5、MRR@5、语料/数据集指纹与 JSON/Markdown 报告；
 - [x] 授权标签预检、Offline CI 门禁与可选真实 BGE 运行模式；
 - [x] Phase 31 完全离线检索质量评测与 CI 证据。
+- [x] G1/G2/G3 多级相关性标注、人工 rationale 与旧二元数据兼容升级；
+- [x] 指数增益 DCG、理想排序归一化 nDCG@1/3/5 与重复结果防增益；
+- [x] Recall@5、MRR@5、nDCG@5 三指标正式通道质量门禁；
+- [x] v2 JSON/Markdown 报告、Phase 32 专项验证和 CI 防回退契约。
 
 ### 尚未实现
 
@@ -1435,7 +1439,7 @@ Application Services
        ├── Retrieval Evaluation
        │   ├── Versioned Query / Relevant Chunk Judgments
        │   ├── Vector / BM25 / Hybrid / Reranker Ablation
-       │   └── Recall@1/3/5 + MRR@5 Quality Gate
+       │   └── Graded Relevance + Recall/MRR/nDCG Gate
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1516,6 +1520,7 @@ demo1/
 │   ├── pgvector_store.md
 │   ├── document_indexing_pipeline.md
 │   ├── retrieval_evaluation.md
+│   ├── graded_relevance_ndcg.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1778,6 +1783,13 @@ python -X utf8 -m scripts.verify_retrieval_evaluation
 python -X utf8 -m scripts.run_retrieval_evaluation --mode bge --device cpu
 ```
 
+### 验证 Phase 32 Graded Relevance + nDCG
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+python -X utf8 -m scripts.verify_graded_relevance
+```
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -2015,7 +2027,8 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `PolicyAnswerService` 正式调用统一 Reranked 入口；
 - [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
 - [x] 相同 Judgments 上的真实 BGE Recall@K、MRR 运行入口（Phase 31）；
-- [ ] nDCG、固定硬件延迟和正式 BGE 基准快照。
+- [x] G1/G2/G3 与 nDCG@1/3/5（Phase 32）；
+- [ ] 固定硬件延迟和正式 BGE 基准快照。
 
 ### Advanced RAG Phase 29：PostgreSQL + pgvector
 
@@ -2058,7 +2071,22 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 确定性、无网络 Offline CI 模式和真实 BGE 可选模式；
 - [x] 无权限/不存在相关标签预检，保持 authorization-before-similarity；
 - [x] JSON / Markdown 报告、稳定退出码、专项验证与 CI Artifact；
-- [ ] 扩大真实匿名查询集、双人标注、graded relevance / nDCG 和 ANN 参数实验。
+- [x] G1/G2/G3 graded relevance、标注理由和 nDCG@1/3/5（Phase 32）；
+- [ ] 扩大真实匿名查询集、双人标注和 ANN 参数实验。
+
+### Advanced RAG Phase 32：Graded Relevance + nDCG
+
+- [x] `RelevanceGrade`：G1 marginal、G2 supporting、G3 highly relevant；
+- [x] 每个 Query–Chunk judgment 包含可审计的人工 `rationale`；
+- [x] Phase 31 `relevant_chunk_ids` 自动升级为 G3，内部不保留双重事实来源；
+- [x] 指数增益 `2^rel - 1`、位置折损、IDCG 和 nDCG@1/3/5；
+- [x] 重复 Chunk 不重复贡献 DCG；
+- [x] Recall/MRR 保持二元兼容，nDCG 评价高价值证据排序；
+- [x] Hybrid/Reranked Recall@5、MRR@5、nDCG@5 均需达到 0.80；
+- [x] 报告 schema `2.0`，JSON 保留等级/理由，Markdown 展示 G1/G2/G3；
+- [x] 20 条数据覆盖三个等级、Phase 32 专项脚本、pytest 和 CI 门禁；
+- [ ] 真实匿名 Query 双人标注、标注一致性、完整 pool judging；
+- [ ] 固定硬件真实 BGE 与 pgvector HNSW Recall–nDCG–p95 实验。
 
 ---
 

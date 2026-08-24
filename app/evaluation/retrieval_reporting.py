@@ -32,14 +32,19 @@ def render_retrieval_markdown(report: RetrievalEvaluationReport) -> str:
         f"- 语料 SHA-256：`{report.corpus_sha256}`",
         f"- 查询数：{report.total_cases}",
         f"- 候选池：Top {report.candidate_k}",
+        (
+            f"- 门禁阈值：Recall@{gate_k} ≥ {_percentage(report.thresholds.minimum_recall)}，"
+            f"MRR@{gate_k} ≥ {_percentage(report.thresholds.minimum_mrr)}，"
+            f"nDCG@{gate_k} ≥ {_percentage(report.thresholds.minimum_ndcg)}"
+        ),
         f"- 质量门禁：**{gate}**",
         "",
         "## 消融指标",
         "",
         "| 检索通道 | "
         + " | ".join(f"Recall@{k}" for k in report.ks)
-        + f" | MRR@{gate_k} | 平均耗时 | 错误 | 门禁 |",
-        "|---|" + "---:|" * len(report.ks) + "---:|---:|---:|---|",
+        + f" | MRR@{gate_k} | nDCG@{gate_k} | 平均耗时 | 错误 | 门禁 |",
+        "|---|" + "---:|" * len(report.ks) + "---:|---:|---:|---:|---|",
     ]
     for summary in report.summaries:
         if summary.meets_quality_gate is None:
@@ -49,6 +54,7 @@ def render_retrieval_markdown(report: RetrievalEvaluationReport) -> str:
         recalls = " | ".join(_percentage(summary.recall_at_k[k]) for k in report.ks)
         lines.append(
             f"| `{summary.channel.value}` | {recalls} | {_percentage(summary.mrr_at_k)} | "
+            f"{_percentage(summary.ndcg_at_k[gate_k])} | "
             f"{summary.average_duration_ms:.3f} ms | {summary.error_count} | {status} |"
         )
 
@@ -57,18 +63,23 @@ def render_retrieval_markdown(report: RetrievalEvaluationReport) -> str:
             "",
             "## 查询明细",
             "",
-            f"| 用例 | 通道 | Recall@{gate_k} | 首个相关排名 | Top {max(report.ks)} | 错误 |",
-            "|---|---|---:|---:|---|---|",
+            f"| 用例 | 分级标注 | 通道 | Recall@{gate_k} | nDCG@{gate_k} | 首个相关排名 | "
+            f"Top {max(report.ks)} | 错误 |",
+            "|---|---|---|---:|---:|---:|---|---|",
         )
     )
     for case in report.case_results:
+        judgments = "<br>".join(
+            f"`{judgment.chunk_id}` (G{int(judgment.relevance)})" for judgment in case.judgments
+        )
         for result in case.channels:
             rank = str(result.first_relevant_rank) if result.first_relevant_rank else "—"
             ids = "<br>".join(f"`{chunk_id}`" for chunk_id in result.retrieved_chunk_ids)
             error = (result.error or "").replace("|", "\\|")
             lines.append(
-                f"| `{case.case_id}` {case.title} | `{result.channel.value}` | "
-                f"{_percentage(result.recall_at_k[gate_k])} | {rank} | {ids} | {error} |"
+                f"| `{case.case_id}` {case.title} | {judgments} | `{result.channel.value}` | "
+                f"{_percentage(result.recall_at_k[gate_k])} | "
+                f"{_percentage(result.ndcg_at_k[gate_k])} | {rank} | {ids} | {error} |"
             )
 
     lines.extend(

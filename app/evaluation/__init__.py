@@ -10,6 +10,8 @@ from app.evaluation.models import (
 from app.evaluation.runner import GoldenEvaluationRunner
 from app.evaluation.retrieval_dataset import RetrievalDataset, load_retrieval_dataset
 from app.evaluation.retrieval_models import (
+    RelevanceGrade,
+    RelevanceJudgment,
     RetrievalCase,
     RetrievalEvaluationMode,
     RetrievalEvaluationReport,
@@ -24,6 +26,8 @@ __all__ = [
     "GoldenDataset",
     "GoldenEvaluationRunner",
     "RetrievalCase",
+    "RelevanceGrade",
+    "RelevanceJudgment",
     "RetrievalDataset",
     "RetrievalEvaluationMode",
     "RetrievalEvaluationReport",

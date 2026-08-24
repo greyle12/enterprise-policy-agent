@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
+from math import log2
 from time import perf_counter
 from typing import Protocol
 
@@ -68,6 +69,40 @@ def reciprocal_rank(
         if chunk_id in relevant:
             return rank, 1.0 / rank
     return None, 0.0
+
+
+def ndcg_at_k(
+    retrieved_ids: Sequence[str],
+    relevance_by_id: dict[str, int],
+    *,
+    k: int,
+) -> float:
+    """Return normalized discounted cumulative gain using exponential gains."""
+
+    if k < 1:
+        raise ValueError("k must be greater than zero")
+    if not relevance_by_id:
+        raise ValueError("relevance_by_id must not be empty")
+    if any(
+        isinstance(grade, bool) or not isinstance(grade, int) or grade not in {1, 2, 3}
+        for grade in relevance_by_id.values()
+    ):
+        raise ValueError("relevance grades must be integers from one to three")
+
+    seen: set[str] = set()
+    dcg = 0.0
+    for rank, chunk_id in enumerate(retrieved_ids[:k], start=1):
+        if chunk_id in seen:
+            continue
+        seen.add(chunk_id)
+        grade = relevance_by_id.get(chunk_id, 0)
+        dcg += (2**grade - 1) / log2(rank + 1)
+
+    ideal_grades = sorted(relevance_by_id.values(), reverse=True)[:k]
+    ideal_dcg = sum(
+        (2**grade - 1) / log2(rank + 1) for rank, grade in enumerate(ideal_grades, start=1)
+    )
+    return dcg / ideal_dcg
 
 
 class RetrievalEvaluationRunner:
@@ -156,6 +191,9 @@ class RetrievalEvaluationRunner:
             recall_at_k={
                 k: recall_at_k(retrieved_ids, case.relevant_chunk_ids, k=k) for k in self._ks
             },
+            ndcg_at_k={
+                k: ndcg_at_k(retrieved_ids, case.relevance_by_chunk_id, k=k) for k in self._ks
+            },
             first_relevant_rank=first_rank,
             reciprocal_rank=rr,
             duration_ms=duration_ms,
@@ -173,6 +211,7 @@ class RetrievalEvaluationRunner:
                 title=case.title,
                 query=case.query,
                 relevant_chunk_ids=case.relevant_chunk_ids,
+                judgments=case.judgments,
                 channels=tuple(self._run_channel(case, channel) for channel in self._channels),
             )
             for case in case_tuple
@@ -191,11 +230,16 @@ class RetrievalEvaluationRunner:
                 for k in self._ks
             }
             mrr = sum(item.reciprocal_rank for item in measurements) / len(measurements)
+            ndcgs = {
+                k: sum(item.ndcg_at_k[k] for item in measurements) / len(measurements)
+                for k in self._ks
+            }
             meets_gate: bool | None = None
             if channel in self._thresholds.required_channels:
                 meets_gate = (
                     recalls[self._thresholds.gate_k] >= self._thresholds.minimum_recall
                     and mrr >= self._thresholds.minimum_mrr
+                    and ndcgs[self._thresholds.gate_k] >= self._thresholds.minimum_ndcg
                     and not any(item.error for item in measurements)
                 )
             summaries.append(
@@ -204,6 +248,7 @@ class RetrievalEvaluationRunner:
                     case_count=len(measurements),
                     recall_at_k=recalls,
                     mrr_at_k=mrr,
+                    ndcg_at_k=ndcgs,
                     average_duration_ms=(
                         sum(item.duration_ms for item in measurements) / len(measurements)
                     ),

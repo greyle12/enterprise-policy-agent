@@ -20,6 +20,7 @@ Advanced RAG Phase 28 增加 RRF 候选批量精排、授权前置、配置回�
 Advanced RAG Phase 29 增加 VectorIndex、pgvector schema/upsert、授权 SQL CTE、持久卷和 Compose 契约。
 Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk 原子删除和预索引复用契约。
 Advanced RAG Phase 31 增加 20 条检索标注、四通道消融、Recall@K、MRR@5 和报告质量门禁。
+Advanced RAG Phase 32 增加 G1/G2/G3 标注、nDCG@1/3/5、v2 报告和三指标质量门禁。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -108,6 +109,7 @@ timeout 30 分钟
 → Phase 29 pgvector 存储、持久化和 authorization-before-distance 离线契约
 → Phase 30 Document Indexing Pipeline 幂等、增量更新与 stale deletion 离线契约
 → Phase 31 Vector/BM25/Hybrid/Reranker Recall@1/3/5 与 MRR@5 离线门禁
+→ Phase 32 graded relevance、nDCG@1/3/5 与标注迁移离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -129,6 +131,8 @@ Phase 30 使用确定性内存 Embedding/Vector Store 边界，验证第二次�
 Phase 31 CI 使用确定性哈希词法向量与词项重排，对相同授权 Retriever 的四个检索入口计算
 Recall@1/3/5 和 MRR@5；它不下载 BGE，也不调用 LLM。真实语义质量由开发者在固定环境显式运行
 `scripts.run_retrieval_evaluation --mode bge` 测量。
+Phase 32 在相同无网络运行中验证三等级 judgments、标注理由、指数增益 nDCG、重复结果防增益和
+v2 报告；Hybrid/Reranked 的 Recall@5、MRR@5、nDCG@5 必须同时达到阈值。
 
 ### 3.1 构建证据
 
@@ -257,6 +261,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_indexing
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.run_retrieval_evaluation --mode offline
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_retrieval_evaluation
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_graded_relevance
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -304,7 +309,8 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Reranker 接入契约失败 | 单独运行 `scripts.verify_reranker_integration`，检查候选池、单次批量调用、原始 RRF 诊断、禁用回退和 Provider 前授权 |
 | pgvector 契约失败 | 单独运行 `scripts.verify_pgvector_store`，检查 schema、upsert、collection、授权 CTE、Compose 镜像和具名卷 |
 | Document Indexing 契约失败 | 单独运行 `scripts.verify_document_indexing`，检查稳定指纹、零变更跳过、单 Chunk 更新、stale 删除和授权前置 |
-| Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5、Provider identity 和授权标签预检 |
+| Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5/nDCG@5、Provider identity 和授权标签预检 |
+| Graded Relevance 契约失败 | 单独运行 `scripts.verify_graded_relevance`，检查 G1/G2/G3 覆盖、rationale、v2 schema、DCG 折损和 nDCG 门禁 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -330,6 +336,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不在 GitHub-hosted Runner 启动真实 PostgreSQL；Phase 29 CI 只验证离线 SQL/安全契约，真实卷恢复由本机 Docker 脚本验证；
 - 不下载真实 BGE 验证增量同步；Phase 30 使用确定性 Embedding 替身证明调用数量和索引状态转换；
 - 不把 Phase 31 Offline 分数解释为真实 BGE 质量；CI 只验证指标、四通道接线、权限和回归门禁；
+- 不把 Phase 32 的单人三级标注当作生产 gold set；尚未完成双人一致性和真实 Query pool judging；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 
