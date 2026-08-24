@@ -69,6 +69,11 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "scripts.verify_graded_relevance" in workflow
     assert "retrieval-evaluation-report.json" in workflow
     assert "retrieval-evaluation-report.md" in workflow
+    assert "scripts.run_retrieval_candidate_sweep" in workflow
+    assert "--mode offline --candidate-k 5 10 20" in workflow
+    assert "scripts.verify_retrieval_candidate_sweep" in workflow
+    assert "retrieval-candidate-sweep-report.json" in workflow
+    assert "retrieval-candidate-sweep-report.md" in workflow
     assert "scripts.run_portfolio_demo" in workflow
     assert "--output-dir artifacts/portfolio" in workflow
     assert "scripts.verify_portfolio_release" in workflow

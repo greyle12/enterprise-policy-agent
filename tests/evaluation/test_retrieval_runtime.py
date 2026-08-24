@@ -8,9 +8,11 @@ import pytest
 from app.evaluation.retrieval_models import RetrievalCase
 from app.evaluation.retrieval_runtime import (
     RetrievalJudgmentError,
+    build_retrieval_evaluation_runtime,
     corpus_sha256,
     validate_retrieval_judgments,
 )
+from app.evaluation.retrieval_models import RetrievalEvaluationMode
 from app.rag.policy_chunker import chunk_policy_directory
 from app.schemas.policy import SecurityLevel
 from app.security import PolicyAccessContext, TrustedIdentitySource
@@ -68,4 +70,22 @@ def test_judgments_cannot_label_an_unauthorized_chunk_as_relevant() -> None:
             [restricted],
             access_context=_context(),
             as_of_date=date(2026, 8, 20),
+        )
+
+
+@pytest.mark.parametrize(
+    ("embedding_batch_size", "reranker_batch_size"),
+    [(0, 1), (1, 0)],
+)
+def test_runtime_rejects_invalid_batch_sizes_before_loading_documents(
+    embedding_batch_size: int,
+    reranker_batch_size: int,
+) -> None:
+    with pytest.raises(ValueError, match="batch sizes"):
+        build_retrieval_evaluation_runtime(
+            policy_directory="does-not-exist",
+            cases=(),
+            mode=RetrievalEvaluationMode.BGE,
+            embedding_batch_size=embedding_batch_size,
+            reranker_batch_size=reranker_batch_size,
         )

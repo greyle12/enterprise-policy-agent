@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 32：Graded Relevance + nDCG（已完成）
+Advanced RAG Phase 33：真实 BGE Candidate Window 消融与实验协议（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -337,6 +337,10 @@ Advanced RAG Phase 32：Graded Relevance + nDCG（已完成）
 - [x] 指数增益 DCG、理想排序归一化 nDCG@1/3/5 与重复结果防增益；
 - [x] Recall@5、MRR@5、nDCG@5 三指标正式通道质量门禁；
 - [x] v2 JSON/Markdown 报告、Phase 32 专项验证和 CI 防回退契约。
+- [x] Hybrid/Reranked Candidate K 受控 sweep，固定最终 Top-5、语料、judgments 与授权身份；
+- [x] Recall@5/MRR@5/nDCG@5 与 nearest-rank p50/p95 联合报告；
+- [x] 分通道 Pareto 前沿、默认窗口门禁和不自动修改生产配置的决策边界；
+- [x] Offline CI 方法验证与可选真实 BGE 固定硬件实验入口。
 
 ### 尚未实现
 
@@ -1439,7 +1443,8 @@ Application Services
        ├── Retrieval Evaluation
        │   ├── Versioned Query / Relevant Chunk Judgments
        │   ├── Vector / BM25 / Hybrid / Reranker Ablation
-       │   └── Graded Relevance + Recall/MRR/nDCG Gate
+       │   ├── Graded Relevance + Recall/MRR/nDCG Gate
+       │   └── Candidate Window Quality/Latency + Pareto Sweep
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1790,6 +1795,21 @@ python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
 python -X utf8 -m scripts.verify_graded_relevance
 ```
 
+### 验证 Phase 33 Candidate Window 消融
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_candidate_sweep --mode offline --candidate-k 5 10 20 40 --default-candidate-k 20 --warmups 1 --repetitions 3
+python -X utf8 -m scripts.verify_retrieval_candidate_sweep
+```
+
+可选真实 BGE 固定硬件实验（首次可能下载模型）：
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_candidate_sweep --mode bge --candidate-k 5 10 20 40 --default-candidate-k 20 --warmups 1 --repetitions 3 --device cpu
+```
+
+详见 `docs/retrieval_candidate_window_experiment.md`。Offline 分数不能解释为真实 BGE 质量或 SLA。
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -2086,7 +2106,22 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 报告 schema `2.0`，JSON 保留等级/理由，Markdown 展示 G1/G2/G3；
 - [x] 20 条数据覆盖三个等级、Phase 32 专项脚本、pytest 和 CI 门禁；
 - [ ] 真实匿名 Query 双人标注、标注一致性、完整 pool judging；
-- [ ] 固定硬件真实 BGE 与 pgvector HNSW Recall–nDCG–p95 实验。
+- [x] 固定变量的 Candidate Window 质量/延迟实验协议与真实 BGE 运行入口（Phase 33）。
+- [ ] pgvector HNSW Recall–nDCG–p95 实验。
+
+### Advanced RAG Phase 33：真实 BGE Candidate Window 消融与实验协议
+
+- [x] 复用同一个授权 Retriever，只改变 Hybrid/Reranked candidate K；
+- [x] 固定最终 Top-5、语料与数据集 SHA-256、可信评测身份和模型 identity；
+- [x] warm-up 与 measured repetitions 分离，记录 nearest-rank p50/p95；
+- [x] 每个窗口联合输出 Recall@5、MRR@5、nDCG@5、错误数和三指标门禁；
+- [x] Hybrid/Reranked 分通道 Pareto 非支配前沿；
+- [x] 默认窗口单独门禁，小窗口消融失败不误报实验实现失败；
+- [x] JSON/Markdown 报告记录 device、batch size、环境、语料和 judgments 指纹；
+- [x] BGE 参数在昂贵模型构建前预检，Offline CI 不下载模型；
+- [x] pytest、专项验证、CI Artifact 和详细实验说明；
+- [ ] 固定硬件运行并评审真实 BGE 报告快照；
+- [ ] pgvector HNSW 参数与 Recall–nDCG–p95 曲线（Phase 34）。
 
 ---
 

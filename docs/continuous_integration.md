@@ -21,6 +21,7 @@ Advanced RAG Phase 29 增加 VectorIndex、pgvector schema/upsert、授权 SQL C
 Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk 原子删除和预索引复用契约。
 Advanced RAG Phase 31 增加 20 条检索标注、四通道消融、Recall@K、MRR@5 和报告质量门禁。
 Advanced RAG Phase 32 增加 G1/G2/G3 标注、nDCG@1/3/5、v2 报告和三指标质量门禁。
+Advanced RAG Phase 33 增加 Candidate K 受控 sweep、质量/延迟联合报告、Pareto 前沿和默认窗口门禁。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -110,6 +111,7 @@ timeout 30 分钟
 → Phase 30 Document Indexing Pipeline 幂等、增量更新与 stale deletion 离线契约
 → Phase 31 Vector/BM25/Hybrid/Reranker Recall@1/3/5 与 MRR@5 离线门禁
 → Phase 32 graded relevance、nDCG@1/3/5 与标注迁移离线契约
+→ Phase 33 Candidate Window Recall/MRR/nDCG、p50/p95 与 Pareto 离线实验契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -133,6 +135,8 @@ Recall@1/3/5 和 MRR@5；它不下载 BGE，也不调用 LLM。真实语义质�
 `scripts.run_retrieval_evaluation --mode bge` 测量。
 Phase 32 在相同无网络运行中验证三等级 judgments、标注理由、指数增益 nDCG、重复结果防增益和
 v2 报告；Hybrid/Reranked 的 Recall@5、MRR@5、nDCG@5 必须同时达到阈值。
+Phase 33 复用同一个授权 Retriever，在固定 Top-5 下 sweep 5/10/20；CI 只证明变量控制、指标、
+报告和默认窗口门禁，不把词法替身的延迟或 Pareto 点解释为真实 BGE 结论。
 
 ### 3.1 构建证据
 
@@ -140,7 +144,7 @@ CI 保存两组 14 天构建证据：
 
 | Artifact | 内容 | 失败时行为 |
 |---|---|---|
-| `quality-evidence-<run_id>` | pytest JUnit XML、黄金/检索评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
+| `quality-evidence-<run_id>` | pytest JUnit XML、黄金/检索/Candidate Window 评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
 | `python-wheel-<run_id>` | 可安装 `.whl` | 仅全部质量门禁通过后保存 |
 
 JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；性能报告
@@ -311,6 +315,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Document Indexing 契约失败 | 单独运行 `scripts.verify_document_indexing`，检查稳定指纹、零变更跳过、单 Chunk 更新、stale 删除和授权前置 |
 | Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5/nDCG@5、Provider identity 和授权标签预检 |
 | Graded Relevance 契约失败 | 单独运行 `scripts.verify_graded_relevance`，检查 G1/G2/G3 覆盖、rationale、v2 schema、DCG 折损和 nDCG 门禁 |
+| Candidate Window 实验失败 | 单独运行 `scripts.verify_retrieval_candidate_sweep`，检查固定 Top-5、默认窗口、三指标、p50/p95、Pareto 和 Provider identity |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -337,6 +342,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不下载真实 BGE 验证增量同步；Phase 30 使用确定性 Embedding 替身证明调用数量和索引状态转换；
 - 不把 Phase 31 Offline 分数解释为真实 BGE 质量；CI 只验证指标、四通道接线、权限和回归门禁；
 - 不把 Phase 32 的单人三级标注当作生产 gold set；尚未完成双人一致性和真实 Query pool judging；
+- 不把 Phase 33 Offline candidate sweep 当作真实 BGE 性能实验；真实模式必须在固定硬件显式运行，且报告不会自动修改生产配置；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 
