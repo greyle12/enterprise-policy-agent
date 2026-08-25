@@ -169,7 +169,8 @@ Recall@K 对“是否找全证据”敏感，MRR@K 对“首个证据是否靠�
 - 当前相关性是二元判断；需要 graded relevance 后再加入 nDCG@K；
 - 尚未按部门、角色、文档格式、OCR 来源、短/长查询和时间切片分层报告；
 - 未统计索引更新后的回归差异和置信区间；
-- pgvector 当前 199 Chunk 使用精确检索，尚未对 HNSW `ef_search` / `m` 做 Recall–Latency 曲线；
+- pgvector 当前生产默认仍为精确检索；Phase 34 已提供 HNSW `m` / `ef_construction` / `ef_search`
+  的 ANN Recall–Judged nDCG–p95 实验入口，尚未沉淀固定硬件真实 BGE 快照；
 - 真实 BGE 模式尚未在 CI 下载模型，也没有固定 GPU/CPU 硬件基线；
 - 评测数据与训练数据需要防止泄漏，真实企业查询还必须先做隐私脱敏。
 

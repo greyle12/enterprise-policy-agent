@@ -59,7 +59,9 @@ class RetrievalEvaluationRuntime:
     external_model_calls: bool
 
 
-def _access_context() -> PolicyAccessContext:
+def retrieval_evaluation_access_context() -> PolicyAccessContext:
+    """Return the fixed trusted identity shared by retrieval experiments."""
+
     return PolicyAccessContext(
         employee_id="RETRIEVAL-EVAL-001",
         department="评测部门",
@@ -127,7 +129,7 @@ def build_retrieval_evaluation_runtime(
         raise ValueError("evaluation batch sizes must be greater than zero")
 
     chunks = tuple(chunk_policy_directory(Path(policy_directory)))
-    access_context = _access_context()
+    access_context = retrieval_evaluation_access_context()
     validate_retrieval_judgments(
         cases,
         chunks,

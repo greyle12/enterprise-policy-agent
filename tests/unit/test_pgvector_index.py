@@ -40,6 +40,7 @@ class _Database:
         self.records: dict[tuple[str, str], tuple[str, list[float], dict[str, str]]] = {}
         self.executed: list[tuple[str, tuple[object, ...]]] = []
         self.executemany_calls = 0
+        self.cursor_calls = 0
         self.schema_ready = False
 
 
@@ -78,7 +79,7 @@ class _Connection:
                 if key[0] != collection or (delete_ids is not None and key[1] not in delete_ids)
             }
             return _Cursor()
-        if "ORDER BY embedding <=>" in query:
+        if "ORDER BY authorized_records.embedding <=>" in query:
             collection = str(normalized_params[0])
             if "record_id = ANY" in query:
                 allowed = set(normalized_params[1])
@@ -110,6 +111,16 @@ class _Connection:
             scored.sort(key=lambda row: row[4], reverse=True)
             return _Cursor(rows=scored[:top_k])
         return _Cursor()
+
+    @contextmanager
+    def cursor(self) -> Iterator[_BatchCursor]:
+        self.database.cursor_calls += 1
+        yield _BatchCursor(self.database)
+
+
+class _BatchCursor:
+    def __init__(self, database: _Database) -> None:
+        self.database = database
 
     def executemany(self, query: str, params_seq: Sequence[Sequence[object]]) -> None:
         assert "ON CONFLICT (collection_name, record_id) DO UPDATE" in query
@@ -168,7 +179,9 @@ def test_schema_is_idempotent_and_uses_exact_cosine_storage() -> None:
 
     sql = "\n".join(query for query, _ in pool.database.executed)
     assert "CREATE EXTENSION IF NOT EXISTS vector" in sql
-    assert "embedding VECTOR(3) NOT NULL" in sql
+    assert "embedding VECTOR NOT NULL" in sql
+    assert "ALTER COLUMN embedding TYPE VECTOR" in sql
+    assert "format_type(attribute.atttypid, attribute.atttypmod) <> 'vector'" in sql
     assert "PRIMARY KEY (collection_name, record_id)" in sql
     assert "USING hnsw" not in sql
     index.ping()
@@ -180,6 +193,8 @@ def test_upsert_persists_across_index_instances_and_updates_by_id() -> None:
     first.initialize_schema()
     first.upsert(_records())
     assert first.size == 3
+    assert database.cursor_calls == 1
+    assert database.executemany_calls == 1
 
     second = PgVectorIndex(pool=_Pool(database), dimension=3, collection_name="policies")
     second.upsert(
@@ -260,10 +275,14 @@ def test_authorization_allow_list_is_in_sql_before_similarity_ordering() -> None
     search_sql, params = next(
         (query, params)
         for query, params in reversed(pool.database.executed)
-        if "ORDER BY embedding <=>" in query
+        if "ORDER BY authorized_records.embedding <=>" in query
     )
-    assert search_sql.index("record_id = ANY") < search_sql.index("ORDER BY embedding <=>")
+    assert search_sql.index("record_id = ANY") < search_sql.index(
+        "ORDER BY authorized_records.embedding <=>"
+    )
     assert "WITH authorized_records AS MATERIALIZED" in search_sql
+    assert "authorized_records.embedding::text" in search_sql
+    assert "query_vector.query_embedding" in search_sql
     assert set(params[1]) == {"travel", "purchase"}
 
 

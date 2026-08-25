@@ -9,7 +9,7 @@ from typing import Any, Protocol, Self
 from app.rag.embeddings import EmbeddingVector
 from app.rag.vector_index import SearchResult, VectorIndexEntry, VectorRecord
 
-_TABLE_NAME = "rag_policy_vectors"
+PGVECTOR_TABLE_NAME = "rag_policy_vectors"
 
 
 class _CursorLike(Protocol):
@@ -20,6 +20,15 @@ class _CursorLike(Protocol):
         """Return all database rows."""
 
 
+class _BatchCursorLike(Protocol):
+    def executemany(
+        self,
+        query: str,
+        params_seq: Sequence[Sequence[Any]],
+    ) -> object:
+        """Execute one parameterized statement for many rows."""
+
+
 class _ConnectionLike(Protocol):
     def execute(
         self,
@@ -28,12 +37,8 @@ class _ConnectionLike(Protocol):
     ) -> _CursorLike:
         """Execute one SQL statement."""
 
-    def executemany(
-        self,
-        query: str,
-        params_seq: Sequence[Sequence[Any]],
-    ) -> object:
-        """Execute one parameterized statement for many rows."""
+    def cursor(self) -> AbstractContextManager[_BatchCursorLike]:
+        """Open a cursor for Psycopg batch operations."""
 
 
 class PgVectorConnectionPool(Protocol):
@@ -155,7 +160,7 @@ class PgVectorIndex:
         self._ensure_open()
         with self._pool.connection() as connection:
             row = connection.execute(
-                f"SELECT COUNT(*) FROM {_TABLE_NAME} WHERE collection_name = %s",
+                f"SELECT COUNT(*) FROM {PGVECTOR_TABLE_NAME} WHERE collection_name = %s",
                 (self._collection_name,),
             ).fetchone()
         if row is None:
@@ -169,11 +174,11 @@ class PgVectorIndex:
         statements = (
             "CREATE EXTENSION IF NOT EXISTS vector",
             f"""
-            CREATE TABLE IF NOT EXISTS {_TABLE_NAME} (
+            CREATE TABLE IF NOT EXISTS {PGVECTOR_TABLE_NAME} (
                 collection_name TEXT NOT NULL,
                 record_id TEXT NOT NULL,
                 text TEXT NOT NULL,
-                embedding VECTOR({self._dimension}) NOT NULL,
+                embedding VECTOR NOT NULL,
                 metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -181,8 +186,31 @@ class PgVectorIndex:
             )
             """,
             f"""
+            DO $pgvector_dimension_migration$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1
+                    FROM pg_attribute AS attribute
+                    JOIN pg_class AS relation
+                      ON relation.oid = attribute.attrelid
+                    JOIN pg_namespace AS namespace
+                      ON namespace.oid = relation.relnamespace
+                    WHERE namespace.nspname = current_schema()
+                      AND relation.relname = '{PGVECTOR_TABLE_NAME}'
+                      AND attribute.attname = 'embedding'
+                      AND NOT attribute.attisdropped
+                      AND format_type(attribute.atttypid, attribute.atttypmod) <> 'vector'
+                ) THEN
+                    ALTER TABLE {PGVECTOR_TABLE_NAME}
+                    ALTER COLUMN embedding TYPE VECTOR
+                    USING embedding::vector;
+                END IF;
+            END
+            $pgvector_dimension_migration$
+            """,
+            f"""
             CREATE INDEX IF NOT EXISTS idx_rag_policy_vectors_collection
-            ON {_TABLE_NAME} (collection_name)
+            ON {PGVECTOR_TABLE_NAME} (collection_name)
             """,
         )
         with self._pool.connection() as connection:
@@ -202,7 +230,7 @@ class PgVectorIndex:
             rows = connection.execute(
                 f"""
                 SELECT record_id, metadata
-                FROM {_TABLE_NAME}
+                FROM {PGVECTOR_TABLE_NAME}
                 WHERE collection_name = %s
                 ORDER BY record_id
                 """,
@@ -237,7 +265,7 @@ class PgVectorIndex:
             return
 
         query = f"""
-            INSERT INTO {_TABLE_NAME} (
+            INSERT INTO {PGVECTOR_TABLE_NAME} (
                 collection_name,
                 record_id,
                 text,
@@ -252,11 +280,12 @@ class PgVectorIndex:
         """
         with self._pool.connection() as connection:
             if prepared:
-                connection.executemany(query, prepared)
+                with connection.cursor() as cursor:
+                    cursor.executemany(query, prepared)
             if delete_ids:
                 connection.execute(
                     f"""
-                    DELETE FROM {_TABLE_NAME}
+                    DELETE FROM {PGVECTOR_TABLE_NAME}
                     WHERE collection_name = %s
                       AND record_id = ANY(%s)
                     """,
@@ -290,21 +319,23 @@ class PgVectorIndex:
         query = f"""
             WITH authorized_records AS MATERIALIZED (
                 SELECT record_id, text, embedding, metadata
-                FROM {_TABLE_NAME}
+                FROM {PGVECTOR_TABLE_NAME}
                 WHERE collection_name = %s{authorization_sql}
             ),
             query_vector AS (
-                SELECT %s::vector AS embedding
+                SELECT %s::vector AS query_embedding
             )
             SELECT
-                record_id,
-                text,
-                embedding::text,
-                metadata,
-                1 - (embedding <=> query_vector.embedding) AS score
+                authorized_records.record_id,
+                authorized_records.text,
+                authorized_records.embedding::text,
+                authorized_records.metadata,
+                1 - (
+                    authorized_records.embedding <=> query_vector.query_embedding
+                ) AS score
             FROM authorized_records
             CROSS JOIN query_vector
-            ORDER BY embedding <=> query_vector.embedding
+            ORDER BY authorized_records.embedding <=> query_vector.query_embedding
             LIMIT %s
         """
         with self._pool.connection() as connection:
@@ -353,7 +384,7 @@ class PgVectorIndex:
         self._ensure_open()
         with self._pool.connection() as connection:
             connection.execute(
-                f"DELETE FROM {_TABLE_NAME} WHERE collection_name = %s",
+                f"DELETE FROM {PGVECTOR_TABLE_NAME} WHERE collection_name = %s",
                 (self._collection_name,),
             )
 

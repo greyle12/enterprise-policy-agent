@@ -54,6 +54,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "--mode offline --candidate-k 5 10 20",
     "--default-candidate-k 20 --warmups 0 --repetitions 1",
     "python -X utf8 -m scripts.verify_retrieval_candidate_sweep",
+    "python -X utf8 -m scripts.verify_pgvector_hnsw_experiment",
     "python -X utf8 -m scripts.run_portfolio_demo",
     "--output-dir artifacts/portfolio",
     "python -X utf8 -m scripts.verify_portfolio_release",

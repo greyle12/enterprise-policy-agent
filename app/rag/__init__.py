@@ -45,6 +45,7 @@ from app.rag.ocr import (
     TesseractOCRProvider,
 )
 from app.rag.pgvector_index import PgVectorIndex
+from app.rag.pgvector_hnsw_experiment import PgVectorHnswExperimentIndex
 from app.rag.vector_index import (
     InMemoryVectorIndex,
     SearchResult,
@@ -91,6 +92,7 @@ __all__ = [
     "OCRQualityGate",
     "OCRResult",
     "PgVectorIndex",
+    "PgVectorHnswExperimentIndex",
     "InMemoryVectorIndex",
     "SearchResult",
     "TesseractOCRProvider",

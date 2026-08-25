@@ -78,13 +78,21 @@ CREATE TABLE IF NOT EXISTS rag_policy_vectors (
     collection_name TEXT NOT NULL,
     record_id TEXT NOT NULL,
     text TEXT NOT NULL,
-    embedding VECTOR(512) NOT NULL,
+    embedding VECTOR NOT NULL,
     metadata JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL,
     updated_at TIMESTAMPTZ NOT NULL,
     PRIMARY KEY (collection_name, record_id)
 );
 ```
+
+基础表使用 pgvector 官方支持的无固定 typmod `VECTOR`，因此不同 collection 可以分别保存 512 维 BGE
+和 1024 维实验向量。`PgVectorIndex` 仍按实例 dimension 校验每次写入和读取，同一个 collection 不应混用
+不同模型。应用初始化时会把旧版 `VECTOR(512)` / `VECTOR(1024)` 列幂等迁移为 `VECTOR`，保留已有数据。
+
+基础表只执行 collection 过滤后的 Exact Search，不在混合维度列上直接建立 ANN 索引。Phase 34 会先按授权范围
+复制到一次性 `VECTOR(n)` 实验表，再在固定维度实验表上建立 HNSW；这符合 pgvector 对混合维度列只能按
+相同维度子集建立表达式/部分索引的限制。
 
 `collection_name` 将模型与索引版本放在逻辑命名空间中。升级 Embedding 模型或 Chunk 策略时应使用新
 collection，而不是让不同向量语义静默混在一起。
@@ -104,17 +112,17 @@ WITH authorized_records AS MATERIALIZED (
       AND record_id = ANY(%s)
 ),
 query_vector AS (
-    SELECT %s::vector AS embedding
+    SELECT %s::vector AS query_embedding
 )
 SELECT
-    record_id,
-    text,
-    embedding::text,
-    metadata,
-    1 - (embedding <=> query_vector.embedding) AS score
+    authorized_records.record_id,
+    authorized_records.text,
+    authorized_records.embedding::text,
+    authorized_records.metadata,
+    1 - (authorized_records.embedding <=> query_vector.query_embedding) AS score
 FROM authorized_records
 CROSS JOIN query_vector
-ORDER BY embedding <=> query_vector.embedding
+ORDER BY authorized_records.embedding <=> query_vector.query_embedding
 LIMIT %s;
 ```
 

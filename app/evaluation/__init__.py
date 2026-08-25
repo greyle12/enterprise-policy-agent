@@ -11,6 +11,8 @@ from app.evaluation.runner import GoldenEvaluationRunner
 from app.evaluation.retrieval_dataset import RetrievalDataset, load_retrieval_dataset
 from app.evaluation.retrieval_experiment_models import CandidateWindowExperimentReport
 from app.evaluation.retrieval_experiments import CandidateWindowExperimentRunner
+from app.evaluation.pgvector_ann_experiments import PgvectorAnnExperimentRunner
+from app.evaluation.pgvector_ann_models import HnswConfiguration, PgvectorAnnExperimentReport
 from app.evaluation.retrieval_models import (
     RelevanceGrade,
     RelevanceJudgment,
@@ -29,6 +31,9 @@ __all__ = [
     "GoldenEvaluationRunner",
     "CandidateWindowExperimentReport",
     "CandidateWindowExperimentRunner",
+    "HnswConfiguration",
+    "PgvectorAnnExperimentReport",
+    "PgvectorAnnExperimentRunner",
     "RetrievalCase",
     "RelevanceGrade",
     "RelevanceJudgment",

@@ -22,6 +22,7 @@ Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk
 Advanced RAG Phase 31 增加 20 条检索标注、四通道消融、Recall@K、MRR@5 和报告质量门禁。
 Advanced RAG Phase 32 增加 G1/G2/G3 标注、nDCG@1/3/5、v2 报告和三指标质量门禁。
 Advanced RAG Phase 33 增加 Candidate K 受控 sweep、质量/延迟联合报告、Pareto 前沿和默认窗口门禁。
+Advanced RAG Phase 34 增加 exact/HNSW 双层 Recall、nDCG、延迟、构建成本和授权隔离建图契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -112,6 +113,7 @@ timeout 30 分钟
 → Phase 31 Vector/BM25/Hybrid/Reranker Recall@1/3/5 与 MRR@5 离线门禁
 → Phase 32 graded relevance、nDCG@1/3/5 与标注迁移离线契约
 → Phase 33 Candidate Window Recall/MRR/nDCG、p50/p95 与 Pareto 离线实验契约
+→ Phase 34 pgvector exact/HNSW 指标、参数与 authorization-before-graph 离线方法契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -137,6 +139,8 @@ Phase 32 在相同无网络运行中验证三等级 judgments、标注理由、�
 v2 报告；Hybrid/Reranked 的 Recall@5、MRR@5、nDCG@5 必须同时达到阈值。
 Phase 33 复用同一个授权 Retriever，在固定 Top-5 下 sweep 5/10/20；CI 只证明变量控制、指标、
 报告和默认窗口门禁，不把词法替身的延迟或 Pareto 点解释为真实 BGE 结论。
+Phase 34 CI 不连接 PostgreSQL，而是验证 exact/HNSW 对照 Runner、ANN 与 judged 指标分离、索引构建
+耗时分离、默认参数门禁和授权先物化语义，并生成明确标注 fixture identity 的报告证据。
 
 ### 3.1 构建证据
 
@@ -316,6 +320,7 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5/nDCG@5、Provider identity 和授权标签预检 |
 | Graded Relevance 契约失败 | 单独运行 `scripts.verify_graded_relevance`，检查 G1/G2/G3 覆盖、rationale、v2 schema、DCG 折损和 nDCG 门禁 |
 | Candidate Window 实验失败 | 单独运行 `scripts.verify_retrieval_candidate_sweep`，检查固定 Top-5、默认窗口、三指标、p50/p95、Pareto 和 Provider identity |
+| pgvector HNSW 实验失败 | 单独运行 `scripts.verify_pgvector_hnsw_experiment`；真实数据库问题再检查 Compose、专用 collection、授权复制数量和 HNSW 参数 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -343,6 +348,7 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不把 Phase 31 Offline 分数解释为真实 BGE 质量；CI 只验证指标、四通道接线、权限和回归门禁；
 - 不把 Phase 32 的单人三级标注当作生产 gold set；尚未完成双人一致性和真实 Query pool judging；
 - 不把 Phase 33 Offline candidate sweep 当作真实 BGE 性能实验；真实模式必须在固定硬件显式运行，且报告不会自动修改生产配置；
+- 不在 GitHub Runner 创建真实 HNSW；Phase 34 CI 只验证实验方法和安全契约，固定硬件 PostgreSQL/BGE 数据需本地显式生成；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 

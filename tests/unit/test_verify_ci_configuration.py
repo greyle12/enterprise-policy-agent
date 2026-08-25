@@ -154,6 +154,18 @@ def test_rejects_missing_candidate_window_experiment_gate(tmp_path: Path) -> Non
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_pgvector_hnsw_experiment_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_pgvector_hnsw_experiment",
+        "python -X utf8 -c \"print('HNSW experiment gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_document_loader_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(

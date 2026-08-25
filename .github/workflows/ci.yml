@@ -125,6 +125,9 @@ jobs:
       - name: Verify the Phase 33 candidate-window experiment contract
         run: python -X utf8 -m scripts.verify_retrieval_candidate_sweep
 
+      - name: Verify the Phase 34 authorization-isolated HNSW experiment contract
+        run: python -X utf8 -m scripts.verify_pgvector_hnsw_experiment
+
       - name: Generate the offline portfolio demonstration evidence
         run: >-
           python -X utf8 -m scripts.run_portfolio_demo
@@ -160,6 +163,8 @@ jobs:
             artifacts/evaluation/retrieval-evaluation-report.md
             artifacts/evaluation/retrieval-candidate-sweep-report.json
             artifacts/evaluation/retrieval-candidate-sweep-report.md
+            artifacts/evaluation/pgvector-hnsw-experiment-report.json
+            artifacts/evaluation/pgvector-hnsw-experiment-report.md
             artifacts/performance/agent-performance-report.json
             artifacts/performance/agent-performance-report.md
             artifacts/performance/agent-concurrency-load-report.json

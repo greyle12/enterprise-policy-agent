@@ -159,7 +159,7 @@ Judged Chunk exists
 - judgments 没有完整 pool depth，可能漏标其他有效 Chunk；
 - 尚未加入无答案 Query、版本冲突、OCR 噪声和跨权限 Query 切片；
 - 离线 Provider 不是 BGE，当前 nDCG 只用于工程回归；
-- 还没有固定硬件上的真实 BGE、候选 K 和 pgvector HNSW Recall–Latency 实验。
+- 已有候选 K 与 pgvector HNSW 实验入口；仍未提交固定硬件上的真实 BGE/PostgreSQL 结果快照。
 
 ## 9. 面试追问
 

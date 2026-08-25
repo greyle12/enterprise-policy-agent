@@ -51,6 +51,7 @@ class _OfflineDatabase:
         self.scored_record_ids: list[str] = []
         self.schema_ready = False
         self.batch_calls = 0
+        self.cursor_calls = 0
 
 
 class _OfflineConnection:
@@ -69,7 +70,7 @@ class _OfflineConnection:
             return _Cursor(one=(count,))
         if "SELECT\n                    EXISTS" in query:
             return _Cursor(one=(self._database.schema_ready, self._database.schema_ready))
-        if "ORDER BY embedding <=>" not in query:
+        if "ORDER BY authorized_records.embedding <=>" not in query:
             return _Cursor()
 
         self._database.last_search_params = values
@@ -98,6 +99,16 @@ class _OfflineConnection:
             )
         rows.sort(key=lambda row: row[4], reverse=True)
         return _Cursor(rows=rows[:top_k])
+
+    @contextmanager
+    def cursor(self) -> Iterator[_OfflineBatchCursor]:
+        self._database.cursor_calls += 1
+        yield _OfflineBatchCursor(self._database)
+
+
+class _OfflineBatchCursor:
+    def __init__(self, database: _OfflineDatabase) -> None:
+        self._database = database
 
     def executemany(self, query: str, params_seq: Sequence[Sequence[object]]) -> None:
         if "ON CONFLICT (collection_name, record_id) DO UPDATE" not in query:
@@ -202,9 +213,17 @@ def run_verification() -> dict[str, object]:
         "schema_initialization_is_idempotent_and_exact": (
             database.schema_ready
             and "CREATE EXTENSION IF NOT EXISTS vector" in "\n".join(database.sql)
+            and "embedding VECTOR NOT NULL" in "\n".join(database.sql)
+            and "ALTER COLUMN embedding TYPE VECTOR" in "\n".join(database.sql)
             and "USING hnsw" not in "\n".join(database.sql)
         ),
-        "batch_upsert_is_idempotent_storage_boundary": database.batch_calls == 1,
+        "collections_can_preserve_multiple_embedding_dimensions": (
+            "format_type(attribute.atttypid, attribute.atttypmod) <> 'vector'"
+            in "\n".join(database.sql)
+        ),
+        "batch_upsert_uses_psycopg_cursor_boundary": (
+            database.cursor_calls == 1 and database.batch_calls == 1
+        ),
         "records_survive_new_index_instance": persisted_size == 2,
         "authorization_is_in_sql_before_vector_ordering": (
             search_sql.index("record_id = ANY") < search_sql.index("ORDER BY")

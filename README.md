@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 33：真实 BGE Candidate Window 消融与实验协议（已完成）
+Advanced RAG Phase 35：蓝绿 Vector Collection 发布与回滚（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -341,11 +341,19 @@ Advanced RAG Phase 33：真实 BGE Candidate Window 消融与实验协议（已�
 - [x] Recall@5/MRR@5/nDCG@5 与 nearest-rank p50/p95 联合报告；
 - [x] 分通道 Pareto 前沿、默认窗口门禁和不自动修改生产配置的决策边界；
 - [x] Offline CI 方法验证与可选真实 BGE 固定硬件实验入口。
+- [x] pgvector exact 与 authorization-isolated HNSW 对照实验；
+- [x] ANN Recall@5 与人工 Judged Recall/MRR/nDCG 分层诊断；
+- [x] HNSW `m`、`ef_construction`、`ef_search` 参数、构建耗时和查询 p50/p95；
+- [x] 授权集合先物化、隔离建图、身份 scope 完全匹配和实验表清理契约。
+- [x] Blue/Green 物理 collection 与事务化逻辑发布指针；
+- [x] generation CAS、防并发覆盖、发布历史审计和 previous 快照回滚；
+- [x] 模型/pipeline/记录数/完整 Chunk 指纹清单 SHA-256 四层发布门禁；
+- [x] Alias 运行时只读复用已发布快照，启动时不修改 active collection。
 
 ### 尚未实现
 
 - [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
-- [ ] 蓝绿 collection 发布指针、回滚和分布式 indexing leader；
+- [ ] 分布式 indexing leader、旧 collection 保留策略和安全 GC；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -1444,7 +1452,9 @@ Application Services
        │   ├── Versioned Query / Relevant Chunk Judgments
        │   ├── Vector / BM25 / Hybrid / Reranker Ablation
        │   ├── Graded Relevance + Recall/MRR/nDCG Gate
-       │   └── Candidate Window Quality/Latency + Pareto Sweep
+       │   ├── Candidate Window Quality/Latency + Pareto Sweep
+       │   ├── pgvector Exact/HNSW ANN Recall–nDCG–p95
+       │   └── Blue/Green Collection Release + CAS Rollback
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1810,6 +1820,33 @@ python -X utf8 -m scripts.run_retrieval_candidate_sweep --mode bge --candidate-k
 
 详见 `docs/retrieval_candidate_window_experiment.md`。Offline 分数不能解释为真实 BGE 质量或 SLA。
 
+### 验证 Phase 34 pgvector HNSW 实验
+
+```powershell
+python -X utf8 -m scripts.verify_pgvector_hnsw_experiment
+docker compose up -d postgres
+python -X utf8 -m scripts.run_pgvector_hnsw_experiment --mode offline --hnsw-config 8:32:20 16:64:40 16:64:80 --default-config 16:64:40 --warmups 1 --repetitions 3
+```
+
+真实 BGE 固定 CPU 实验：
+
+```powershell
+python -X utf8 -m scripts.run_pgvector_hnsw_experiment --mode bge --hnsw-config 8:32:20 16:64:40 16:64:80 --default-config 16:64:40 --warmups 1 --repetitions 3 --device cpu
+```
+
+详见 `docs/pgvector_hnsw_experiment.md`。专项验证不连接 PostgreSQL；真实 CLI 会写入专用实验 collection。
+
+### 验证 Phase 35 蓝绿 Collection 发布
+
+```powershell
+python -X utf8 -m scripts.verify_vector_collection_release
+python -X utf8 -m scripts.index_policy_documents --collection enterprise-policy-bge-small-zh-v1-green
+python -X utf8 -m scripts.manage_vector_collection_release status --alias enterprise-policy
+```
+
+发布和回滚的完整 PowerShell 命令、snapshot SHA 使用方式及运行时 alias 配置见
+`docs/vector_collection_release.md`。CI 只验证事务状态机和 SQL 契约，不代表真实数据库发布已执行。
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -2054,7 +2091,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 
 - [x] `VectorIndex` Protocol 和 `InMemoryVectorIndex.upsert(...)`；
 - [x] `PgVectorIndex`、Psycopg 连接池和延迟导入边界；
-- [x] pgvector extension、`VECTOR(512)`、JSONB 元数据和 collection 复合主键；
+- [x] pgvector extension、支持多模型 collection 的 `VECTOR`、JSONB 元数据和 collection 复合主键；
 - [x] `ON CONFLICT` 事务批量 upsert 与跨连接池实例持久化；
 - [x] `MATERIALIZED authorized_records` 后再执行 cosine distance；
 - [x] 当前 199 Chunk 默认精确检索，不在无评测数据时引入 HNSW；
@@ -2078,7 +2115,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 应用启动只解析/切分一次，并让 Retriever 复用同步后的向量；
 - [x] 独立 `scripts.index_policy_documents` JSON CLI；
 - [x] 完全离线幂等、单 Chunk 更新、源删除和授权前置专项验证；
-- [ ] 蓝绿 collection 构建、发布指针和一键回滚；
+- [x] 蓝绿 collection 构建、发布指针和一键回滚（Phase 35）；
 - [x] Recall@K、MRR、四通道消融与可选真实 BGE 检索评测（Phase 31）。
 
 ### Advanced RAG Phase 31：Retrieval Evaluation
@@ -2121,7 +2158,35 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] BGE 参数在昂贵模型构建前预检，Offline CI 不下载模型；
 - [x] pytest、专项验证、CI Artifact 和详细实验说明；
 - [ ] 固定硬件运行并评审真实 BGE 报告快照；
-- [ ] pgvector HNSW 参数与 Recall–nDCG–p95 曲线（Phase 34）。
+- [x] pgvector HNSW 参数与 Recall–nDCG–p95 实验入口（Phase 34）。
+
+### Advanced RAG Phase 34：pgvector HNSW Recall–nDCG–p95 实验
+
+- [x] exact cosine baseline 与多组 HNSW `m/ef_construction/ef_search` 对照；
+- [x] ANN Recall@5 单独衡量 HNSW 对 exact Top-5 的近似损失；
+- [x] Judged Recall@5、MRR@5、nDCG@5 继续评价人工标注相关性；
+- [x] warm-up、重复测量、nearest-rank p50/p95 与独立 index build time；
+- [x] 授权 ID 先复制到隔离 UNLOGGED 表，再构建 HNSW；
+- [x] 搜索身份 scope 必须与预物化 scope 完全一致；
+- [x] 默认参数门禁、HNSW Pareto 前沿和不自动改生产配置边界；
+- [x] 真实 PostgreSQL/BGE CLI、无数据库 CI verifier、JSON/Markdown 报告和 pytest；
+- [ ] 在固定硬件运行并提交真实 PostgreSQL + BGE 报告快照；
+- [x] 蓝绿索引发布指针与 CAS 回滚（Phase 35）；
+- [ ] 大规模匿名 Query 与并发 ANN。
+
+### Advanced RAG Phase 35：蓝绿 Vector Collection 发布与回滚
+
+- [x] 逻辑 alias → active/previous 物理 collection 指针；
+- [x] `SELECT ... FOR UPDATE`、generation CAS 和同事务审计历史；
+- [x] Green 发布前验证 Embedding identity、pipeline version 和 record count；
+- [x] 完整 `(record_id, index_fingerprint)` manifest SHA-256 防陈旧同数量快照；
+- [x] 回滚前重新验证 previous collection，篡改或删除时 fail closed；
+- [x] `index_policy_documents --collection` 显式构建非 active Green；
+- [x] `manage_vector_collection_release status/publish/rollback` 管理 CLI；
+- [x] `RAG_PGVECTOR_RELEASE_ALIAS` 默认关闭，兼容现有直接 collection 模式；
+- [x] Alias 模式启动只读校验快照并复用原 PolicyRetriever/权限检索链；
+- [x] pytest、离线专项验证、CI 防回退契约和操作文档；
+- [ ] 多历史版本回滚、旧 collection GC、分布式构建租约与热切换（Phase 36）。
 
 ---
 
