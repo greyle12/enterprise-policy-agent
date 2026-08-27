@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 35：蓝绿 Vector Collection 发布与回滚（已完成）
+Advanced RAG Phase 37：Safe Vector Collection GC（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -349,11 +349,19 @@ Advanced RAG Phase 35：蓝绿 Vector Collection 发布与回滚（已完成）
 - [x] generation CAS、防并发覆盖、发布历史审计和 previous 快照回滚；
 - [x] 模型/pipeline/记录数/完整 Chunk 指纹清单 SHA-256 四层发布门禁；
 - [x] Alias 运行时只读复用已发布快照，启动时不修改 active collection。
+- [x] 按物理 collection 的 PostgreSQL indexing lease、heartbeat 和过期接管；
+- [x] 单调 fencing token 与最终向量写入同事务校验，拒绝僵尸 Builder；
+- [x] Green 构建与 publish/rollback 锁定同一控制行，active/previous 禁止重建；
+- [x] Lease 控制行 release 后保留，为后续安全 GC 提供 generation 与活跃状态。
+- [x] 旧 Vector collection 保留期、只读 dry-run 与保护原因报告；
+- [x] Active/previous/有效 lease 三重保护和 mark/sweep 两阶段删除；
+- [x] Sweep 前重新验证 fencing generation、记录数、最后活动时间和宽限期；
+- [x] 删除后保留 lease 控制行与 GC receipt，支持安全重试和后续审计。
 
 ### 尚未实现
 
 - [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
-- [ ] 分布式 indexing leader、旧 collection 保留策略和安全 GC；
+- [ ] GC/租约审计指标、告警、管理员 RBAC 和双人审批；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -1847,6 +1855,28 @@ python -X utf8 -m scripts.manage_vector_collection_release status --alias enterp
 发布和回滚的完整 PowerShell 命令、snapshot SHA 使用方式及运行时 alias 配置见
 `docs/vector_collection_release.md`。CI 只验证事务状态机和 SQL 契约，不代表真实数据库发布已执行。
 
+### 验证 Phase 36 Distributed Indexing Lease
+
+```powershell
+python -X utf8 -m scripts.verify_indexing_lease
+python -X utf8 -m scripts.index_policy_documents --collection enterprise-policy-bge-small-zh-v1-green
+python -X utf8 -m scripts.manage_indexing_lease status --collection enterprise-policy-bge-small-zh-v1-green
+```
+
+真实 Green 构建会自动 acquire/heartbeat/release；CI 只验证 lease/fencing SQL 状态机，不连接 PostgreSQL。
+完整故障语义和面试解释见 `docs/distributed_indexing_lease.md`。
+
+### 验证 Phase 37 Safe Vector Collection GC
+
+```powershell
+python -X utf8 -m scripts.verify_vector_collection_gc
+python -X utf8 -m scripts.manage_vector_collection_gc plan --retention-days 7
+```
+
+`plan` 是业务数据 dry-run：首次运行只会幂等初始化所需控制表，不创建 mark 或删除 Vector。真实删除必须先对单个非 active/previous、无有效 lease 且超过 retention 的
+collection 执行 `mark`，等待宽限期后携带 `mark_token` 执行 `sweep`。完整 PowerShell 操作、事务门禁和
+面试解释见 `docs/safe_vector_collection_gc.md`。
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -2186,7 +2216,35 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `RAG_PGVECTOR_RELEASE_ALIAS` 默认关闭，兼容现有直接 collection 模式；
 - [x] Alias 模式启动只读校验快照并复用原 PolicyRetriever/权限检索链；
 - [x] pytest、离线专项验证、CI 防回退契约和操作文档；
-- [ ] 多历史版本回滚、旧 collection GC、分布式构建租约与热切换（Phase 36）。
+- [x] 分布式构建租约与 fencing（Phase 36）；
+- [x] Retention、引用/租约保护和两阶段旧 collection GC（Phase 37）；
+- [ ] 多历史版本任意 generation 回滚与运行时热切换。
+
+### Advanced RAG Phase 36：Distributed Indexing Lease 与 Fencing
+
+- [x] 每个物理 collection 一个稳定 PostgreSQL 控制行；
+- [x] owner、随机 lease token、TTL heartbeat 和过期接管；
+- [x] acquire 时 fencing token 单调递增，release 不删除 generation；
+- [x] 最终 upsert/delete 与 lease `FOR UPDATE` 校验位于同一事务；
+- [x] no-op 同步也验证最终 fence；
+- [x] active/previous release collection 禁止 acquire 构建租约；
+- [x] publish/rollback 拒绝存在活跃构建 lease 的目标；
+- [x] `index_policy_documents` 对 pgvector 强制显式 Green collection；
+- [x] 租约状态 CLI 不输出 lease token；
+- [x] pytest、离线专项验证、CI 门禁和 PowerShell 运维文档；
+- [x] Phase 37 旧 collection retention 与安全 GC。
+
+### Advanced RAG Phase 37：Safe Vector Collection GC
+
+- [x] 只读 `plan` 输出记录数、fencing token、最后活动时间与保护原因；
+- [x] PostgreSQL `CURRENT_TIMESTAMP` 驱动 retention，避免应用主机时钟漂移；
+- [x] Active、previous 与有效 indexing lease 三重 fail-closed 保护；
+- [x] Mark 固化 collection、记录数、活动时间、generation 和 sweep 宽限期；
+- [x] Sweep 同事务重新验证 pointer、lease、fence、count 与更新时间；
+- [x] Mark 后出现新 Builder generation 时旧 mark 自动失效；
+- [x] 删除数量必须与 mark 一致，保留稳定 lease 行和 GC receipt；
+- [x] 管理 CLI、pytest、离线专项 verifier、CI 防回退契约和运维文档；
+- [ ] Phase 38 GC 审计指标、管理员 RBAC、双人审批与真实 PostgreSQL 竞态集成测试。
 
 ---
 

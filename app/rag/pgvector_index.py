@@ -41,6 +41,13 @@ class _ConnectionLike(Protocol):
         """Open a cursor for Psycopg batch operations."""
 
 
+class PgVectorWriteGuard(Protocol):
+    """Lock and validate a control-plane fence inside a vector write transaction."""
+
+    def lock_for_write(self, connection: _ConnectionLike, collection_name: str) -> None:
+        """Raise unless this writer still owns the collection fence."""
+
+
 class PgVectorConnectionPool(Protocol):
     """Small pool boundary that keeps the adapter testable without PostgreSQL."""
 
@@ -49,6 +56,55 @@ class PgVectorConnectionPool(Protocol):
 
     def close(self) -> None:
         """Close the pool."""
+
+
+def initialize_pgvector_schema(connection: _ConnectionLike) -> None:
+    """Create the shared pgvector extension, table, and collection index idempotently."""
+
+    statements = (
+        "CREATE EXTENSION IF NOT EXISTS vector",
+        f"""
+        CREATE TABLE IF NOT EXISTS {PGVECTOR_TABLE_NAME} (
+            collection_name TEXT NOT NULL,
+            record_id TEXT NOT NULL,
+            text TEXT NOT NULL,
+            embedding VECTOR NOT NULL,
+            metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (collection_name, record_id)
+        )
+        """,
+        f"""
+        DO $pgvector_dimension_migration$
+        BEGIN
+            IF EXISTS (
+                SELECT 1
+                FROM pg_attribute AS attribute
+                JOIN pg_class AS relation
+                  ON relation.oid = attribute.attrelid
+                JOIN pg_namespace AS namespace
+                  ON namespace.oid = relation.relnamespace
+                WHERE namespace.nspname = current_schema()
+                  AND relation.relname = '{PGVECTOR_TABLE_NAME}'
+                  AND attribute.attname = 'embedding'
+                  AND NOT attribute.attisdropped
+                  AND format_type(attribute.atttypid, attribute.atttypmod) <> 'vector'
+            ) THEN
+                ALTER TABLE {PGVECTOR_TABLE_NAME}
+                ALTER COLUMN embedding TYPE VECTOR
+                USING embedding::vector;
+            END IF;
+        END
+        $pgvector_dimension_migration$
+        """,
+        f"""
+        CREATE INDEX IF NOT EXISTS idx_rag_policy_vectors_collection
+        ON {PGVECTOR_TABLE_NAME} (collection_name)
+        """,
+    )
+    for statement in statements:
+        connection.execute(statement)
 
 
 def _vector_literal(vector: Sequence[float]) -> str:
@@ -171,51 +227,8 @@ class PgVectorIndex:
         """Create the extension and exact-search table idempotently."""
 
         self._ensure_open()
-        statements = (
-            "CREATE EXTENSION IF NOT EXISTS vector",
-            f"""
-            CREATE TABLE IF NOT EXISTS {PGVECTOR_TABLE_NAME} (
-                collection_name TEXT NOT NULL,
-                record_id TEXT NOT NULL,
-                text TEXT NOT NULL,
-                embedding VECTOR NOT NULL,
-                metadata JSONB NOT NULL DEFAULT '{{}}'::jsonb,
-                created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (collection_name, record_id)
-            )
-            """,
-            f"""
-            DO $pgvector_dimension_migration$
-            BEGIN
-                IF EXISTS (
-                    SELECT 1
-                    FROM pg_attribute AS attribute
-                    JOIN pg_class AS relation
-                      ON relation.oid = attribute.attrelid
-                    JOIN pg_namespace AS namespace
-                      ON namespace.oid = relation.relnamespace
-                    WHERE namespace.nspname = current_schema()
-                      AND relation.relname = '{PGVECTOR_TABLE_NAME}'
-                      AND attribute.attname = 'embedding'
-                      AND NOT attribute.attisdropped
-                      AND format_type(attribute.atttypid, attribute.atttypmod) <> 'vector'
-                ) THEN
-                    ALTER TABLE {PGVECTOR_TABLE_NAME}
-                    ALTER COLUMN embedding TYPE VECTOR
-                    USING embedding::vector;
-                END IF;
-            END
-            $pgvector_dimension_migration$
-            """,
-            f"""
-            CREATE INDEX IF NOT EXISTS idx_rag_policy_vectors_collection
-            ON {PGVECTOR_TABLE_NAME} (collection_name)
-            """,
-        )
         with self._pool.connection() as connection:
-            for statement in statements:
-                connection.execute(statement)
+            initialize_pgvector_schema(connection)
 
     def upsert(self, records: Sequence[VectorRecord]) -> None:
         """Persist a validated batch using one transactional executemany call."""
@@ -252,6 +265,30 @@ class PgVectorIndex:
     ) -> None:
         """Apply upserts and stale-record deletion in one database transaction."""
 
+        self._apply_changes(records, delete_record_ids=delete_record_ids, write_guard=None)
+
+    def apply_changes_guarded(
+        self,
+        records: Sequence[VectorRecord],
+        *,
+        delete_record_ids: Collection[str] = (),
+        write_guard: PgVectorWriteGuard,
+    ) -> None:
+        """Apply changes only after locking a valid fencing token in the same transaction."""
+
+        self._apply_changes(
+            records,
+            delete_record_ids=delete_record_ids,
+            write_guard=write_guard,
+        )
+
+    def _apply_changes(
+        self,
+        records: Sequence[VectorRecord],
+        *,
+        delete_record_ids: Collection[str],
+        write_guard: PgVectorWriteGuard | None,
+    ) -> None:
         self._ensure_open()
         prepared = self._prepare_records(records)
         delete_ids = self._prepare_delete_ids(delete_record_ids)
@@ -261,7 +298,7 @@ class PgVectorIndex:
             raise ValueError(
                 "record ids cannot be upserted and deleted together: " + ", ".join(overlap)
             )
-        if not prepared and not delete_ids:
+        if not prepared and not delete_ids and write_guard is None:
             return
 
         query = f"""
@@ -279,6 +316,8 @@ class PgVectorIndex:
                 updated_at = CURRENT_TIMESTAMP
         """
         with self._pool.connection() as connection:
+            if write_guard is not None:
+                write_guard.lock_for_write(connection, self._collection_name)
             if prepared:
                 with connection.cursor() as cursor:
                     cursor.executemany(query, prepared)
