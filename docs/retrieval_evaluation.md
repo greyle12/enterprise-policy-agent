@@ -33,14 +33,15 @@ Trusted Identity → Authorization Filter → Vector/BM25 Scoring → RRF → Re
 
 ## 2. 输入与输出
 
-输入是 `tests/evaluation/retrieval_test_cases.jsonl`。每行包含：
+Phase 32 已将数据集升级为 graded judgments，并新增 nDCG；当前数据格式和公式详见
+`docs/graded_relevance_ndcg.md`。输入仍是 `tests/evaluation/retrieval_test_cases.jsonl`。
 
 | 字段 | 含义 |
 |---|---|
 | `case_id` | 稳定的 `RET-NNN` 用例编号 |
 | `title` | 便于人工审阅的场景名称 |
 | `query` | 用户自然语言问题 |
-| `relevant_chunk_ids` | 人工判断的相关 Chunk 集合，允许多个 |
+| `judgments` | Chunk ID、G1/G2/G3 相关等级和人工理由，允许多个 |
 | `tags` | 领域和单/多相关标签 |
 
 当前 v1 数据集有 20 条查询，覆盖差旅、采购、普通费用、信息安全和请假；其中包含跨条款问题，
@@ -85,8 +86,8 @@ $$
 MRR@K 强调第一个可用证据是否靠前。本项目明确写作 `MRR@5`，不把截断指标模糊地称为 MRR。
 Recall 使用查询级宏平均，让每个业务问题权重相同。
 
-默认记录 Recall@1、Recall@3、Recall@5 和 MRR@5。Hybrid 与 Reranked 是正式链路，因此默认
-门禁要求它们的 Recall@5、MRR@5 都不低于 0.80；Vector 与 BM25 作为消融对照，不单独阻塞 CI。
+默认记录 Recall@1/3/5、MRR@5 和 nDCG@1/3/5。Hybrid 与 Reranked 是正式链路，因此当前
+门禁要求它们的 Recall@5、MRR@5、nDCG@5 都不低于 0.80；Vector 与 BM25 作为消融对照。
 
 ## 4. 两种运行模式
 
@@ -168,7 +169,8 @@ Recall@K 对“是否找全证据”敏感，MRR@K 对“首个证据是否靠�
 - 当前相关性是二元判断；需要 graded relevance 后再加入 nDCG@K；
 - 尚未按部门、角色、文档格式、OCR 来源、短/长查询和时间切片分层报告；
 - 未统计索引更新后的回归差异和置信区间；
-- pgvector 当前 199 Chunk 使用精确检索，尚未对 HNSW `ef_search` / `m` 做 Recall–Latency 曲线；
+- pgvector 当前生产默认仍为精确检索；Phase 34 已提供 HNSW `m` / `ef_construction` / `ef_search`
+  的 ANN Recall–Judged nDCG–p95 实验入口，尚未沉淀固定硬件真实 BGE 快照；
 - 真实 BGE 模式尚未在 CI 下载模型，也没有固定 GPU/CPU 硬件基线；
 - 评测数据与训练数据需要防止泄漏，真实企业查询还必须先做隐私脱敏。
 

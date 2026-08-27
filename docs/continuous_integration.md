@@ -20,6 +20,10 @@ Advanced RAG Phase 28 增加 RRF 候选批量精排、授权前置、配置回�
 Advanced RAG Phase 29 增加 VectorIndex、pgvector schema/upsert、授权 SQL CTE、持久卷和 Compose 契约。
 Advanced RAG Phase 30 增加稳定指纹、幂等增量 Embedding、陈旧 Chunk 原子删除和预索引复用契约。
 Advanced RAG Phase 31 增加 20 条检索标注、四通道消融、Recall@K、MRR@5 和报告质量门禁。
+Advanced RAG Phase 32 增加 G1/G2/G3 标注、nDCG@1/3/5、v2 报告和三指标质量门禁。
+Advanced RAG Phase 33 增加 Candidate K 受控 sweep、质量/延迟联合报告、Pareto 前沿和默认窗口门禁。
+Advanced RAG Phase 34 增加 exact/HNSW 双层 Recall、nDCG、延迟、构建成本和授权隔离建图契约。
+Advanced RAG Phase 35 增加蓝绿 collection、快照 SHA、generation CAS、审计历史和回滚契约。
 
 CI 只验证代码，不部署服务、不发布镜像、不调用真实 LLM，也不读取项目密钥。
 
@@ -108,6 +112,10 @@ timeout 30 分钟
 → Phase 29 pgvector 存储、持久化和 authorization-before-distance 离线契约
 → Phase 30 Document Indexing Pipeline 幂等、增量更新与 stale deletion 离线契约
 → Phase 31 Vector/BM25/Hybrid/Reranker Recall@1/3/5 与 MRR@5 离线门禁
+→ Phase 32 graded relevance、nDCG@1/3/5 与标注迁移离线契约
+→ Phase 33 Candidate Window Recall/MRR/nDCG、p50/p95 与 Pareto 离线实验契约
+→ Phase 34 pgvector exact/HNSW 指标、参数与 authorization-before-graph 离线方法契约
+→ Phase 35 Vector Collection publish/rollback 状态机与快照完整性离线契约
 → 六场景离线作品集演示与 Day 30 发布契约
 → 三种 load shape 的离线并发吞吐报告
 → Embedding/Reranker 离线批处理对照报告
@@ -129,6 +137,18 @@ Phase 30 使用确定性内存 Embedding/Vector Store 边界，验证第二次�
 Phase 31 CI 使用确定性哈希词法向量与词项重排，对相同授权 Retriever 的四个检索入口计算
 Recall@1/3/5 和 MRR@5；它不下载 BGE，也不调用 LLM。真实语义质量由开发者在固定环境显式运行
 `scripts.run_retrieval_evaluation --mode bge` 测量。
+Phase 32 在相同无网络运行中验证三等级 judgments、标注理由、指数增益 nDCG、重复结果防增益和
+v2 报告；Hybrid/Reranked 的 Recall@5、MRR@5、nDCG@5 必须同时达到阈值。
+Phase 33 复用同一个授权 Retriever，在固定 Top-5 下 sweep 5/10/20；CI 只证明变量控制、指标、
+报告和默认窗口门禁，不把词法替身的延迟或 Pareto 点解释为真实 BGE 结论。
+Phase 34 CI 不连接 PostgreSQL，而是验证 exact/HNSW 对照 Runner、ANN 与 judged 指标分离、索引构建
+耗时分离、默认参数门禁和授权先物化语义，并生成明确标注 fixture identity 的报告证据。
+Phase 35 CI 使用确定性 SQL 状态机替身验证 FOR UPDATE、generation CAS、同事务 history、完整 manifest
+SHA 和回滚前重验证；它不执行真实发布，也不访问 DSN 或加载 BGE。
+Phase 36 CI 使用确定性 SQL 状态机替身验证 collection 行锁、TTL 接管、单调 fencing token、僵尸写入拒绝、
+active/previous 构建保护和 release 后控制行保留；它不启动 heartbeat 的真实 PostgreSQL 长任务，也不加载 BGE。
+Phase 37 CI 使用确定性 SQL 状态机替身验证幂等 schema bootstrap、业务数据 dry-run、retention、active/previous/lease 三重保护、
+mark 宽限期、fencing generation 失效和精确删除 receipt；它不连接 PostgreSQL，也不会删除真实 collection。
 
 ### 3.1 构建证据
 
@@ -136,7 +156,7 @@ CI 保存两组 14 天构建证据：
 
 | Artifact | 内容 | 失败时行为 |
 |---|---|---|
-| `quality-evidence-<run_id>` | pytest JUnit XML、黄金/检索评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
+| `quality-evidence-<run_id>` | pytest JUnit XML、黄金/检索/Candidate Window 评测、串行性能、并发负载、批处理和作品集 JSON / Markdown | 尽可能保存已生成文件 |
 | `python-wheel-<run_id>` | 可安装 `.whl` | 仅全部质量门禁通过后保存 |
 
 JUnit XML 适合测试平台或后续脚本读取；黄金评测报告记录指标和失败用例；性能报告
@@ -257,6 +277,7 @@ Docker 构建只在 Push 或手动运行中执行，因此不应设为 PR 必需
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_document_indexing
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.run_retrieval_evaluation --mode offline
 & .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_retrieval_evaluation
+& .\.venv\Scripts\python.exe -X utf8 -m scripts.verify_graded_relevance
 & .\.venv\Scripts\python.exe -X utf8 `
   -m scripts.run_portfolio_demo `
   --output-dir artifacts/portfolio
@@ -304,7 +325,11 @@ Docker Desktop 已启动时还可以运行 Day 17 的完整容器验收：
 | Reranker 接入契约失败 | 单独运行 `scripts.verify_reranker_integration`，检查候选池、单次批量调用、原始 RRF 诊断、禁用回退和 Provider 前授权 |
 | pgvector 契约失败 | 单独运行 `scripts.verify_pgvector_store`，检查 schema、upsert、collection、授权 CTE、Compose 镜像和具名卷 |
 | Document Indexing 契约失败 | 单独运行 `scripts.verify_document_indexing`，检查稳定指纹、零变更跳过、单 Chunk 更新、stale 删除和授权前置 |
-| Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5、Provider identity 和授权标签预检 |
+| Retrieval Evaluation 失败 | 查看检索 Markdown 报告的逐查询排名；检查 judgments、语料指纹、四通道 Recall@5/MRR@5/nDCG@5、Provider identity 和授权标签预检 |
+| Graded Relevance 契约失败 | 单独运行 `scripts.verify_graded_relevance`，检查 G1/G2/G3 覆盖、rationale、v2 schema、DCG 折损和 nDCG 门禁 |
+| Candidate Window 实验失败 | 单独运行 `scripts.verify_retrieval_candidate_sweep`，检查固定 Top-5、默认窗口、三指标、p50/p95、Pareto 和 Provider identity |
+| pgvector HNSW 实验失败 | 单独运行 `scripts.verify_pgvector_hnsw_experiment`；真实数据库问题再检查 Compose、专用 collection、授权复制数量和 HNSW 参数 |
+| Vector Collection 发布契约失败 | 单独运行 `scripts.verify_vector_collection_release`，检查 generation、snapshot SHA、history、active/previous 交换和 alias 解析 |
 | 并发负载契约失败 | 单独运行 `scripts.verify_concurrency_load`，检查三个 load shape 的调用数与错误率 |
 | 批处理契约失败 | 单独运行 `scripts.verify_embedding_reranker_batching`，检查调用数、内部批次、摘要和顺序 |
 | 作品集发布契约失败 | 单独运行 `scripts.run_portfolio_demo`，再检查三份 Day 30 文档和 CI 证据路径 |
@@ -330,6 +355,10 @@ Day 18 实现的是持续集成，不是持续部署：
 - 不在 GitHub-hosted Runner 启动真实 PostgreSQL；Phase 29 CI 只验证离线 SQL/安全契约，真实卷恢复由本机 Docker 脚本验证；
 - 不下载真实 BGE 验证增量同步；Phase 30 使用确定性 Embedding 替身证明调用数量和索引状态转换；
 - 不把 Phase 31 Offline 分数解释为真实 BGE 质量；CI 只验证指标、四通道接线、权限和回归门禁；
+- 不把 Phase 32 的单人三级标注当作生产 gold set；尚未完成双人一致性和真实 Query pool judging；
+- 不把 Phase 33 Offline candidate sweep 当作真实 BGE 性能实验；真实模式必须在固定硬件显式运行，且报告不会自动修改生产配置；
+- 不在 GitHub Runner 创建真实 HNSW；Phase 34 CI 只验证实验方法和安全契约，固定硬件 PostgreSQL/BGE 数据需本地显式生成；
+- 不在 CI 执行真实 collection 指针切换；Phase 35 只验证无数据库状态机，真实发布需显式管理命令和滚动重启；
 - 不替代 Day 17 的本机 SQLite 持久卷重建验收；
 - 不自动配置 GitHub Ruleset 或 Branch protection。
 

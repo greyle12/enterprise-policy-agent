@@ -263,12 +263,12 @@ python -X utf8 -m scripts.verify_reranker_integration
 ## 12. 生产环境不足
 
 - 尚未在真实 BGE 模型上测量相关性收益与延迟；
-- `candidate_k=20` 和 `batch_size=8` 未经过硬件与数据集调优；
+- `candidate_k=20` 已有 Phase 33 受控实验入口，但尚未沉淀固定硬件真实 BGE 结论；`batch_size=8` 仍未完成真实硬件调优；
 - 没有 GPU/CPU 自动容量基准和请求级并发门禁；
 - 没有 ONNX/OpenVINO/量化部署；
 - 没有真实模型故障降级指标和告警；
 - 没有 Reranker score threshold 校准；
-- 没有 Recall@K、MRR、nDCG 或 reranking ablation；
+- 已有 Recall@K、MRR、nDCG 与 candidate-window ablation；仍缺扩大后的双人标注集和正式 BGE 基准快照；
 - 模型权重尚未锁定到不可变 revision 或内部制品哈希；
 - 多实例模型加载会重复占用内存。
 

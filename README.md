@@ -196,7 +196,7 @@ Agent 应当：
 当前处于：
 
 ```text
-Advanced RAG Phase 31：Retrieval Evaluation（已完成）
+Advanced RAG Phase 37：Safe Vector Collection GC（已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -333,11 +333,35 @@ Advanced RAG Phase 31：Retrieval Evaluation（已完成）
 - [x] Recall@1/3/5、MRR@5、语料/数据集指纹与 JSON/Markdown 报告；
 - [x] 授权标签预检、Offline CI 门禁与可选真实 BGE 运行模式；
 - [x] Phase 31 完全离线检索质量评测与 CI 证据。
+- [x] G1/G2/G3 多级相关性标注、人工 rationale 与旧二元数据兼容升级；
+- [x] 指数增益 DCG、理想排序归一化 nDCG@1/3/5 与重复结果防增益；
+- [x] Recall@5、MRR@5、nDCG@5 三指标正式通道质量门禁；
+- [x] v2 JSON/Markdown 报告、Phase 32 专项验证和 CI 防回退契约。
+- [x] Hybrid/Reranked Candidate K 受控 sweep，固定最终 Top-5、语料、judgments 与授权身份；
+- [x] Recall@5/MRR@5/nDCG@5 与 nearest-rank p50/p95 联合报告；
+- [x] 分通道 Pareto 前沿、默认窗口门禁和不自动修改生产配置的决策边界；
+- [x] Offline CI 方法验证与可选真实 BGE 固定硬件实验入口。
+- [x] pgvector exact 与 authorization-isolated HNSW 对照实验；
+- [x] ANN Recall@5 与人工 Judged Recall/MRR/nDCG 分层诊断；
+- [x] HNSW `m`、`ef_construction`、`ef_search` 参数、构建耗时和查询 p50/p95；
+- [x] 授权集合先物化、隔离建图、身份 scope 完全匹配和实验表清理契约。
+- [x] Blue/Green 物理 collection 与事务化逻辑发布指针；
+- [x] generation CAS、防并发覆盖、发布历史审计和 previous 快照回滚；
+- [x] 模型/pipeline/记录数/完整 Chunk 指纹清单 SHA-256 四层发布门禁；
+- [x] Alias 运行时只读复用已发布快照，启动时不修改 active collection。
+- [x] 按物理 collection 的 PostgreSQL indexing lease、heartbeat 和过期接管；
+- [x] 单调 fencing token 与最终向量写入同事务校验，拒绝僵尸 Builder；
+- [x] Green 构建与 publish/rollback 锁定同一控制行，active/previous 禁止重建；
+- [x] Lease 控制行 release 后保留，为后续安全 GC 提供 generation 与活跃状态。
+- [x] 旧 Vector collection 保留期、只读 dry-run 与保护原因报告；
+- [x] Active/previous/有效 lease 三重保护和 mark/sweep 两阶段删除；
+- [x] Sweep 前重新验证 fencing generation、记录数、最后活动时间和宽限期；
+- [x] 删除后保留 lease 控制行与 GC receipt，支持安全重试和后续审计。
 
 ### 尚未实现
 
 - [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
-- [ ] 蓝绿 collection 发布指针、回滚和分布式 indexing leader；
+- [ ] GC/租约审计指标、告警、管理员 RBAC 和双人审批；
 - [ ] Redis 会话状态；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
@@ -1435,7 +1459,10 @@ Application Services
        ├── Retrieval Evaluation
        │   ├── Versioned Query / Relevant Chunk Judgments
        │   ├── Vector / BM25 / Hybrid / Reranker Ablation
-       │   └── Recall@1/3/5 + MRR@5 Quality Gate
+       │   ├── Graded Relevance + Recall/MRR/nDCG Gate
+       │   ├── Candidate Window Quality/Latency + Pareto Sweep
+       │   ├── pgvector Exact/HNSW ANN Recall–nDCG–p95
+       │   └── Blue/Green Collection Release + CAS Rollback
        │
        ├── Policy Repository
        ├── Application Repository
@@ -1516,6 +1543,7 @@ demo1/
 │   ├── pgvector_store.md
 │   ├── document_indexing_pipeline.md
 │   ├── retrieval_evaluation.md
+│   ├── graded_relevance_ndcg.md
 │   ├── system_architecture.md
 │   ├── portfolio_demo.md
 │   ├── interview_guide.md
@@ -1778,6 +1806,77 @@ python -X utf8 -m scripts.verify_retrieval_evaluation
 python -X utf8 -m scripts.run_retrieval_evaluation --mode bge --device cpu
 ```
 
+### 验证 Phase 32 Graded Relevance + nDCG
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_evaluation --mode offline
+python -X utf8 -m scripts.verify_graded_relevance
+```
+
+### 验证 Phase 33 Candidate Window 消融
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_candidate_sweep --mode offline --candidate-k 5 10 20 40 --default-candidate-k 20 --warmups 1 --repetitions 3
+python -X utf8 -m scripts.verify_retrieval_candidate_sweep
+```
+
+可选真实 BGE 固定硬件实验（首次可能下载模型）：
+
+```powershell
+python -X utf8 -m scripts.run_retrieval_candidate_sweep --mode bge --candidate-k 5 10 20 40 --default-candidate-k 20 --warmups 1 --repetitions 3 --device cpu
+```
+
+详见 `docs/retrieval_candidate_window_experiment.md`。Offline 分数不能解释为真实 BGE 质量或 SLA。
+
+### 验证 Phase 34 pgvector HNSW 实验
+
+```powershell
+python -X utf8 -m scripts.verify_pgvector_hnsw_experiment
+docker compose up -d postgres
+python -X utf8 -m scripts.run_pgvector_hnsw_experiment --mode offline --hnsw-config 8:32:20 16:64:40 16:64:80 --default-config 16:64:40 --warmups 1 --repetitions 3
+```
+
+真实 BGE 固定 CPU 实验：
+
+```powershell
+python -X utf8 -m scripts.run_pgvector_hnsw_experiment --mode bge --hnsw-config 8:32:20 16:64:40 16:64:80 --default-config 16:64:40 --warmups 1 --repetitions 3 --device cpu
+```
+
+详见 `docs/pgvector_hnsw_experiment.md`。专项验证不连接 PostgreSQL；真实 CLI 会写入专用实验 collection。
+
+### 验证 Phase 35 蓝绿 Collection 发布
+
+```powershell
+python -X utf8 -m scripts.verify_vector_collection_release
+python -X utf8 -m scripts.index_policy_documents --collection enterprise-policy-bge-small-zh-v1-green
+python -X utf8 -m scripts.manage_vector_collection_release status --alias enterprise-policy
+```
+
+发布和回滚的完整 PowerShell 命令、snapshot SHA 使用方式及运行时 alias 配置见
+`docs/vector_collection_release.md`。CI 只验证事务状态机和 SQL 契约，不代表真实数据库发布已执行。
+
+### 验证 Phase 36 Distributed Indexing Lease
+
+```powershell
+python -X utf8 -m scripts.verify_indexing_lease
+python -X utf8 -m scripts.index_policy_documents --collection enterprise-policy-bge-small-zh-v1-green
+python -X utf8 -m scripts.manage_indexing_lease status --collection enterprise-policy-bge-small-zh-v1-green
+```
+
+真实 Green 构建会自动 acquire/heartbeat/release；CI 只验证 lease/fencing SQL 状态机，不连接 PostgreSQL。
+完整故障语义和面试解释见 `docs/distributed_indexing_lease.md`。
+
+### 验证 Phase 37 Safe Vector Collection GC
+
+```powershell
+python -X utf8 -m scripts.verify_vector_collection_gc
+python -X utf8 -m scripts.manage_vector_collection_gc plan --retention-days 7
+```
+
+`plan` 是业务数据 dry-run：首次运行只会幂等初始化所需控制表，不创建 mark 或删除 Vector。真实删除必须先对单个非 active/previous、无有效 lease 且超过 retention 的
+collection 执行 `mark`，等待宽限期后携带 `mark_token` 执行 `sweep`。完整 PowerShell 操作、事务门禁和
+面试解释见 `docs/safe_vector_collection_gc.md`。
+
 ### 运行 Day 30 作品集演示与发布验收
 
 ```powershell
@@ -2015,13 +2114,14 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] `PolicyAnswerService` 正式调用统一 Reranked 入口；
 - [x] 完全离线 Provider 替身、199 Chunk 专项验证与 CI 门禁；
 - [x] 相同 Judgments 上的真实 BGE Recall@K、MRR 运行入口（Phase 31）；
-- [ ] nDCG、固定硬件延迟和正式 BGE 基准快照。
+- [x] G1/G2/G3 与 nDCG@1/3/5（Phase 32）；
+- [ ] 固定硬件延迟和正式 BGE 基准快照。
 
 ### Advanced RAG Phase 29：PostgreSQL + pgvector
 
 - [x] `VectorIndex` Protocol 和 `InMemoryVectorIndex.upsert(...)`；
 - [x] `PgVectorIndex`、Psycopg 连接池和延迟导入边界；
-- [x] pgvector extension、`VECTOR(512)`、JSONB 元数据和 collection 复合主键；
+- [x] pgvector extension、支持多模型 collection 的 `VECTOR`、JSONB 元数据和 collection 复合主键；
 - [x] `ON CONFLICT` 事务批量 upsert 与跨连接池实例持久化；
 - [x] `MATERIALIZED authorized_records` 后再执行 cosine distance；
 - [x] 当前 199 Chunk 默认精确检索，不在无评测数据时引入 HNSW；
@@ -2045,7 +2145,7 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 应用启动只解析/切分一次，并让 Retriever 复用同步后的向量；
 - [x] 独立 `scripts.index_policy_documents` JSON CLI；
 - [x] 完全离线幂等、单 Chunk 更新、源删除和授权前置专项验证；
-- [ ] 蓝绿 collection 构建、发布指针和一键回滚；
+- [x] 蓝绿 collection 构建、发布指针和一键回滚（Phase 35）；
 - [x] Recall@K、MRR、四通道消融与可选真实 BGE 检索评测（Phase 31）。
 
 ### Advanced RAG Phase 31：Retrieval Evaluation
@@ -2058,7 +2158,93 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 确定性、无网络 Offline CI 模式和真实 BGE 可选模式；
 - [x] 无权限/不存在相关标签预检，保持 authorization-before-similarity；
 - [x] JSON / Markdown 报告、稳定退出码、专项验证与 CI Artifact；
-- [ ] 扩大真实匿名查询集、双人标注、graded relevance / nDCG 和 ANN 参数实验。
+- [x] G1/G2/G3 graded relevance、标注理由和 nDCG@1/3/5（Phase 32）；
+- [ ] 扩大真实匿名查询集、双人标注和 ANN 参数实验。
+
+### Advanced RAG Phase 32：Graded Relevance + nDCG
+
+- [x] `RelevanceGrade`：G1 marginal、G2 supporting、G3 highly relevant；
+- [x] 每个 Query–Chunk judgment 包含可审计的人工 `rationale`；
+- [x] Phase 31 `relevant_chunk_ids` 自动升级为 G3，内部不保留双重事实来源；
+- [x] 指数增益 `2^rel - 1`、位置折损、IDCG 和 nDCG@1/3/5；
+- [x] 重复 Chunk 不重复贡献 DCG；
+- [x] Recall/MRR 保持二元兼容，nDCG 评价高价值证据排序；
+- [x] Hybrid/Reranked Recall@5、MRR@5、nDCG@5 均需达到 0.80；
+- [x] 报告 schema `2.0`，JSON 保留等级/理由，Markdown 展示 G1/G2/G3；
+- [x] 20 条数据覆盖三个等级、Phase 32 专项脚本、pytest 和 CI 门禁；
+- [ ] 真实匿名 Query 双人标注、标注一致性、完整 pool judging；
+- [x] 固定变量的 Candidate Window 质量/延迟实验协议与真实 BGE 运行入口（Phase 33）。
+- [ ] pgvector HNSW Recall–nDCG–p95 实验。
+
+### Advanced RAG Phase 33：真实 BGE Candidate Window 消融与实验协议
+
+- [x] 复用同一个授权 Retriever，只改变 Hybrid/Reranked candidate K；
+- [x] 固定最终 Top-5、语料与数据集 SHA-256、可信评测身份和模型 identity；
+- [x] warm-up 与 measured repetitions 分离，记录 nearest-rank p50/p95；
+- [x] 每个窗口联合输出 Recall@5、MRR@5、nDCG@5、错误数和三指标门禁；
+- [x] Hybrid/Reranked 分通道 Pareto 非支配前沿；
+- [x] 默认窗口单独门禁，小窗口消融失败不误报实验实现失败；
+- [x] JSON/Markdown 报告记录 device、batch size、环境、语料和 judgments 指纹；
+- [x] BGE 参数在昂贵模型构建前预检，Offline CI 不下载模型；
+- [x] pytest、专项验证、CI Artifact 和详细实验说明；
+- [ ] 固定硬件运行并评审真实 BGE 报告快照；
+- [x] pgvector HNSW 参数与 Recall–nDCG–p95 实验入口（Phase 34）。
+
+### Advanced RAG Phase 34：pgvector HNSW Recall–nDCG–p95 实验
+
+- [x] exact cosine baseline 与多组 HNSW `m/ef_construction/ef_search` 对照；
+- [x] ANN Recall@5 单独衡量 HNSW 对 exact Top-5 的近似损失；
+- [x] Judged Recall@5、MRR@5、nDCG@5 继续评价人工标注相关性；
+- [x] warm-up、重复测量、nearest-rank p50/p95 与独立 index build time；
+- [x] 授权 ID 先复制到隔离 UNLOGGED 表，再构建 HNSW；
+- [x] 搜索身份 scope 必须与预物化 scope 完全一致；
+- [x] 默认参数门禁、HNSW Pareto 前沿和不自动改生产配置边界；
+- [x] 真实 PostgreSQL/BGE CLI、无数据库 CI verifier、JSON/Markdown 报告和 pytest；
+- [ ] 在固定硬件运行并提交真实 PostgreSQL + BGE 报告快照；
+- [x] 蓝绿索引发布指针与 CAS 回滚（Phase 35）；
+- [ ] 大规模匿名 Query 与并发 ANN。
+
+### Advanced RAG Phase 35：蓝绿 Vector Collection 发布与回滚
+
+- [x] 逻辑 alias → active/previous 物理 collection 指针；
+- [x] `SELECT ... FOR UPDATE`、generation CAS 和同事务审计历史；
+- [x] Green 发布前验证 Embedding identity、pipeline version 和 record count；
+- [x] 完整 `(record_id, index_fingerprint)` manifest SHA-256 防陈旧同数量快照；
+- [x] 回滚前重新验证 previous collection，篡改或删除时 fail closed；
+- [x] `index_policy_documents --collection` 显式构建非 active Green；
+- [x] `manage_vector_collection_release status/publish/rollback` 管理 CLI；
+- [x] `RAG_PGVECTOR_RELEASE_ALIAS` 默认关闭，兼容现有直接 collection 模式；
+- [x] Alias 模式启动只读校验快照并复用原 PolicyRetriever/权限检索链；
+- [x] pytest、离线专项验证、CI 防回退契约和操作文档；
+- [x] 分布式构建租约与 fencing（Phase 36）；
+- [x] Retention、引用/租约保护和两阶段旧 collection GC（Phase 37）；
+- [ ] 多历史版本任意 generation 回滚与运行时热切换。
+
+### Advanced RAG Phase 36：Distributed Indexing Lease 与 Fencing
+
+- [x] 每个物理 collection 一个稳定 PostgreSQL 控制行；
+- [x] owner、随机 lease token、TTL heartbeat 和过期接管；
+- [x] acquire 时 fencing token 单调递增，release 不删除 generation；
+- [x] 最终 upsert/delete 与 lease `FOR UPDATE` 校验位于同一事务；
+- [x] no-op 同步也验证最终 fence；
+- [x] active/previous release collection 禁止 acquire 构建租约；
+- [x] publish/rollback 拒绝存在活跃构建 lease 的目标；
+- [x] `index_policy_documents` 对 pgvector 强制显式 Green collection；
+- [x] 租约状态 CLI 不输出 lease token；
+- [x] pytest、离线专项验证、CI 门禁和 PowerShell 运维文档；
+- [x] Phase 37 旧 collection retention 与安全 GC。
+
+### Advanced RAG Phase 37：Safe Vector Collection GC
+
+- [x] 只读 `plan` 输出记录数、fencing token、最后活动时间与保护原因；
+- [x] PostgreSQL `CURRENT_TIMESTAMP` 驱动 retention，避免应用主机时钟漂移；
+- [x] Active、previous 与有效 indexing lease 三重 fail-closed 保护；
+- [x] Mark 固化 collection、记录数、活动时间、generation 和 sweep 宽限期；
+- [x] Sweep 同事务重新验证 pointer、lease、fence、count 与更新时间；
+- [x] Mark 后出现新 Builder generation 时旧 mark 自动失效；
+- [x] 删除数量必须与 mark 一致，保留稳定 lease 行和 GC receipt；
+- [x] 管理 CLI、pytest、离线专项 verifier、CI 防回退契约和运维文档；
+- [ ] Phase 38 GC 审计指标、管理员 RBAC、双人审批与真实 PostgreSQL 竞态集成测试。
 
 ---
 

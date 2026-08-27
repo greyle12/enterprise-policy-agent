@@ -180,9 +180,9 @@ authorization_still_precedes_vector_scoring: true
 
 ## 11. 生产环境仍有哪些不足
 
-- 当前单次同步以 collection 为镜像边界，没有分布式写锁或 leader election；
+- Phase 36 已增加按 collection 的分布式租约、heartbeat 和 fencing；仍没有任务队列或全局调度器；
 - Loader/Parser/Chunker 与 BM25 仍会在每个进程启动时执行；
-- 没有蓝绿 collection、发布指针和一键回滚；
+- Phase 35/36/37 已增加蓝绿发布、previous 回滚、分布式构建租约和安全 GC；仍缺任意历史版本回滚；
 - 没有失败任务队列、死信队列或断点续传；
 - 大目录仍需要流式发现、分页 list entries 和分批事务；
 - 没有病毒扫描、文件配额、租户隔离和 ingestion 审计表；
@@ -219,5 +219,6 @@ Indexer 写入完整知识集合和安全元数据。访问权限取决于每个
 
 ### 如何发布新 Embedding 模型？
 
-使用新 collection 和新的 pipeline/model identity 完整构建，跑 Phase 31 Retrieval Evaluation，通过后再切换
-读取配置；不要在旧 collection 内混合不同维度或语义空间的向量。
+使用新 collection 和新的 pipeline/model identity 完整构建，跑 Phase 31–34 评测，通过后由 Phase 35
+Release Manager 校验 record count、identity、pipeline 与 snapshot SHA，再原子切换逻辑 alias；不要在旧
+collection 内混合不同维度或语义空间的向量。

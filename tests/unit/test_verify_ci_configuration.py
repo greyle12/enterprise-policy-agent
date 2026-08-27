@@ -142,6 +142,66 @@ def test_rejects_missing_rag_security_gate(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_candidate_window_experiment_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_retrieval_candidate_sweep",
+        "python -X utf8 -c \"print('candidate sweep gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_pgvector_hnsw_experiment_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_pgvector_hnsw_experiment",
+        "python -X utf8 -c \"print('HNSW experiment gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_vector_collection_release_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_vector_collection_release",
+        "python -X utf8 -c \"print('release gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_indexing_lease_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_indexing_lease",
+        "python -X utf8 -c \"print('indexing lease gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_vector_collection_gc_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_vector_collection_gc",
+        "python -X utf8 -c \"print('collection GC gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_document_loader_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(
@@ -280,6 +340,18 @@ def test_rejects_missing_retrieval_evaluation_gate(tmp_path: Path) -> None:
         workflow,
         "python -X utf8 -m scripts.run_retrieval_evaluation --mode offline",
         "python -X utf8 -c \"print('retrieval evaluation removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_graded_relevance_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.verify_graded_relevance",
+        "python -X utf8 -c \"print('graded relevance removed')\"",
     )
 
     with pytest.raises(CIConfigurationError, match="quality job is missing command"):

@@ -6,6 +6,19 @@ from app.rag.bm25 import (
     KeywordTokenizer,
     PolicyKeywordTokenizer,
 )
+from app.rag.collection_gc import (
+    CollectionGCConflictError,
+    CollectionGCMark,
+    CollectionGCNotReadyError,
+    CollectionGCPlanEntry,
+    CollectionGCProtectedError,
+    CollectionGCRetentionError,
+    PgVectorCollectionGCManager,
+)
+from app.rag.collection_release import (
+    CollectionReleasePointer,
+    PgVectorCollectionReleaseManager,
+)
 from app.rag.document_loader import (
     DEFAULT_DOCUMENT_LOADER_REGISTRY,
     DOCXDocumentLoader,
@@ -35,6 +48,14 @@ from app.rag.indexing import (
     PolicyDocumentIndexer,
     PolicyIndexingRun,
 )
+from app.rag.indexing_lease import (
+    IndexingCollectionProtectedError,
+    IndexingLease,
+    IndexingLeaseConflictError,
+    IndexingLeaseLostError,
+    LeaseGuardedPgVectorIndex,
+    PgVectorIndexingLeaseManager,
+)
 from app.rag.ocr import (
     OCRError,
     OCRImage,
@@ -44,6 +65,7 @@ from app.rag.ocr import (
     OCRResult,
     TesseractOCRProvider,
 )
+from app.rag.pgvector_hnsw_experiment import PgVectorHnswExperimentIndex
 from app.rag.pgvector_index import PgVectorIndex
 from app.rag.vector_index import (
     InMemoryVectorIndex,
@@ -58,6 +80,12 @@ __all__ = [
     "BM25Record",
     "BM25SearchResult",
     "BM25UnsearchableQueryError",
+    "CollectionGCConflictError",
+    "CollectionGCMark",
+    "CollectionGCNotReadyError",
+    "CollectionGCPlanEntry",
+    "CollectionGCProtectedError",
+    "CollectionGCRetentionError",
     "DEFAULT_DOCUMENT_LOADER_REGISTRY",
     "DEFAULT_INDEX_PIPELINE_VERSION",
     "DEFAULT_RRF_RANK_CONSTANT",
@@ -70,7 +98,12 @@ __all__ = [
     "DocumentIndexingStatus",
     "LoadedDocument",
     "InMemoryBM25Index",
+    "IndexingCollectionProtectedError",
+    "IndexingLease",
+    "IndexingLeaseConflictError",
+    "IndexingLeaseLostError",
     "KeywordTokenizer",
+    "LeaseGuardedPgVectorIndex",
     "MarkdownDocumentLoader",
     "OCRRequiredError",
     "PDFDocumentLoader",
@@ -91,6 +124,11 @@ __all__ = [
     "OCRQualityGate",
     "OCRResult",
     "PgVectorIndex",
+    "PgVectorCollectionGCManager",
+    "PgVectorIndexingLeaseManager",
+    "PgVectorHnswExperimentIndex",
+    "CollectionReleasePointer",
+    "PgVectorCollectionReleaseManager",
     "InMemoryVectorIndex",
     "SearchResult",
     "TesseractOCRProvider",

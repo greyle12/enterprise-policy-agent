@@ -10,6 +10,7 @@ from app.evaluation.retrieval_models import (
     RetrievalEvaluationMode,
     RetrievalEvaluationReport,
     RetrievalEvaluationThresholds,
+    RelevanceJudgment,
 )
 from app.evaluation.retrieval_reporting import (
     render_retrieval_markdown,
@@ -23,6 +24,7 @@ def _report() -> RetrievalEvaluationReport:
         channel=RetrievalMethod.HYBRID,
         retrieved_chunk_ids=("chunk-1",),
         recall_at_k={1: 1.0, 3: 1.0, 5: 1.0},
+        ndcg_at_k={1: 1.0, 3: 1.0, 5: 1.0},
         first_relevant_rank=1,
         reciprocal_rank=1.0,
         duration_ms=1.25,
@@ -47,6 +49,7 @@ def _report() -> RetrievalEvaluationReport:
                 case_count=1,
                 recall_at_k={1: 1.0, 3: 1.0, 5: 1.0},
                 mrr_at_k=1.0,
+                ndcg_at_k={1: 1.0, 3: 1.0, 5: 1.0},
                 average_duration_ms=1.25,
                 error_count=0,
                 meets_quality_gate=True,
@@ -58,6 +61,13 @@ def _report() -> RetrievalEvaluationReport:
                 title="case",
                 query="query",
                 relevant_chunk_ids=("chunk-1",),
+                judgments=(
+                    RelevanceJudgment(
+                        chunk_id="chunk-1",
+                        relevance=3,
+                        rationale="direct answer",
+                    ),
+                ),
                 channels=(measurement,),
             ),
         ),
@@ -65,10 +75,14 @@ def _report() -> RetrievalEvaluationReport:
 
 
 def test_markdown_explains_offline_limit_and_metrics() -> None:
-    markdown = render_retrieval_markdown(_report())
+    report = _report()
+    markdown = render_retrieval_markdown(report)
 
+    assert report.schema_version == "2.0"
     assert "Recall@5" in markdown
     assert "MRR@5" in markdown
+    assert "nDCG@5" in markdown
+    assert "(G3)" in markdown
     assert "不代表真实 BGE" in markdown
 
 

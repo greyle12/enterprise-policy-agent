@@ -118,7 +118,8 @@ Vector Search 的余弦相似度和 BM25 的词频相关分数没有共同量纲
 - Phase 28 cross-encoder 推理成本；
 - PostgreSQL 连接、授权 CTE 和持久化数据库的查询成本。
 
-`candidate_k=20` 是当前 199 Chunk 小语料的工程默认值，不是经过 Recall@K/MRR 调优后的最终结论。
+`candidate_k=20` 是当前 199 Chunk 小语料的工程默认值。Phase 33 已提供固定 Top-5 的
+Recall@5/MRR@5/nDCG@5 与 p50/p95 消融协议，但仍需在固定硬件运行真实 BGE 后才能评审最终参数。
 
 ## 7. 正式检索链路接入
 

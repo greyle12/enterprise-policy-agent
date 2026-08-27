@@ -238,6 +238,19 @@ Invoke-RestMethod http://127.0.0.1:8000/api/v1/security/status |
 
 ## 6. SQLite、pgvector 与模型持久卷
 
+Phase 35 可选使用 `RAG_PGVECTOR_RELEASE_ALIAS` 解析已发布 Blue/Green collection。Alias 模式下 Agent
+启动只读验证快照，不会增量修改 active collection；发布或回滚指针后需要执行
+`docker compose restart agent`。完整操作见 `docs/vector_collection_release.md`。
+
+Phase 36 的 Green 构建通过 `scripts.index_policy_documents --collection <green>` 自动获得 PostgreSQL
+lease。多个容器或 CI Job 指向同一 Green 时只有一个能够构建；进程崩溃后由 TTL 接管，旧 fencing token
+不能继续提交向量。构建命令不能指向 active/previous collection，详见
+`docs/distributed_indexing_lease.md`。
+
+Phase 37 通过 `scripts.manage_vector_collection_gc plan/mark/status/sweep` 回收不再被 release pointer 引用的
+旧 collection。GC 使用同一 PostgreSQL lease 控制行和 fencing generation；active、previous、有效 lease
+或仍在 retention 内的 collection 都会 fail closed。完整操作见 `docs/safe_vector_collection_gc.md`。
+
 Compose 使用三个具名卷：
 
 | 具名卷 | 容器路径 | 内容 |

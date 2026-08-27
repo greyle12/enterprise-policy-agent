@@ -43,6 +43,9 @@ def run_verification() -> dict[str, object]:
             set(summary.recall_at_k) == {1, 3, 5} for summary in summaries.values()
         ),
         "mrr_at_5_is_reported": all(0.0 <= item.mrr_at_k <= 1.0 for item in summaries.values()),
+        "ndcg_at_1_3_5_is_reported": all(
+            set(summary.ndcg_at_k) == {1, 3, 5} for summary in summaries.values()
+        ),
         "offline_runtime_has_no_external_model_calls": not report.external_model_calls,
         "hybrid_and_reranker_meet_quality_gate": report.quality_gate_passed,
         "evaluation_is_retrieval_only": all(
@@ -60,10 +63,12 @@ def run_verification() -> dict[str, object]:
         "dataset_sha256": dataset.sha256,
         "corpus_sha256": runtime.corpus_sha256,
         "quality_gate_passed": report.quality_gate_passed,
+        "report_schema_version": report.schema_version,
         "metrics": {
             channel.value: {
                 "recall_at_5": summary.recall_at_k[5],
                 "mrr_at_5": summary.mrr_at_k,
+                "ndcg_at_5": summary.ndcg_at_k[5],
             }
             for channel, summary in summaries.items()
         },

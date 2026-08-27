@@ -58,6 +58,7 @@ class DocumentIndexingResult:
 class DocumentIndexingReport:
     pipeline_version: str
     embedding_identity: str
+    snapshot_sha256: str
     documents: tuple[DocumentIndexingResult, ...]
     total_chunk_count: int
     upserted_chunk_count: int
@@ -73,6 +74,7 @@ class DocumentIndexingReport:
         return {
             "pipeline_version": self.pipeline_version,
             "embedding_identity": self.embedding_identity,
+            "snapshot_sha256": self.snapshot_sha256,
             "changed": self.changed,
             "document_count": len(self.documents),
             "document_status_counts": {
@@ -91,6 +93,36 @@ class DocumentIndexingReport:
 class PolicyIndexingRun:
     chunks: tuple[PolicyChunk, ...]
     report: DocumentIndexingReport
+
+
+@dataclass(frozen=True, slots=True)
+class IndexSnapshotValidationReport:
+    expected_chunk_count: int
+    stored_record_count: int
+    missing_record_ids: tuple[str, ...]
+    unexpected_record_ids: tuple[str, ...]
+    fingerprint_mismatch_ids: tuple[str, ...]
+    expected_snapshot_sha256: str
+    stored_snapshot_sha256: str
+
+    @property
+    def valid(self) -> bool:
+        return not (
+            self.missing_record_ids
+            or self.unexpected_record_ids
+            or self.fingerprint_mismatch_ids
+            or self.expected_snapshot_sha256 != self.stored_snapshot_sha256
+        )
+
+    def require_valid(self) -> None:
+        if self.valid:
+            return
+        raise RuntimeError(
+            "published vector snapshot does not match current corpus: "
+            f"missing={len(self.missing_record_ids)}, "
+            f"unexpected={len(self.unexpected_record_ids)}, "
+            f"fingerprint_mismatch={len(self.fingerprint_mismatch_ids)}"
+        )
 
 
 def build_record_metadata(chunk: PolicyChunk) -> dict[str, str]:
@@ -183,6 +215,101 @@ def _document_fingerprint(
             "document_id": document_id,
             "chunks": sorted(entries),
         }
+    )
+
+
+def index_snapshot_sha256_from_entries(entries: Sequence[tuple[str, str]]) -> str:
+    """Hash the complete sorted record/fingerprint manifest for release validation."""
+
+    return _stable_digest({"records": sorted(entries)})
+
+
+def policy_index_snapshot_sha256(
+    chunks: Sequence[PolicyChunk],
+    *,
+    embedding_identity: str,
+    pipeline_version: str = DEFAULT_INDEX_PIPELINE_VERSION,
+) -> str:
+    chunk_tuple = tuple(chunks)
+    if not chunk_tuple:
+        raise ValueError("chunks must not be empty")
+    return index_snapshot_sha256_from_entries(
+        [
+            (
+                chunk.chunk_id,
+                _chunk_fingerprint(
+                    chunk,
+                    metadata=build_record_metadata(chunk),
+                    pipeline_version=pipeline_version,
+                    embedding_identity=embedding_identity,
+                ),
+            )
+            for chunk in chunk_tuple
+        ]
+    )
+
+
+def validate_policy_index_snapshot(
+    chunks: Sequence[PolicyChunk],
+    *,
+    vector_index: VectorIndex,
+    embedding_identity: str,
+    pipeline_version: str = DEFAULT_INDEX_PIPELINE_VERSION,
+) -> IndexSnapshotValidationReport:
+    """Validate a published snapshot without embedding or mutating any records."""
+
+    chunk_tuple = tuple(chunks)
+    if not chunk_tuple:
+        raise ValueError("chunks must not be empty")
+    chunks_by_id = {chunk.chunk_id: chunk for chunk in chunk_tuple}
+    if len(chunks_by_id) != len(chunk_tuple):
+        raise ValueError("chunk_id values must be unique")
+    normalized_identity = embedding_identity.strip()
+    normalized_version = pipeline_version.strip()
+    if not normalized_identity or not normalized_version:
+        raise ValueError("embedding identity and pipeline version must not be blank")
+
+    entries = vector_index.list_entries()
+    entries_by_id = {entry.record_id: entry for entry in entries}
+    if len(entries_by_id) != len(entries):
+        raise RuntimeError("vector index returned duplicate record IDs")
+    desired_fingerprints = {
+        chunk.chunk_id: _chunk_fingerprint(
+            chunk,
+            metadata=build_record_metadata(chunk),
+            pipeline_version=normalized_version,
+            embedding_identity=normalized_identity,
+        )
+        for chunk in chunk_tuple
+    }
+    desired_ids = set(chunks_by_id)
+    stored_ids = set(entries_by_id)
+    common_ids = desired_ids.intersection(stored_ids)
+    return IndexSnapshotValidationReport(
+        expected_chunk_count=len(chunk_tuple),
+        stored_record_count=len(entries),
+        missing_record_ids=tuple(sorted(desired_ids.difference(stored_ids))),
+        unexpected_record_ids=tuple(sorted(stored_ids.difference(desired_ids))),
+        fingerprint_mismatch_ids=tuple(
+            sorted(
+                record_id
+                for record_id in common_ids
+                if entries_by_id[record_id].metadata.get(INDEX_FINGERPRINT_METADATA_KEY)
+                != desired_fingerprints[record_id]
+            )
+        ),
+        expected_snapshot_sha256=index_snapshot_sha256_from_entries(
+            list(desired_fingerprints.items())
+        ),
+        stored_snapshot_sha256=index_snapshot_sha256_from_entries(
+            [
+                (
+                    entry.record_id,
+                    entry.metadata.get(INDEX_FINGERPRINT_METADATA_KEY, ""),
+                )
+                for entry in entries
+            ]
+        ),
     )
 
 
@@ -382,6 +509,7 @@ class PolicyDocumentIndexer:
         return DocumentIndexingReport(
             pipeline_version=self._pipeline_version,
             embedding_identity=self._embedding_identity,
+            snapshot_sha256=index_snapshot_sha256_from_entries(list(desired_fingerprints.items())),
             documents=tuple(document_results),
             total_chunk_count=len(chunk_list),
             upserted_chunk_count=len(records),
@@ -395,7 +523,11 @@ __all__ = [
     "DocumentIndexingReport",
     "DocumentIndexingResult",
     "DocumentIndexingStatus",
+    "IndexSnapshotValidationReport",
     "PolicyDocumentIndexer",
     "PolicyIndexingRun",
     "build_record_metadata",
+    "index_snapshot_sha256_from_entries",
+    "policy_index_snapshot_sha256",
+    "validate_policy_index_snapshot",
 ]

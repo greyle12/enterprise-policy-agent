@@ -53,10 +53,15 @@ class RetrievalEvaluationRuntime:
     corpus_sha256: str
     embedding_provider: str
     reranker_provider: str
+    embedding_batch_size: int
+    reranker_batch_size: int
+    requested_device: str | None
     external_model_calls: bool
 
 
-def _access_context() -> PolicyAccessContext:
+def retrieval_evaluation_access_context() -> PolicyAccessContext:
+    """Return the fixed trusted identity shared by retrieval experiments."""
+
     return PolicyAccessContext(
         employee_id="RETRIEVAL-EVAL-001",
         department="评测部门",
@@ -114,12 +119,17 @@ def build_retrieval_evaluation_runtime(
     embedding_model: str = DEFAULT_BGE_MODEL_NAME,
     reranker_model: str = DEFAULT_BGE_RERANKER_MODEL_NAME,
     device: str | None = None,
+    embedding_batch_size: int = 32,
+    reranker_batch_size: int = 32,
     candidate_k: int = 20,
 ) -> RetrievalEvaluationRuntime:
     """Build the existing Retriever with either deterministic or real BGE providers."""
 
+    if embedding_batch_size < 1 or reranker_batch_size < 1:
+        raise ValueError("evaluation batch sizes must be greater than zero")
+
     chunks = tuple(chunk_policy_directory(Path(policy_directory)))
-    access_context = _access_context()
+    access_context = retrieval_evaluation_access_context()
     validate_retrieval_judgments(
         cases,
         chunks,
@@ -128,10 +138,15 @@ def build_retrieval_evaluation_runtime(
     )
 
     if mode is RetrievalEvaluationMode.BGE:
-        embedding_provider = BGEEmbeddingProvider(model_name=embedding_model, device=device)
+        embedding_provider = BGEEmbeddingProvider(
+            model_name=embedding_model,
+            device=device,
+            batch_size=embedding_batch_size,
+        )
         reranking_provider: RerankingProvider = BGERerankingProvider(
             model_name=reranker_model,
             device=device,
+            batch_size=reranker_batch_size,
         )
         embedding_identity = embedding_model
         reranker_identity = reranker_model
@@ -158,5 +173,8 @@ def build_retrieval_evaluation_runtime(
         corpus_sha256=corpus_sha256(chunks),
         embedding_provider=embedding_identity,
         reranker_provider=reranker_identity,
+        embedding_batch_size=embedding_batch_size,
+        reranker_batch_size=reranker_batch_size,
+        requested_device=device,
         external_model_calls=external_model_calls,
     )
