@@ -14,8 +14,8 @@ from app.persistence.sqlite_memory import SQLiteConversationMemoryStore
 from app.persistence.sqlite_runtime import (
     SQLiteAgentStateStore,
     SQLiteMockApprovalSubmitter,
-    StoredAgentSession,
 )
+from app.persistence.state_models import StoredAgentSession
 from app.persistence.state_provider import AgentStateProviderName
 
 __all__ = [
