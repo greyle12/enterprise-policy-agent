@@ -5,6 +5,7 @@ from pydantic import ValidationError
 
 from app.cache import CacheProviderName
 from app.core.config import Settings
+from app.persistence import AgentStateProviderName
 from app.rag.reranking import RerankerProviderName
 from app.rag.vector_index import VectorStoreProviderName
 from app.research import WebSearchProviderName
@@ -48,6 +49,11 @@ _ENVIRONMENT_NAMES = (
     "RAG_PGVECTOR_MIN_POOL_SIZE",
     "RAG_PGVECTOR_MAX_POOL_SIZE",
     "RAG_PGVECTOR_CONNECT_TIMEOUT_SECONDS",
+    "AGENT_STATE_PROVIDER",
+    "AGENT_POSTGRES_DSN",
+    "AGENT_POSTGRES_MIN_POOL_SIZE",
+    "AGENT_POSTGRES_MAX_POOL_SIZE",
+    "AGENT_POSTGRES_CONNECT_TIMEOUT_SECONDS",
     "SQLITE_DATABASE_PATH",
 )
 
@@ -104,6 +110,11 @@ def test_uses_default_llm_settings() -> None:
     assert settings.rag_pgvector_min_pool_size == 1
     assert settings.rag_pgvector_max_pool_size == 4
     assert settings.rag_pgvector_connect_timeout_seconds == 5.0
+    assert settings.agent_state_provider is AgentStateProviderName.SQLITE
+    assert settings.agent_postgres_dsn.get_secret_value().startswith("postgresql://")
+    assert settings.agent_postgres_min_pool_size == 1
+    assert settings.agent_postgres_max_pool_size == 8
+    assert settings.agent_postgres_connect_timeout_seconds == 5.0
     assert settings.sqlite_database_path == Path("data/runtime/enterprise_policy_agent.db")
     assert settings.llm_api_key.get_secret_value() == "test-key"
 
@@ -153,6 +164,11 @@ def test_loads_llm_settings_from_env_file(
             "RAG_PGVECTOR_MIN_POOL_SIZE=2\n"
             "RAG_PGVECTOR_MAX_POOL_SIZE=8\n"
             "RAG_PGVECTOR_CONNECT_TIMEOUT_SECONDS=9\n"
+            "AGENT_STATE_PROVIDER=postgresql\n"
+            "AGENT_POSTGRES_DSN=postgresql://agent:secret@postgres.example:5432/agent\n"
+            "AGENT_POSTGRES_MIN_POOL_SIZE=3\n"
+            "AGENT_POSTGRES_MAX_POOL_SIZE=12\n"
+            "AGENT_POSTGRES_CONNECT_TIMEOUT_SECONDS=11\n"
             "SQLITE_DATABASE_PATH=data/test-agent.db"
         ),
         encoding="utf-8",
@@ -202,7 +218,15 @@ def test_loads_llm_settings_from_env_file(
     assert settings.rag_pgvector_min_pool_size == 2
     assert settings.rag_pgvector_max_pool_size == 8
     assert settings.rag_pgvector_connect_timeout_seconds == 9.0
+    assert settings.agent_state_provider is AgentStateProviderName.POSTGRESQL
+    assert settings.agent_postgres_dsn.get_secret_value() == (
+        "postgresql://agent:secret@postgres.example:5432/agent"
+    )
+    assert settings.agent_postgres_min_pool_size == 3
+    assert settings.agent_postgres_max_pool_size == 12
+    assert settings.agent_postgres_connect_timeout_seconds == 11.0
     assert "postgresql://rag:secret" not in repr(settings)
+    assert "postgresql://agent:secret" not in repr(settings)
     assert settings.sqlite_database_path == Path("data/test-agent.db")
 
 
@@ -243,6 +267,12 @@ def test_loads_llm_settings_from_env_file(
         ("rag_pgvector_max_pool_size", 65),
         ("rag_pgvector_connect_timeout_seconds", 0),
         ("rag_pgvector_connect_timeout_seconds", 61),
+        ("agent_postgres_min_pool_size", 0),
+        ("agent_postgres_min_pool_size", 17),
+        ("agent_postgres_max_pool_size", 0),
+        ("agent_postgres_max_pool_size", 65),
+        ("agent_postgres_connect_timeout_seconds", 0),
+        ("agent_postgres_connect_timeout_seconds", 61),
     ],
 )
 def test_rejects_invalid_numeric_settings(
@@ -281,6 +311,16 @@ def test_rejects_inverted_pgvector_pool_range() -> None:
         )
 
 
+def test_rejects_inverted_agent_postgres_pool_range() -> None:
+    with pytest.raises(ValidationError, match="agent_postgres_max_pool_size"):
+        Settings(
+            llm_api_key="test-key",
+            agent_postgres_min_pool_size=9,
+            agent_postgres_max_pool_size=8,
+            _env_file=None,
+        )
+
+
 @pytest.mark.parametrize(
     "dsn",
     ["", "sqlite:///tmp/rag.db", "postgresql:///missing-host"],
@@ -290,6 +330,19 @@ def test_rejects_invalid_pgvector_dsn(dsn: str) -> None:
         Settings(
             llm_api_key="test-key",
             rag_pgvector_dsn=dsn,
+            _env_file=None,
+        )
+
+
+@pytest.mark.parametrize(
+    "dsn",
+    ["", "sqlite:///tmp/agent.db", "postgresql:///missing-host"],
+)
+def test_rejects_invalid_agent_postgres_dsn(dsn: str) -> None:
+    with pytest.raises(ValidationError, match="agent_postgres_dsn"):
+        Settings(
+            llm_api_key="test-key",
+            agent_postgres_dsn=dsn,
             _env_file=None,
         )
 
