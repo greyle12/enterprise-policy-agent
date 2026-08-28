@@ -197,7 +197,7 @@ Agent 应当：
 
 ```text
 Advanced RAG Phase 37：Safe Vector Collection GC（已完成）
-Platform Phase 38：Multi-instance Shared State（进行中：Step 1 State Inventory 已完成）
+Platform Phase 38：Multi-instance Shared State（进行中：Step 2 PostgreSQL Schema 已完成）
 基础作品集路线 Phase 21：项目收尾与作品集发布（Day 30 已完成）
 ```
 
@@ -363,7 +363,7 @@ Platform Phase 38：Multi-instance Shared State（进行中：Step 1 State Inven
 
 - [ ] 扩展真实匿名查询集并沉淀固定硬件上的 BGE / pgvector ANN 消融结果；
 - [ ] GC/租约审计指标、告警、管理员 RBAC 和双人审批；
-- [ ] Phase 38 PostgreSQL Agent shared state 与 Redis session coordination（Step 1 状态清单已完成，运行时迁移尚未开始）；
+- [ ] Phase 38 PostgreSQL Agent shared state 与 Redis session coordination（Step 1–2 已完成，Repository 与运行时迁移尚未开始）；
 - [ ] 集中日志存储、跨实例指标聚合和 OpenTelemetry 链路追踪。
 - [ ] 真实 BGE、LLM 和 Web Provider 性能基线；
 - [ ] 生产级持续压测、跨进程全局背压、分布式防击穿和真实模型 batch 调优。
@@ -2254,7 +2254,10 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [x] 明确 Durable State → PostgreSQL、Ephemeral Coordination → Redis，禁止 durable state 进入 Redis；
 - [x] 增加机器可读清单、详细 ADR、离线 verifier 和 pytest；
 - [x] 明确 Phase 40/43 才处理集中可观测性、distributed single-flight 和 global backpressure；
-- [ ] Step 2 PostgreSQL runtime configuration 与 schema；
+- [x] Step 2 独立 PostgreSQL runtime 配置、固定 `agent_runtime` schema 和 versioned migration；
+- [x] Step 2 创建 session/draft/conversation/submission/audit 五张业务表及 schema migration 表；
+- [x] Step 2 使用 JSONB、TIMESTAMPTZ、session revision、tombstone、唯一约束和审计外键；
+- [x] Step 2 提供显式 setup/status CLI、离线 verifier 和 schema drift fail-closed 验证；
 - [ ] Step 3 PostgreSQL repositories；
 - [ ] Step 4 PostgreSQL LangGraph checkpointer；
 - [ ] Step 5 Redis distributed session coordination；
@@ -2262,8 +2265,8 @@ python -X utf8 -m scripts.verify_portfolio_release
 - [ ] Step 7 multi-instance / crash failover / no-duplicate integration tests；
 - [ ] Step 8 文档、Compose 验收和 CI gate。
 
-当前 Step 1 **没有**创建 PostgreSQL runtime 表、复制 SQLite 数据、获取 Redis session lock 或切换
-FastAPI persistence backend。完整设计和状态归属见
+当前 Step 2 只提供显式 schema 管理能力；FastAPI 默认和 Compose runtime 仍使用 SQLite，且**没有**复制
+SQLite 数据、获取 Redis session lock、实现 Repository 或切换 persistence backend。完整设计和状态归属见
 [`docs/multi_instance_shared_state.md`](docs/multi_instance_shared_state.md)。
 
 ---

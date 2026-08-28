@@ -2,8 +2,9 @@
 
 ## 1. 当前结论
 
-本设计以 GitHub `main` 的 `b37277953a663930cc01a251b5f0de71d7284b4f` 为审计基线。
-代码、测试和 CI 表明 Advanced RAG Phase 37 已完成；Phase 38 还没有进入运行时实现。
+本设计最初以 GitHub `main` 的 `b37277953a663930cc01a251b5f0de71d7284b4f` 为审计基线，
+Step 1 已由 `58b64a6fe4d6345c68f1b944527dd82892d89369` 提交。代码、测试和 CI 表明
+Advanced RAG Phase 37 已完成；Phase 38 Step 2 已增加 PostgreSQL schema contract，但还没有切换运行时。
 
 当前 Agent 的 checkpoint、会话投影、草稿快照、对话记忆、提交回执、幂等记录和提交审计，
 全部写入 `SQLITE_DATABASE_PATH` 指向的同一个 SQLite 文件。Compose 只启动一个 Agent，
@@ -15,8 +16,8 @@ PostgreSQL 已用于 pgvector、Collection Release、Indexing Lease 和 Collecti
 或 Collection 控制面。
 
 本阶段的机器可读事实来源是
-[`docs/multi_instance_state_inventory.json`](multi_instance_state_inventory.json)。Step 1 只建立清单和
-验证契约，没有创建 PostgreSQL runtime 表、没有复制 SQLite 数据，也没有切换 FastAPI 后端。
+[`docs/multi_instance_state_inventory.json`](multi_instance_state_inventory.json)。Step 1 建立清单和验证
+契约；Step 2 增加显式 PostgreSQL schema setup/status 能力。FastAPI 仍使用 SQLite，也没有复制数据。
 
 ## 2. 本阶段解决什么问题
 
@@ -243,7 +244,8 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-本轮只完成 Step 1。Step 2 及之后的 schema、dependency、runtime 和 Compose 修改均未开始。
+当前已完成 Step 1–2。Step 3 及之后的 Repository、checkpointer、Redis coordinator、runtime 和 Compose
+切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -256,13 +258,72 @@ Phase 38 至少记录：
 - verifier、pytest、Ruff 和现有专项验证通过；
 - runtime migration 仍为 `false`。
 
-## 12. 生产环境仍有的不足
+## 12. Step 2：PostgreSQL configuration + schema
+
+### 12.1 本步范围
+
+Step 2 增加独立于 RAG pgvector 的 Agent runtime 配置：
+
+- `AGENT_STATE_PROVIDER`：默认仍为 `sqlite`；
+- `AGENT_POSTGRES_DSN`：独立 SecretStr，不复用 `RAG_PGVECTOR_DSN` 命名；
+- `AGENT_POSTGRES_MIN_POOL_SIZE` / `MAX_POOL_SIZE`：为 Step 3–4 的 repository/checkpointer 预留；
+- `AGENT_POSTGRES_CONNECT_TIMEOUT_SECONDS`：有界连接超时。
+
+本步不让 `app/main.py` 根据 Provider 构造 PostgreSQL repository；该切换属于 Step 6。因此即使把
+`AGENT_STATE_PROVIDER` 写成 `postgresql`，当前 FastAPI 也不会假装已经完成迁移。
+
+### 12.2 固定 schema 与迁移
+
+Schema 名固定为 `agent_runtime`，不接受客户端或环境变量提供的 SQL identifier，避免标识符注入和不同实例
+写入不同 schema。`schema_migrations` 保存当前版本，setup 在事务内锁定 migration table：
+
+| 表 | 用途 | 关键约束 |
+| --- | --- | --- |
+| `schema_migrations` | schema version | 只允许正整数版本；拒绝比应用更新的数据库 |
+| `agent_sessions` | session 查询投影和 CAS head | `state_version`、`deleted_at`、owner 成对出现 |
+| `application_draft_snapshots` | 不可变 draft revision | `(draft_id, revision)` 主键、JSONB payload |
+| `conversation_messages` | 已脱敏的多轮上下文 | `(session_id, turn_number, role)` 唯一 |
+| `approval_submissions` | submission/idempotency 事实来源 | idempotency key、submission ID、draft ID 分别唯一 |
+| `submission_audit_records` | first-submit/replay 审计 | 引用 submission，`ON DELETE RESTRICT` |
+
+业务 payload 使用 JSONB 保留现有 Pydantic 模型的完整快照；可查询字段继续单独成列。时间统一使用
+`TIMESTAMPTZ`。`owner_subject` 和 `owner_identity_source` 当前允许同时为空，仅为 Phase 39 的可信认证身份
+预留，Step 2 不从用户文本或 request body 写入 owner。
+
+LangGraph 官方 checkpoint tables 不在本迁移中创建；它们由 Step 4 的 checkpointer adapter 执行兼容版本的
+官方 setup，避免当前 schema 与第三方迁移历史互相伪装。
+
+### 12.3 管理命令
+
+```powershell
+docker compose up -d postgres
+
+$env:AGENT_POSTGRES_DSN = "postgresql://policy_agent:local-development-only@127.0.0.1:5432/policy_agent"
+
+python -X utf8 -m scripts.manage_agent_state_schema setup
+python -X utf8 -m scripts.manage_agent_state_schema status
+```
+
+`setup` 可重复执行；`status` 只读检查 version、required tables 和 required columns。两者都不输出 DSN。
+
+### 12.4 Step 2 完成标准
+
+- 默认 Provider 仍为 SQLite；
+- DSN 使用 SecretStr，连接池范围和 timeout 有校验；
+- fresh setup 得到 schema version 1，重复 setup 不重新执行 migration 1；
+- 缺表、缺列或数据库版本过新均 fail closed；
+- submission/idempotency/audit 约束由 PostgreSQL DDL 明确表达；
+- 离线 verifier 不访问 PostgreSQL、Redis、模型或网络；
+- 真实 PostgreSQL `setup` 与 `status` 都返回 `ready: true`；
+- `runtime_backend_switched` 与 `sqlite_data_migrated` 仍为 `false`。
+
+## 13. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 13. 面试官可能追问
+## 14. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 

@@ -12,6 +12,7 @@ from pydantic_settings import (
 )
 
 from app.cache import CacheProviderName
+from app.persistence.state_provider import AgentStateProviderName
 from app.research.models import WebSearchProviderName
 from app.rag.reranking import (
     DEFAULT_BGE_RERANKER_MODEL_NAME,
@@ -178,6 +179,25 @@ class Settings(BaseSettings):
         gt=0,
         le=60,
     )
+    agent_state_provider: AgentStateProviderName = AgentStateProviderName.SQLITE
+    agent_postgres_dsn: SecretStr = SecretStr(
+        "postgresql://policy_agent:local-development-only@127.0.0.1:5432/policy_agent"
+    )
+    agent_postgres_min_pool_size: int = Field(
+        default=1,
+        ge=1,
+        le=16,
+    )
+    agent_postgres_max_pool_size: int = Field(
+        default=8,
+        ge=1,
+        le=64,
+    )
+    agent_postgres_connect_timeout_seconds: float = Field(
+        default=5.0,
+        gt=0,
+        le=60,
+    )
     sqlite_database_path: Path = Path("data/runtime/enterprise_policy_agent.db")
 
     @field_validator("redis_url")
@@ -214,6 +234,18 @@ class Settings(BaseSettings):
             raise ValueError("rag_pgvector_dsn must use postgres:// or postgresql:// with a host")
         return normalized
 
+    @field_validator("agent_postgres_dsn", mode="before")
+    @classmethod
+    def validate_agent_postgres_dsn(cls, value: object) -> object:
+        raw_value = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if not isinstance(raw_value, str):
+            return value
+        normalized = raw_value.strip()
+        parsed = urlsplit(normalized)
+        if parsed.scheme not in {"postgres", "postgresql"} or not parsed.hostname:
+            raise ValueError("agent_postgres_dsn must use postgres:// or postgresql:// with a host")
+        return normalized
+
     @model_validator(mode="after")
     def validate_agent_retry_wait_range(self) -> Self:
         if self.agent_retry_max_wait_seconds < self.agent_retry_min_wait_seconds:
@@ -241,6 +273,15 @@ class Settings(BaseSettings):
             raise ValueError(
                 "rag_pgvector_max_pool_size must be greater than or equal to "
                 "rag_pgvector_min_pool_size"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_agent_postgres_pool_range(self) -> Self:
+        if self.agent_postgres_max_pool_size < self.agent_postgres_min_pool_size:
+            raise ValueError(
+                "agent_postgres_max_pool_size must be greater than or equal to "
+                "agent_postgres_min_pool_size"
             )
         return self
 
