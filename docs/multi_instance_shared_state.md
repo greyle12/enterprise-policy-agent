@@ -4,7 +4,7 @@
 
 本设计最初以 GitHub `main` 的 `b37277953a663930cc01a251b5f0de71d7284b4f` 为审计基线，
 Step 1 已由 `58b64a6fe4d6345c68f1b944527dd82892d89369` 提交。代码、测试和 CI 表明
-Advanced RAG Phase 37 已完成；Phase 38 Step 3.2 已增加 PostgreSQL Conversation Repository，但还没有切换运行时。
+Advanced RAG Phase 37 已完成；Phase 38 Step 3.3 已增加 PostgreSQL Submission/Audit Repository，但还没有切换运行时。
 
 当前 Agent 的 checkpoint、会话投影、草稿快照、对话记忆、提交回执、幂等记录和提交审计，
 全部写入 `SQLITE_DATABASE_PATH` 指向的同一个 SQLite 文件。Compose 只启动一个 Agent，
@@ -17,8 +17,8 @@ PostgreSQL 已用于 pgvector、Collection Release、Indexing Lease 和 Collecti
 
 本阶段的机器可读事实来源是
 [`docs/multi_instance_state_inventory.json`](multi_instance_state_inventory.json)。Step 1 建立清单和验证
-契约；Step 2 增加显式 PostgreSQL schema setup/status 能力；Step 3.1–3.2 增加未接线的
-Session/Draft/Conversation Repository。FastAPI 仍使用 SQLite，也没有复制数据。
+契约；Step 2 增加显式 PostgreSQL schema setup/status 能力；Step 3.1–3.3 增加未接线的
+Session/Draft/Conversation/Submission/Audit Repository。FastAPI 仍使用 SQLite，也没有复制数据。
 
 ## 2. 本阶段解决什么问题
 
@@ -245,8 +245,8 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2 和 Step 3.1–3.2。Submission/Audit Repository 以及 checkpointer、Redis coordinator、
-runtime 和 Compose 切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.3。真实 PostgreSQL Repository 集成验收以及 checkpointer、Redis
+coordinator、runtime 和 Compose 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -362,13 +362,37 @@ python -X utf8 -m pytest tests/unit/test_postgres_conversation_memory.py tests/u
 
 本子步骤不创建连接池、不接入 `app/main.py`，也不实现 Submission/Audit、Checkpoint、数据迁移或双写。
 
-## 15. 生产环境仍有的不足
+## 15. Step 3.3：PostgreSQL Submission/Audit Repository
+
+Step 3.3 实现 PostgreSQL mock approval submitter，提交回执与审计共同构成不可随 session reset 删除的
+事实来源：
+
+- 所有既有显式确认、草稿完整性、可信申请人和 session 归属校验都在访问数据库前执行；
+- 首次提交在同一事务写入唯一 submission receipt 和 `submitted` audit；任一写入失败会整体回滚；
+- 相同 idempotency key 锁定并校验 draft/session/employee 绑定，返回原 submission/workflow 并追加
+  `idempotent_replay` audit；
+- idempotency key、submission ID 和 draft ID 的数据库唯一约束是并发最终保护；
+- 两实例同时 INSERT 时，失败方重新读取数据库胜者；相同 key 返回 replay，不同 key 绑定同一 draft 则冲突；
+- audit 只追加，不提供 update/delete；查询按 `recorded_at, audit_id` 稳定排序；
+- `get_submission(draft_id=...)` 支持 reset 后恢复已产生的副作用回执。
+
+离线验收命令：
+
+```powershell
+python -X utf8 -m scripts.verify_postgres_submission_repository
+python -X utf8 -m pytest tests/unit/test_postgres_submission_repository.py tests/unit/test_verify_postgres_submission_repository.py -q
+```
+
+本子步骤不接入运行时，也不执行真实审批、SQLite import、双写或跨数据库事务。Step 3.4 将使用真实
+PostgreSQL 验证 DDL、事务回滚、并发 first-submit/replay、retention 和 tombstone 行为。
+
+## 16. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 16. 面试官可能追问
+## 17. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 
