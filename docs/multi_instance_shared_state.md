@@ -4,7 +4,7 @@
 
 本设计最初以 GitHub `main` 的 `b37277953a663930cc01a251b5f0de71d7284b4f` 为审计基线，
 Step 1 已由 `58b64a6fe4d6345c68f1b944527dd82892d89369` 提交。代码、测试和 CI 表明
-Advanced RAG Phase 37 已完成；Phase 38 Step 3.1 已增加 PostgreSQL Session/Draft Repository，但还没有切换运行时。
+Advanced RAG Phase 37 已完成；Phase 38 Step 3.2 已增加 PostgreSQL Conversation Repository，但还没有切换运行时。
 
 当前 Agent 的 checkpoint、会话投影、草稿快照、对话记忆、提交回执、幂等记录和提交审计，
 全部写入 `SQLITE_DATABASE_PATH` 指向的同一个 SQLite 文件。Compose 只启动一个 Agent，
@@ -17,8 +17,8 @@ PostgreSQL 已用于 pgvector、Collection Release、Indexing Lease 和 Collecti
 
 本阶段的机器可读事实来源是
 [`docs/multi_instance_state_inventory.json`](multi_instance_state_inventory.json)。Step 1 建立清单和验证
-契约；Step 2 增加显式 PostgreSQL schema setup/status 能力；Step 3.1 增加未接线的 Session/Draft
-Repository。FastAPI 仍使用 SQLite，也没有复制数据。
+契约；Step 2 增加显式 PostgreSQL schema setup/status 能力；Step 3.1–3.2 增加未接线的
+Session/Draft/Conversation Repository。FastAPI 仍使用 SQLite，也没有复制数据。
 
 ## 2. 本阶段解决什么问题
 
@@ -245,8 +245,8 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2 和 Step 3.1。Conversation、Submission/Audit Repository 以及 checkpointer、Redis
-coordinator、runtime 和 Compose 切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.2。Submission/Audit Repository 以及 checkpointer、Redis coordinator、
+runtime 和 Compose 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -342,13 +342,33 @@ Step 3.1 不实现真实 pool lifecycle、Conversation、Submission/Audit、Lang
 SQLite import 或 FastAPI 接线；这些边界继续留给 Phase 38 后续子步骤。因而
 `runtime_backend_switched` 与 `sqlite_data_migrated` 仍为 `false`。
 
-## 14. 生产环境仍有的不足
+## 14. Step 3.2：PostgreSQL Conversation Repository
+
+Step 3.2 实现 `ConversationMemoryStore` 的 PostgreSQL 版本，但不接入运行时：
+
+- user/assistant 内容在借用数据库连接前完成既有 secret redaction、空白检查和长度截断；
+- append 先锁定 live `agent_sessions` 行，再计算下一 turn，跨实例串行分配 turn number；
+- user/assistant 使用单条 INSERT 原子写入；唯一约束只接受完整的两行结果，否则整个事务回滚；
+- 每次 append 在同一事务内按 turn number 删除保留窗口之前的完整旧 turn；
+- snapshot 用单条窗口查询同时取得 retained count 和最近消息，保持 SQLite 的最新截取、时间正序返回语义；
+- tombstoned session 的历史不可读取或追加，但 reset 仍可锁行并幂等清理该 session 的 conversation rows。
+
+离线验收命令：
+
+```powershell
+python -X utf8 -m scripts.verify_postgres_conversation_repository
+python -X utf8 -m pytest tests/unit/test_postgres_conversation_memory.py tests/unit/test_verify_postgres_conversation_repository.py -q
+```
+
+本子步骤不创建连接池、不接入 `app/main.py`，也不实现 Submission/Audit、Checkpoint、数据迁移或双写。
+
+## 15. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 15. 面试官可能追问
+## 16. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 
