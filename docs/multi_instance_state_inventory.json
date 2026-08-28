@@ -1,0 +1,323 @@
+{
+  "schema_version": "1.0",
+  "phase": 38,
+  "step": 1,
+  "status": "inventory_only",
+  "audited_branch": "main",
+  "audited_commit": "b37277953a663930cc01a251b5f0de71d7284b4f",
+  "runtime_migration_applied": false,
+  "backend_policy": {
+    "durable": "postgresql",
+    "ephemeral_shared": "redis",
+    "process_local": "reconstructable_or_telemetry_only"
+  },
+  "state_assets": [
+    {
+      "id": "workflow_checkpoints",
+      "durability": "durable",
+      "role": "source_of_truth",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 4,
+      "tables": [
+        "langgraph_checkpoints",
+        "langgraph_blobs",
+        "langgraph_writes"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_checkpointer.py",
+        "app/persistence/sqlite_schema.py",
+        "app/agent/workflow.py"
+      ],
+      "current_symbols": [
+        "SQLiteCheckpointSaver",
+        "thread_id"
+      ],
+      "multi_instance_risk": "An instance-local database cannot resume the same LangGraph thread on another replica.",
+      "required_guarantee": "One durable thread history shared by every replica, with ordered checkpoint writes and restart recovery."
+    },
+    {
+      "id": "agent_session_projection",
+      "durability": "durable",
+      "role": "derived_projection",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 3,
+      "tables": [
+        "agent_sessions"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_runtime.py",
+        "app/persistence/sqlite_schema.py"
+      ],
+      "current_symbols": [
+        "SQLiteAgentStateStore",
+        "save_route_state"
+      ],
+      "multi_instance_risk": "Each replica can expose a different session head and overwrite a newer turn.",
+      "required_guarantee": "Shared session metadata with monotonic revision checks; the checkpoint remains the recovery authority."
+    },
+    {
+      "id": "application_draft_snapshots",
+      "durability": "durable",
+      "role": "derived_projection",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 3,
+      "tables": [
+        "application_draft_snapshots"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_runtime.py",
+        "app/persistence/sqlite_schema.py",
+        "app/tools/draft_models.py"
+      ],
+      "current_symbols": [
+        "application_draft_snapshots",
+        "DraftGenerationResult"
+      ],
+      "multi_instance_risk": "A draft revision created on one replica is not queryable or recoverable from another replica.",
+      "required_guarantee": "Immutable versioned snapshots keyed by draft_id and revision, without accepting stale revision replacement."
+    },
+    {
+      "id": "conversation_memory",
+      "durability": "durable",
+      "role": "source_of_truth",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 3,
+      "tables": [
+        "conversation_messages"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_memory.py",
+        "app/persistence/sqlite_schema.py",
+        "app/memory/conversation.py"
+      ],
+      "current_symbols": [
+        "SQLiteConversationMemoryStore",
+        "sanitize_memory_content"
+      ],
+      "multi_instance_risk": "Follow-up context and sanitized history diverge when requests move between replicas.",
+      "required_guarantee": "Atomic turn allocation, bounded retention, existing redaction, and the same ordered history on every replica."
+    },
+    {
+      "id": "approval_submission_receipts",
+      "durability": "durable",
+      "role": "source_of_truth",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 3,
+      "tables": [
+        "approval_submissions"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_runtime.py",
+        "app/persistence/sqlite_schema.py",
+        "app/tools/mock_approval_submission.py",
+        "app/tools/submission_models.py"
+      ],
+      "current_symbols": [
+        "SQLiteMockApprovalSubmitter",
+        "idempotency_key",
+        "SubmittedApprovalWorkflow"
+      ],
+      "multi_instance_risk": "Two replicas can commit two simulated submissions because their unique constraints live in different files.",
+      "required_guarantee": "A shared transaction and unique constraints bind one idempotency key and one draft to exactly one submission receipt."
+    },
+    {
+      "id": "submission_audit_log",
+      "durability": "durable",
+      "role": "audit",
+      "current_backend": "sqlite",
+      "target_backend": "postgresql",
+      "phase38_action": "migrate",
+      "planned_step": 3,
+      "tables": [
+        "submission_audit_records"
+      ],
+      "source_files": [
+        "app/persistence/sqlite_runtime.py",
+        "app/persistence/sqlite_schema.py",
+        "app/tools/submission_models.py"
+      ],
+      "current_symbols": [
+        "submission_audit_records",
+        "SubmissionAuditRecord"
+      ],
+      "multi_instance_risk": "Audit evidence is fragmented per replica and cannot explain a failover or replay globally.",
+      "required_guarantee": "Append-only shared audit records written in the same transaction as first submission or replay handling."
+    },
+    {
+      "id": "rag_vector_control_plane",
+      "durability": "durable",
+      "role": "control_plane",
+      "current_backend": "postgresql",
+      "target_backend": "postgresql",
+      "phase38_action": "retain",
+      "planned_step": null,
+      "tables": [
+        "rag_policy_vectors",
+        "rag_vector_collection_releases",
+        "rag_vector_collection_release_history",
+        "rag_vector_indexing_leases",
+        "rag_vector_collection_gc_marks"
+      ],
+      "source_files": [
+        "app/rag/pgvector_index.py",
+        "app/rag/collection_release.py",
+        "app/rag/indexing_lease.py",
+        "app/rag/collection_gc.py"
+      ],
+      "current_symbols": [
+        "PGVECTOR_TABLE_NAME",
+        "INDEXING_LEASE_TABLE",
+        "COLLECTION_GC_MARK_TABLE"
+      ],
+      "multi_instance_risk": "No Phase 38 migration is required; using the memory vector provider in a multi-instance profile would bypass this shared state.",
+      "required_guarantee": "Retain PostgreSQL, authorization-before-similarity, release CAS, indexing fencing, and safe collection GC unchanged."
+    },
+    {
+      "id": "llm_response_cache",
+      "durability": "ephemeral",
+      "role": "cache",
+      "current_backend": "redis",
+      "target_backend": "redis",
+      "phase38_action": "retain",
+      "planned_step": null,
+      "tables": [],
+      "source_files": [
+        "app/cache/backends.py",
+        "app/cache/llm.py",
+        "app/core/config.py",
+        "app/main.py"
+      ],
+      "current_symbols": [
+        "RedisLLMCache",
+        "llm_cache_namespace"
+      ],
+      "multi_instance_risk": "The cache is already shared when enabled, but it must never become a workflow or submission source of truth.",
+      "required_guarantee": "TTL-bounded, prompt-free keys, size limits, sensitive-content bypass, and fail-open cache behavior remain unchanged."
+    },
+    {
+      "id": "model_artifact_cache",
+      "durability": "reconstructable",
+      "role": "cache",
+      "current_backend": "filesystem",
+      "target_backend": "filesystem",
+      "phase38_action": "retain",
+      "planned_step": null,
+      "tables": [],
+      "source_files": [
+        "compose.yaml"
+      ],
+      "current_symbols": [
+        "model_cache"
+      ],
+      "multi_instance_risk": "Replicas can have different warm-up latency, but model files are rebuildable and do not affect business correctness.",
+      "required_guarantee": "Treat the cache as disposable; never place workflow, identity, authorization, or submission state in it."
+    }
+  ],
+  "single_instance_dependencies": [
+    {
+      "id": "sqlite_runtime_file",
+      "source_file": "app/main.py",
+      "current_symbol": "SQLiteCheckpointSaver",
+      "current_scope": "instance_filesystem",
+      "impact": "correctness",
+      "phase38_action": "migrate",
+      "target": "postgresql runtime composition without silent SQLite fallback",
+      "resolution_phase": 38,
+      "planned_step": 6
+    },
+    {
+      "id": "workflow_session_lock",
+      "source_file": "app/agent/workflow.py",
+      "current_symbol": "_session_locks",
+      "current_scope": "process",
+      "impact": "correctness",
+      "phase38_action": "migrate",
+      "target": "token-owned Redis session lease plus PostgreSQL conflict guards",
+      "resolution_phase": 38,
+      "planned_step": 5
+    },
+    {
+      "id": "in_memory_vector_provider",
+      "source_file": "app/core/config.py",
+      "current_symbol": "VectorStoreProviderName.MEMORY",
+      "current_scope": "process",
+      "impact": "continuity",
+      "phase38_action": "require_shared_backend",
+      "target": "pgvector required by the multi-instance deployment profile",
+      "resolution_phase": 38,
+      "planned_step": 6
+    },
+    {
+      "id": "in_memory_submission_fallback",
+      "source_file": "app/tools/mock_approval_submission.py",
+      "current_symbol": "_by_idempotency_key",
+      "current_scope": "process",
+      "impact": "correctness",
+      "phase38_action": "restrict_to_tests",
+      "target": "PostgreSQL submitter required by production composition",
+      "resolution_phase": 38,
+      "planned_step": 6
+    },
+    {
+      "id": "llm_singleflight_registry",
+      "source_file": "app/cache/singleflight.py",
+      "current_symbol": "_tasks",
+      "current_scope": "process",
+      "impact": "performance",
+      "phase38_action": "defer",
+      "target": "distributed single-flight experiment",
+      "resolution_phase": 43,
+      "planned_step": null
+    },
+    {
+      "id": "provider_capacity_queue",
+      "source_file": "app/llm/concurrency.py",
+      "current_symbol": "_waiters",
+      "current_scope": "process",
+      "impact": "availability",
+      "phase38_action": "defer",
+      "target": "global provider quota and distributed backpressure",
+      "resolution_phase": 43,
+      "planned_step": null
+    },
+    {
+      "id": "runtime_metrics_registry",
+      "source_file": "app/observability/metrics.py",
+      "current_symbol": "_routes",
+      "current_scope": "process",
+      "impact": "observability",
+      "phase38_action": "defer",
+      "target": "centralized metrics and traces",
+      "resolution_phase": 40,
+      "planned_step": null
+    },
+    {
+      "id": "single_agent_compose_topology",
+      "source_file": "compose.yaml",
+      "current_symbol": "agent_runtime",
+      "current_scope": "single_replica",
+      "impact": "continuity",
+      "phase38_action": "migrate",
+      "target": "two isolated Agent instances sharing PostgreSQL and Redis",
+      "resolution_phase": 38,
+      "planned_step": 7
+    }
+  ],
+  "step_1_non_goals": [
+    "No PostgreSQL runtime tables are created.",
+    "No SQLite data is copied or dual-written.",
+    "No Redis session lock is acquired.",
+    "No FastAPI runtime backend is switched.",
+    "No existing authorization, prompt-injection, HITL, idempotency, or tool boundary is changed."
+  ]
+}
