@@ -81,7 +81,10 @@ _REQUIRED_POSTGRES_REPOSITORY_COMMANDS = (
     'python -m pip install -e ".[dev]"',
     "python -X utf8 -m scripts.manage_agent_state_schema setup",
     "python -X utf8 -m scripts.manage_agent_state_schema status",
-    "python -m pytest tests/integration/test_postgres_repositories.py",
+    "python -X utf8 -m scripts.manage_postgres_checkpointer setup",
+    "python -X utf8 -m scripts.manage_postgres_checkpointer status",
+    "tests/integration/test_postgres_repositories.py",
+    "tests/integration/test_postgres_checkpointer.py",
     "-m postgres_integration -q",
     "--junitxml=artifacts/test-results/postgres-repositories.xml",
 )

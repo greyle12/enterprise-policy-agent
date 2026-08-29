@@ -1,5 +1,11 @@
 """Runtime persistence boundaries for local and shared Agent state."""
 
+from app.persistence.postgres_checkpointer import (
+    POSTGRES_CHECKPOINT_TABLES,
+    PostgresCheckpointError,
+    PostgresCheckpointRuntime,
+    PostgresCheckpointStatus,
+)
 from app.persistence.postgres_schema import (
     AGENT_STATE_SCHEMA,
     AGENT_STATE_SCHEMA_VERSION,
@@ -21,7 +27,11 @@ from app.persistence.state_provider import AgentStateProviderName
 __all__ = [
     "AGENT_STATE_SCHEMA",
     "AGENT_STATE_SCHEMA_VERSION",
+    "POSTGRES_CHECKPOINT_TABLES",
     "AgentStateProviderName",
+    "PostgresCheckpointError",
+    "PostgresCheckpointRuntime",
+    "PostgresCheckpointStatus",
     "PostgresAgentStateSchemaManager",
     "PostgresStateSchemaError",
     "PostgresStateSchemaStatus",

@@ -245,9 +245,9 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2 和 Step 3.1–3.4。Step 3.4 已在 Windows + Docker PostgreSQL 上完成六项真实集成与
-并发验收，隔离 Compose profile 与 CI Gate 继续提供防回退保护。checkpointer、Redis coordinator、runtime
-和 Compose runtime 切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.4。Step 4 的官方 PostgreSQL Checkpointer、显式 Schema 管理和跨实例
+HITL 恢复 Gate 已就绪，仍需真实 PostgreSQL 运行结果才能标记完成。Redis coordinator、runtime 和 Compose
+runtime 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -426,13 +426,48 @@ Remove-Item Env:AGENT_POSTGRES_TEST_DSN
 结果。2026-08-29 已在 Windows PowerShell + Docker PostgreSQL 环境完成验收：`6 passed in 5.08s`；Step 3.4
 正式完成。GitHub Actions 中的等价 PostgreSQL service job 继续作为每次提交的持续验收 Gate。
 
-## 17. 生产环境仍有的不足
+## 17. Step 4：PostgreSQL LangGraph Checkpointer
+
+Step 4 使用官方 `langgraph-checkpoint-postgres` 3.1 系列，不复制或维护第三方 checkpoint DDL：
+
+- `PostgresCheckpointRuntime` 显式拥有 `AsyncConnectionPool`，连接使用 `autocommit=True`、
+  `prepare_threshold=0` 和 `dict_row`，满足官方 saver 要求；
+- pool configure 固定 `search_path=agent_runtime`，官方 `checkpoint_migrations`、`checkpoints`、
+  `checkpoint_blobs`、`checkpoint_writes` 不会落入动态或错误 Schema；
+- `setup()` 先验证 Step 2 Schema Version 1，再使用固定 advisory lock 串行执行官方 migration；
+- `status()` 比较数据库 migration 与安装包 `MIGRATIONS`，缺表、版本过新或版本不一致均 fail closed；
+- serializer 从空 msgpack allowlist 开始，由现有 `AgentWorkflow` 只增加项目明确允许的 Pydantic 类型；
+- Windows 管理 CLI 通过 `SelectorEventLoop` 运行，避免 Psycopg 与默认 Proactor loop 不兼容；
+- 真实集成测试由 Instance A 写入人工确认 interrupt，关闭 pool 后 Instance B 使用同一 thread 恢复确认，
+  并验证 `adelete_thread()` 删除 checkpoint、blob 和 pending writes；
+- FastAPI 默认仍构造 `SQLiteCheckpointSaver`，Step 4 不切换 Provider、不迁移 SQLite checkpoint。
+
+Windows PowerShell 验收命令：
+
+```powershell
+python -m pip install -e ".[dev]"
+docker compose --profile integration up -d --wait postgres-test
+
+$env:AGENT_POSTGRES_DSN = "postgresql://policy_agent:local-integration-only@127.0.0.1:55432/policy_agent_test"
+$env:AGENT_POSTGRES_TEST_DSN = $env:AGENT_POSTGRES_DSN
+
+python -X utf8 -m scripts.manage_agent_state_schema setup
+python -X utf8 -m scripts.manage_postgres_checkpointer setup
+python -X utf8 -m scripts.manage_postgres_checkpointer status
+python -X utf8 -m pytest tests/integration/test_postgres_checkpointer.py -m postgres_integration -q
+python -X utf8 -m scripts.verify_postgres_checkpointer
+```
+
+离线 verifier 的 `checkpointer_backend_ready` 只证明依赖、生命周期、Schema 边界、CI 和测试接线完整；真实
+PostgreSQL 测试返回 `1 passed` 后才能把 Step 4 标记完成。
+
+## 18. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 18. 面试官可能追问
+## 19. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 
