@@ -245,9 +245,9 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2 和 Step 3.1–3.3；Step 3.4 的真实 PostgreSQL 集成/并发测试、隔离 Compose profile 与
-CI Gate 已就绪，仍需真实数据库运行结果才能标记完成。checkpointer、Redis coordinator、runtime 和 Compose
-runtime 切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.4。Step 3.4 已在 Windows + Docker PostgreSQL 上完成六项真实集成与
+并发验收，隔离 Compose profile 与 CI Gate 继续提供防回退保护。checkpointer、Redis coordinator、runtime
+和 Compose runtime 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -422,8 +422,9 @@ Remove-Item Env:AGENT_POSTGRES_DSN
 Remove-Item Env:AGENT_POSTGRES_TEST_DSN
 ```
 
-离线 verifier 只证明 gate、隔离保护和 CI 接线完整，状态为 `integration_gate_ready`；Step 3.4 只有在上述
-真实数据库测试或等价 GitHub Actions job 返回六项通过后才能标记完成。
+离线 verifier 只证明 gate、隔离保护和 CI 接线完整，状态为 `integration_gate_ready`，不能替代真实数据库
+结果。2026-08-29 已在 Windows PowerShell + Docker PostgreSQL 环境完成验收：`6 passed in 5.08s`；Step 3.4
+正式完成。GitHub Actions 中的等价 PostgreSQL service job 继续作为每次提交的持续验收 Gate。
 
 ## 17. 生产环境仍有的不足
 
