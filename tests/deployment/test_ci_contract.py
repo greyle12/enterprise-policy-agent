@@ -15,6 +15,7 @@ def test_checked_in_ci_configuration_passes_its_contract() -> None:
     assert report.jobs == (
         "container-build",
         "dependency-review",
+        "postgres-repositories",
         "quality",
     )
     assert report.dependency_ecosystems == ("github-actions", "pip")
@@ -98,3 +99,7 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     assert "dist/*.whl" in workflow
     assert "docker compose config --quiet" in workflow
     assert "docker build --pull --tag enterprise-policy-agent:ci ." in workflow
+    assert "AGENT_POSTGRES_TEST_DSN" in workflow
+    assert "policy_agent_test" in workflow
+    assert "tests/integration/test_postgres_repositories.py" in workflow
+    assert "postgres-repositories.xml" in workflow

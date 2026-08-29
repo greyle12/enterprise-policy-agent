@@ -40,6 +40,9 @@ profiling = [
 pythonpath = ["."]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "postgres_integration: requires an isolated PostgreSQL database whose name ends in _test",
+]
 addopts = [
     "--basetemp=.pytest_tmp",
 ]

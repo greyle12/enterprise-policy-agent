@@ -24,6 +24,63 @@ env:
   PYTHONUTF8: "1"
 
 jobs:
+  postgres-repositories:
+    name: PostgreSQL repository integration gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.6-pg17-bookworm
+        env:
+          POSTGRES_DB: policy_agent_test
+          POSTGRES_USER: policy_agent
+          POSTGRES_PASSWORD: ci-integration-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U policy_agent -d policy_agent_test"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
+    env:
+      AGENT_POSTGRES_DSN: postgresql://policy_agent:ci-integration-only@127.0.0.1:5432/policy_agent_test
+      AGENT_POSTGRES_TEST_DSN: postgresql://policy_agent:ci-integration-only@127.0.0.1:5432/policy_agent_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12.10
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12.10"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install project and development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Initialize and inspect the isolated Agent state schema
+        run: |
+          python -X utf8 -m scripts.manage_agent_state_schema setup
+          python -X utf8 -m scripts.manage_agent_state_schema status
+
+      - name: Run real PostgreSQL repository and concurrency tests
+        run: >-
+          python -m pytest tests/integration/test_postgres_repositories.py
+          -m postgres_integration -q
+          --junitxml=artifacts/test-results/postgres-repositories.xml
+
+      - name: Upload PostgreSQL integration evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: postgres-repository-evidence-${{ github.run_id }}
+          path: artifacts/test-results/postgres-repositories.xml
+          if-no-files-found: error
+          retention-days: 14
+
   quality:
     name: Python quality gates
     runs-on: ubuntu-24.04

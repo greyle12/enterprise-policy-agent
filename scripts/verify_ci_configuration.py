@@ -77,6 +77,14 @@ _REQUIRED_CONTAINER_COMMANDS = (
     "docker build --pull --tag enterprise-policy-agent:ci .",
     "docker run --rm --entrypoint python enterprise-policy-agent:ci",
 )
+_REQUIRED_POSTGRES_REPOSITORY_COMMANDS = (
+    'python -m pip install -e ".[dev]"',
+    "python -X utf8 -m scripts.manage_agent_state_schema setup",
+    "python -X utf8 -m scripts.manage_agent_state_schema status",
+    "python -m pytest tests/integration/test_postgres_repositories.py",
+    "-m postgres_integration -q",
+    "--junitxml=artifacts/test-results/postgres-repositories.xml",
+)
 
 
 class CIConfigurationError(ValueError):
@@ -192,7 +200,12 @@ def _collect_action_pins(
 
 
 def _validate_jobs(jobs: Mapping[str, Any]) -> None:
-    required_jobs = {"quality", "dependency-review", "container-build"}
+    required_jobs = {
+        "quality",
+        "dependency-review",
+        "container-build",
+        "postgres-repositories",
+    }
     missing_jobs = required_jobs.difference(jobs)
     if missing_jobs:
         raise CIConfigurationError(f"workflow is missing jobs: {', '.join(sorted(missing_jobs))}")
@@ -262,6 +275,34 @@ def _validate_jobs(jobs: Mapping[str, Any]) -> None:
     for command in _REQUIRED_CONTAINER_COMMANDS:
         if command not in container_commands:
             raise CIConfigurationError(f"container-build job is missing command: {command}")
+
+    postgres = _mapping(jobs["postgres-repositories"], label="jobs.postgres-repositories")
+    services = _mapping(postgres.get("services"), label="jobs.postgres-repositories.services")
+    database = _mapping(services.get("postgres"), label="postgres service")
+    database_env = _mapping(database.get("env"), label="postgres service env")
+    if not str(database_env.get("POSTGRES_DB", "")).endswith("_test"):
+        raise CIConfigurationError("PostgreSQL integration service must use a _test database")
+    if "pg_isready" not in str(database.get("options", "")):
+        raise CIConfigurationError("PostgreSQL integration service must define a health check")
+    postgres_env = _mapping(postgres.get("env"), label="jobs.postgres-repositories.env")
+    test_dsn = str(postgres_env.get("AGENT_POSTGRES_TEST_DSN", ""))
+    if not test_dsn.endswith("/policy_agent_test"):
+        raise CIConfigurationError("PostgreSQL integration DSN must target policy_agent_test")
+    postgres_steps = _job_steps(postgres, job_name="postgres-repositories")
+    postgres_commands = _run_commands(postgres_steps)
+    for command in _REQUIRED_POSTGRES_REPOSITORY_COMMANDS:
+        if command not in postgres_commands:
+            raise CIConfigurationError(f"postgres-repositories job is missing command: {command}")
+    evidence_steps = [
+        step
+        for step in postgres_steps
+        if str(step.get("uses", "")).startswith("actions/upload-artifact@")
+    ]
+    if len(evidence_steps) != 1:
+        raise CIConfigurationError("postgres-repositories must upload integration evidence")
+    evidence = _mapping(evidence_steps[0].get("with"), label="postgres evidence.with")
+    if evidence.get("if-no-files-found") != "error" or evidence.get("retention-days") != "14":
+        raise CIConfigurationError("PostgreSQL evidence must be mandatory and retained for 14 days")
 
 
 def _validate_dependabot(config: Mapping[str, Any]) -> tuple[str, ...]:

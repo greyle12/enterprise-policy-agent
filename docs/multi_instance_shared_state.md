@@ -245,8 +245,9 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2 和 Step 3.1–3.3。真实 PostgreSQL Repository 集成验收以及 checkpointer、Redis
-coordinator、runtime 和 Compose 切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.3；Step 3.4 的真实 PostgreSQL 集成/并发测试、隔离 Compose profile 与
+CI Gate 已就绪，仍需真实数据库运行结果才能标记完成。checkpointer、Redis coordinator、runtime 和 Compose
+runtime 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -386,13 +387,51 @@ python -X utf8 -m pytest tests/unit/test_postgres_submission_repository.py tests
 本子步骤不接入运行时，也不执行真实审批、SQLite import、双写或跨数据库事务。Step 3.4 将使用真实
 PostgreSQL 验证 DDL、事务回滚、并发 first-submit/replay、retention 和 tombstone 行为。
 
-## 16. 生产环境仍有的不足
+## 16. Step 3.4：真实 PostgreSQL Repository 集成与并发验收
+
+Step 3.4 增加独立的真实数据库 gate，不接入 FastAPI runtime：
+
+- 测试 DSN 必须显式来自 `AGENT_POSTGRES_TEST_DSN`，且数据库名必须以 `_test` 结尾；否则跳过或
+  fail closed，避免 `TRUNCATE` 误操作开发/生产库；
+- `postgres-test` Compose profile 使用 `policy_agent_test`、独立端口和 tmpfs，不复用 runtime volume；
+- pytest-asyncio integration scope 显式使用 `SelectorEventLoop`，兼容 Windows 上 Psycopg 不支持默认
+  `ProactorEventLoop` 的限制，同时不改变应用运行时事件循环；
+- 每个测试先清空五张业务表，但保留 versioned schema migration 历史；
+- 验证 pool 关闭/重建后 Session 仍可恢复、同 turn 不同 head 只有一个 CAS 胜者；
+- 验证 Session tombstone 与 Draft projection 清理事务语义；
+- 10 个并发 Conversation append 必须产生连续、完整的 user/assistant turn pair；
+- 8 个并发同 key Submission 必须只有一个首次回执和七个 replay audit；
+- 同一 Draft 的两个不同 key 并发提交必须只有一个胜者，失败方返回稳定冲突；
+- GitHub Actions 使用真实 PostgreSQL service 执行六个 integration tests，并上传 JUnit XML。
+
+Windows PowerShell 本地验收：
+
+```powershell
+docker compose --profile integration up -d --wait postgres-test
+
+$env:AGENT_POSTGRES_DSN = "postgresql://policy_agent:local-integration-only@127.0.0.1:55432/policy_agent_test"
+$env:AGENT_POSTGRES_TEST_DSN = $env:AGENT_POSTGRES_DSN
+
+python -X utf8 -m scripts.manage_agent_state_schema setup
+python -X utf8 -m scripts.manage_agent_state_schema status
+python -X utf8 -m pytest tests/integration/test_postgres_repositories.py -m postgres_integration -q
+python -X utf8 -m scripts.verify_postgres_repository_integration_gate
+
+docker compose --profile integration down
+Remove-Item Env:AGENT_POSTGRES_DSN
+Remove-Item Env:AGENT_POSTGRES_TEST_DSN
+```
+
+离线 verifier 只证明 gate、隔离保护和 CI 接线完整，状态为 `integration_gate_ready`；Step 3.4 只有在上述
+真实数据库测试或等价 GitHub Actions job 返回六项通过后才能标记完成。
+
+## 17. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 17. 面试官可能追问
+## 18. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 
