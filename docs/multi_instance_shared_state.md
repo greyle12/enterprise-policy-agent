@@ -461,13 +461,42 @@ python -X utf8 -m scripts.verify_postgres_checkpointer
 离线 verifier 的 `checkpointer_backend_ready` 只证明依赖、生命周期、Schema 边界、CI 和测试接线完整；真实
 PostgreSQL 测试返回 `1 passed` 后才能把 Step 4 标记完成。
 
-## 18. 生产环境仍有的不足
+## 18. Runtime Provider 装配与切换准备
+
+本子步骤只建立 Step 6 将使用的组合和生命周期契约，不代表跳过 Step 5，也不执行 runtime cutover：
+
+- `prepare_agent_runtime_providers()` 根据显式 `AGENT_STATE_PROVIDER` 只准备一个后端；
+- SQLite 组合保持当前 State、Conversation、Submission 和 Checkpoint 实现；
+- PostgreSQL 组合共享一个事务型 Repository pool，并独立拥有官方 Checkpointer pool；
+- 准备 PostgreSQL 时先执行 Repository schema readiness，再执行 Checkpointer 幂等 setup；
+- 任一初始化失败都会关闭已打开资源并 fail closed，不允许静默创建 SQLite fallback；
+- 连接口令只从 `SecretStr.get_secret_value()` 传给驱动，不进入状态或验证输出；
+- `AgentRuntimeProviders.close()` 负责逆序、幂等地释放 Checkpointer 和 Repository pool；
+- PostgreSQL 组合固定返回 `activation_ready=false` 和
+  `activation_blocker=redis_session_coordination_required`；Step 5 完成前不得传给 FastAPI AgentRouter；
+- `app/main.py` 仍直接构造 SQLite 组件，`provider_factory_wired=false`。
+
+离线检查：
+
+```powershell
+python -X utf8 -m pytest `
+  tests/unit/test_runtime_provider_preparation.py `
+  tests/unit/test_verify_runtime_provider_preparation.py -q
+
+python -X utf8 -m scripts.verify_runtime_provider_preparation
+```
+
+该门禁只验证装配契约、资源回收和未切换边界，不访问数据库，也不替代 Step 4 的真实 PostgreSQL 验收。
+下一项仍是 Step 5 Redis distributed session coordination；完成丢锁保护后，Step 6 才能把本组合接入 FastAPI
+lifespan，并增加 health/readiness 与一次性 SQLite importer。
+
+## 19. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 19. 面试官可能追问
+## 20. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 

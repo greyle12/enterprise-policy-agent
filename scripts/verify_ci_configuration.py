@@ -37,6 +37,7 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -X utf8 -m scripts.verify_async_singleflight",
     "python -X utf8 -m scripts.verify_provider_backpressure",
     "python -X utf8 -m scripts.verify_runtime_observability",
+    "python -X utf8 -m scripts.verify_runtime_provider_preparation",
     "python -X utf8 -m scripts.verify_rag_security",
     "python -X utf8 -m scripts.verify_document_loader",
     "python -X utf8 -m scripts.verify_pdf_document_parsing",

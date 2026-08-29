@@ -15,6 +15,17 @@ from app.persistence.postgres_schema import (
     initialize_postgres_state_schema,
     inspect_postgres_state_schema,
 )
+from app.persistence.runtime_provider import (
+    POSTGRES_ACTIVATION_BLOCKER,
+    AgentRuntimeProviderSettings,
+    AgentRuntimeProviderStatus,
+    AgentRuntimeProviders,
+    AgentRuntimeStateStore,
+    AgentRuntimeSubmissionService,
+    RuntimeProviderActivationBlockedError,
+    RuntimeProviderPreparationError,
+    prepare_agent_runtime_providers,
+)
 from app.persistence.sqlite_checkpointer import SQLiteCheckpointSaver
 from app.persistence.sqlite_memory import SQLiteConversationMemoryStore
 from app.persistence.sqlite_runtime import (
@@ -28,13 +39,21 @@ __all__ = [
     "AGENT_STATE_SCHEMA",
     "AGENT_STATE_SCHEMA_VERSION",
     "POSTGRES_CHECKPOINT_TABLES",
+    "POSTGRES_ACTIVATION_BLOCKER",
     "AgentStateProviderName",
+    "AgentRuntimeProviderSettings",
+    "AgentRuntimeProviderStatus",
+    "AgentRuntimeProviders",
+    "AgentRuntimeStateStore",
+    "AgentRuntimeSubmissionService",
     "PostgresCheckpointError",
     "PostgresCheckpointRuntime",
     "PostgresCheckpointStatus",
     "PostgresAgentStateSchemaManager",
     "PostgresStateSchemaError",
     "PostgresStateSchemaStatus",
+    "RuntimeProviderActivationBlockedError",
+    "RuntimeProviderPreparationError",
     "SQLiteAgentStateStore",
     "SQLiteCheckpointSaver",
     "SQLiteConversationMemoryStore",
@@ -42,4 +61,5 @@ __all__ = [
     "StoredAgentSession",
     "initialize_postgres_state_schema",
     "inspect_postgres_state_schema",
+    "prepare_agent_runtime_providers",
 ]
