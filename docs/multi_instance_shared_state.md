@@ -4,7 +4,7 @@
 
 本设计最初以 GitHub `main` 的 `b37277953a663930cc01a251b5f0de71d7284b4f` 为审计基线，
 Step 1 已由 `58b64a6fe4d6345c68f1b944527dd82892d89369` 提交。代码、测试和 CI 表明
-Advanced RAG Phase 37 已完成；Phase 38 Step 2 已增加 PostgreSQL schema contract，但还没有切换运行时。
+Advanced RAG Phase 37 已完成；Phase 38 Step 3.3 已增加 PostgreSQL Submission/Audit Repository，但还没有切换运行时。
 
 当前 Agent 的 checkpoint、会话投影、草稿快照、对话记忆、提交回执、幂等记录和提交审计，
 全部写入 `SQLITE_DATABASE_PATH` 指向的同一个 SQLite 文件。Compose 只启动一个 Agent，
@@ -17,7 +17,8 @@ PostgreSQL 已用于 pgvector、Collection Release、Indexing Lease 和 Collecti
 
 本阶段的机器可读事实来源是
 [`docs/multi_instance_state_inventory.json`](multi_instance_state_inventory.json)。Step 1 建立清单和验证
-契约；Step 2 增加显式 PostgreSQL schema setup/status 能力。FastAPI 仍使用 SQLite，也没有复制数据。
+契约；Step 2 增加显式 PostgreSQL schema setup/status 能力；Step 3.1–3.3 增加未接线的
+Session/Draft/Conversation/Submission/Audit Repository。FastAPI 仍使用 SQLite，也没有复制数据。
 
 ## 2. 本阶段解决什么问题
 
@@ -244,8 +245,9 @@ Phase 38 至少记录：
 | 7 | Multi-instance / failover tests | A/B 连续办理、crash/replay/no-duplicate | 两实例和故障验收全部通过 |
 | 8 | Documentation + CI gate | README、Compose 验收、CI services/evidence | 全量 pytest/Ruff/专项/真实依赖 gate 通过 |
 
-当前已完成 Step 1–2。Step 3 及之后的 Repository、checkpointer、Redis coordinator、runtime 和 Compose
-切换均未开始。
+当前已完成 Step 1–2 和 Step 3.1–3.4。Step 4 的官方 PostgreSQL Checkpointer、显式 Schema 管理和跨实例
+HITL 恢复 Gate 已就绪，仍需真实 PostgreSQL 运行结果才能标记完成。Redis coordinator、runtime 和 Compose
+runtime 切换均未开始。
 
 ## 11. Step 1 完成标准
 
@@ -317,13 +319,155 @@ python -X utf8 -m scripts.manage_agent_state_schema status
 - 真实 PostgreSQL `setup` 与 `status` 都返回 `ready: true`；
 - `runtime_backend_switched` 与 `sqlite_data_migrated` 仍为 `false`。
 
-## 13. 生产环境仍有的不足
+## 13. Step 3.1：PostgreSQL Session/Draft Repository
+
+Step 3.1 只实现未接入运行时的异步 Repository 边界：
+
+- `PostgresStateConnectionPool` 以 Protocol 注入，Repository 不读取 DSN、不创建或关闭连接池；
+- `save_route_state()` 在一个连接事务中写 session head 和 active draft revision；
+- session 首写使用 `ON CONFLICT DO NOTHING`，后续锁行并以 `state_version` CAS 防止旧 turn 覆盖；
+- 相同 turn、相同投影可幂等重放，相同 turn 的不同投影及 tombstone 复活会被拒绝；
+- draft 的 `(draft_id, revision)` 业务内容不可覆盖；现有 workflow 所需的确认、取消、提交状态仅允许
+  单调生命周期转换，并使用旧 status 做 CAS；
+- reset 先写 session tombstone，再清理该 session 的 draft projection；submission/audit 不在本子步骤中删除；
+- 查询忽略 tombstoned session，latest revision 降序选取，revision list 保持升序。
+
+离线验收命令不访问数据库或外部服务：
+
+```powershell
+python -X utf8 -m scripts.verify_postgres_session_draft_repository
+python -X utf8 -m pytest tests/unit/test_postgres_agent_state_store.py tests/unit/test_verify_postgres_session_draft_repository.py -q
+```
+
+Step 3.1 不实现真实 pool lifecycle、Conversation、Submission/Audit、LangGraph checkpoint、Provider factory、
+SQLite import 或 FastAPI 接线；这些边界继续留给 Phase 38 后续子步骤。因而
+`runtime_backend_switched` 与 `sqlite_data_migrated` 仍为 `false`。
+
+## 14. Step 3.2：PostgreSQL Conversation Repository
+
+Step 3.2 实现 `ConversationMemoryStore` 的 PostgreSQL 版本，但不接入运行时：
+
+- user/assistant 内容在借用数据库连接前完成既有 secret redaction、空白检查和长度截断；
+- append 先锁定 live `agent_sessions` 行，再计算下一 turn，跨实例串行分配 turn number；
+- user/assistant 使用单条 INSERT 原子写入；唯一约束只接受完整的两行结果，否则整个事务回滚；
+- 每次 append 在同一事务内按 turn number 删除保留窗口之前的完整旧 turn；
+- snapshot 用单条窗口查询同时取得 retained count 和最近消息，保持 SQLite 的最新截取、时间正序返回语义；
+- tombstoned session 的历史不可读取或追加，但 reset 仍可锁行并幂等清理该 session 的 conversation rows。
+
+离线验收命令：
+
+```powershell
+python -X utf8 -m scripts.verify_postgres_conversation_repository
+python -X utf8 -m pytest tests/unit/test_postgres_conversation_memory.py tests/unit/test_verify_postgres_conversation_repository.py -q
+```
+
+本子步骤不创建连接池、不接入 `app/main.py`，也不实现 Submission/Audit、Checkpoint、数据迁移或双写。
+
+## 15. Step 3.3：PostgreSQL Submission/Audit Repository
+
+Step 3.3 实现 PostgreSQL mock approval submitter，提交回执与审计共同构成不可随 session reset 删除的
+事实来源：
+
+- 所有既有显式确认、草稿完整性、可信申请人和 session 归属校验都在访问数据库前执行；
+- 首次提交在同一事务写入唯一 submission receipt 和 `submitted` audit；任一写入失败会整体回滚；
+- 相同 idempotency key 锁定并校验 draft/session/employee 绑定，返回原 submission/workflow 并追加
+  `idempotent_replay` audit；
+- idempotency key、submission ID 和 draft ID 的数据库唯一约束是并发最终保护；
+- 两实例同时 INSERT 时，失败方重新读取数据库胜者；相同 key 返回 replay，不同 key 绑定同一 draft 则冲突；
+- audit 只追加，不提供 update/delete；查询按 `recorded_at, audit_id` 稳定排序；
+- `get_submission(draft_id=...)` 支持 reset 后恢复已产生的副作用回执。
+
+离线验收命令：
+
+```powershell
+python -X utf8 -m scripts.verify_postgres_submission_repository
+python -X utf8 -m pytest tests/unit/test_postgres_submission_repository.py tests/unit/test_verify_postgres_submission_repository.py -q
+```
+
+本子步骤不接入运行时，也不执行真实审批、SQLite import、双写或跨数据库事务。Step 3.4 将使用真实
+PostgreSQL 验证 DDL、事务回滚、并发 first-submit/replay、retention 和 tombstone 行为。
+
+## 16. Step 3.4：真实 PostgreSQL Repository 集成与并发验收
+
+Step 3.4 增加独立的真实数据库 gate，不接入 FastAPI runtime：
+
+- 测试 DSN 必须显式来自 `AGENT_POSTGRES_TEST_DSN`，且数据库名必须以 `_test` 结尾；否则跳过或
+  fail closed，避免 `TRUNCATE` 误操作开发/生产库；
+- `postgres-test` Compose profile 使用 `policy_agent_test`、独立端口和 tmpfs，不复用 runtime volume；
+- pytest-asyncio integration scope 显式使用 `SelectorEventLoop`，兼容 Windows 上 Psycopg 不支持默认
+  `ProactorEventLoop` 的限制，同时不改变应用运行时事件循环；
+- 每个测试先清空五张业务表，但保留 versioned schema migration 历史；
+- 验证 pool 关闭/重建后 Session 仍可恢复、同 turn 不同 head 只有一个 CAS 胜者；
+- 验证 Session tombstone 与 Draft projection 清理事务语义；
+- 10 个并发 Conversation append 必须产生连续、完整的 user/assistant turn pair；
+- 8 个并发同 key Submission 必须只有一个首次回执和七个 replay audit；
+- 同一 Draft 的两个不同 key 并发提交必须只有一个胜者，失败方返回稳定冲突；
+- GitHub Actions 使用真实 PostgreSQL service 执行六个 integration tests，并上传 JUnit XML。
+
+Windows PowerShell 本地验收：
+
+```powershell
+docker compose --profile integration up -d --wait postgres-test
+
+$env:AGENT_POSTGRES_DSN = "postgresql://policy_agent:local-integration-only@127.0.0.1:55432/policy_agent_test"
+$env:AGENT_POSTGRES_TEST_DSN = $env:AGENT_POSTGRES_DSN
+
+python -X utf8 -m scripts.manage_agent_state_schema setup
+python -X utf8 -m scripts.manage_agent_state_schema status
+python -X utf8 -m pytest tests/integration/test_postgres_repositories.py -m postgres_integration -q
+python -X utf8 -m scripts.verify_postgres_repository_integration_gate
+
+docker compose --profile integration down
+Remove-Item Env:AGENT_POSTGRES_DSN
+Remove-Item Env:AGENT_POSTGRES_TEST_DSN
+```
+
+离线 verifier 只证明 gate、隔离保护和 CI 接线完整，状态为 `integration_gate_ready`，不能替代真实数据库
+结果。2026-08-29 已在 Windows PowerShell + Docker PostgreSQL 环境完成验收：`6 passed in 5.08s`；Step 3.4
+正式完成。GitHub Actions 中的等价 PostgreSQL service job 继续作为每次提交的持续验收 Gate。
+
+## 17. Step 4：PostgreSQL LangGraph Checkpointer
+
+Step 4 使用官方 `langgraph-checkpoint-postgres` 3.1 系列，不复制或维护第三方 checkpoint DDL：
+
+- `PostgresCheckpointRuntime` 显式拥有 `AsyncConnectionPool`，连接使用 `autocommit=True`、
+  `prepare_threshold=0` 和 `dict_row`，满足官方 saver 要求；
+- pool configure 固定 `search_path=agent_runtime`，官方 `checkpoint_migrations`、`checkpoints`、
+  `checkpoint_blobs`、`checkpoint_writes` 不会落入动态或错误 Schema；
+- `setup()` 先验证 Step 2 Schema Version 1，再使用固定 advisory lock 串行执行官方 migration；
+- `status()` 比较数据库 migration 与安装包 `MIGRATIONS`，缺表、版本过新或版本不一致均 fail closed；
+- serializer 从空 msgpack allowlist 开始，由现有 `AgentWorkflow` 只增加项目明确允许的 Pydantic 类型；
+- Windows 管理 CLI 通过 `SelectorEventLoop` 运行，避免 Psycopg 与默认 Proactor loop 不兼容；
+- 真实集成测试由 Instance A 写入人工确认 interrupt，关闭 pool 后 Instance B 使用同一 thread 恢复确认，
+  并验证 `adelete_thread()` 删除 checkpoint、blob 和 pending writes；
+- FastAPI 默认仍构造 `SQLiteCheckpointSaver`，Step 4 不切换 Provider、不迁移 SQLite checkpoint。
+
+Windows PowerShell 验收命令：
+
+```powershell
+python -m pip install -e ".[dev]"
+docker compose --profile integration up -d --wait postgres-test
+
+$env:AGENT_POSTGRES_DSN = "postgresql://policy_agent:local-integration-only@127.0.0.1:55432/policy_agent_test"
+$env:AGENT_POSTGRES_TEST_DSN = $env:AGENT_POSTGRES_DSN
+
+python -X utf8 -m scripts.manage_agent_state_schema setup
+python -X utf8 -m scripts.manage_postgres_checkpointer setup
+python -X utf8 -m scripts.manage_postgres_checkpointer status
+python -X utf8 -m pytest tests/integration/test_postgres_checkpointer.py -m postgres_integration -q
+python -X utf8 -m scripts.verify_postgres_checkpointer
+```
+
+离线 verifier 的 `checkpointer_backend_ready` 只证明依赖、生命周期、Schema 边界、CI 和测试接线完整；真实
+PostgreSQL 测试返回 `1 passed` 后才能把 Step 4 标记完成。
+
+## 18. 生产环境仍有的不足
 
 即使 Phase 38 完成，系统仍缺少 Phase 39 的真实认证与 session ownership enforcement、Phase 40 的集中
 trace/metrics/log、数据库备份恢复演练、跨区域容灾、密钥轮换、容量基线和正式 SLO。Phase 38 只证明共享
 状态和故障接管，不等于完整生产就绪。
 
-## 14. 面试官可能追问
+## 19. 面试官可能追问
 
 ### 为什么不把 workflow 全放 Redis？
 
