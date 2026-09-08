@@ -1,0 +1,42 @@
+{
+  "local_base_head": "c4b76cc5201f246f055c71adad033e9928e5666e",
+  "github_main_at_audit": "2a033a5804347b50ebc2023d51fb57b3a856fb76",
+  "code_files": [
+    "scripts/run_retrieval_coverage_ablation.py",
+    "tests/evaluation/test_retrieval_coverage_ablation.py",
+    "tests/evaluation/retrieval_coverage_rules.json",
+    "docs/retrieval_coverage_ablation.md"
+  ],
+  "files": [
+    {
+      "path": "scripts/run_retrieval_coverage_ablation.py",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10"
+    },
+    {
+      "path": "tests/evaluation/test_retrieval_coverage_ablation.py",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "f9da693ff327ca77f982525901b47827d2e00bc774ee7164bf427b4091ab0f3a"
+    },
+    {
+      "path": "tests/evaluation/retrieval_coverage_rules.json",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb"
+    },
+    {
+      "path": "docs/retrieval_coverage_ablation.md",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "e2058e3edd4561152c99f474e37b3556418da5d67eb9d15890461914e39a21b7"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-20260908/coverage-report.json",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "c3afdd31608cdf740a9efba8d4d59c9f1737d7efab4b11b10cea65911cb791b5"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-20260908/coverage-report.md",
+      "before_sha256_lf": null,
+      "after_sha256_lf": "1557c90c9c4a8c684d743aa452d58f387161bb75f3566e36babed29c1c672e83"
+    }
+  ]
+}

@@ -1,0 +1,813 @@
+{
+  "schema_version": "2.0",
+  "suite_name": "enterprise_policy_agent_retrieval",
+  "evaluation_mode": "offline",
+  "embedding_provider": "deterministic_hashed_lexical_v1",
+  "reranker_provider": "deterministic_lexical_overlap_v1",
+  "external_model_calls": false,
+  "generated_at": "2026-09-06T03:42:35.772399Z",
+  "dataset_sha256": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95",
+  "corpus_sha256": "5260c50ae8f0d4fddc4bd5ad7d1d325bd53c76487fa13b91e7aefaee7a445737",
+  "total_cases": 6,
+  "channels": [
+    "vector",
+    "bm25",
+    "hybrid",
+    "reranked"
+  ],
+  "ks": [
+    1,
+    3,
+    5
+  ],
+  "candidate_k": 20,
+  "thresholds": {
+    "gate_k": 5,
+    "minimum_recall": 0.8,
+    "minimum_mrr": 0.8,
+    "minimum_ndcg": 0.8,
+    "required_channels": [
+      "hybrid",
+      "reranked"
+    ]
+  },
+  "quality_gate_passed": false,
+  "summaries": [
+    {
+      "channel": "vector",
+      "case_count": 6,
+      "recall_at_k": {
+        "1": 0.08333333333333333,
+        "3": 0.3055555555555555,
+        "5": 0.3611111111111111
+      },
+      "mrr_at_k": 0.27777777777777773,
+      "ndcg_at_k": {
+        "1": 0.16666666666666666,
+        "3": 0.23068637625091196,
+        "5": 0.2656283486089143
+      },
+      "average_duration_ms": 7.54601633339765,
+      "error_count": 0,
+      "meets_quality_gate": null
+    },
+    {
+      "channel": "bm25",
+      "case_count": 6,
+      "recall_at_k": {
+        "1": 0.3333333333333333,
+        "3": 0.3888888888888889,
+        "5": 0.6944444444444445
+      },
+      "mrr_at_k": 0.5888888888888889,
+      "ndcg_at_k": {
+        "1": 0.4047619047619047,
+        "3": 0.3702450383693147,
+        "5": 0.5176321551704074
+      },
+      "average_duration_ms": 1.3116596666501816,
+      "error_count": 0,
+      "meets_quality_gate": null
+    },
+    {
+      "channel": "hybrid",
+      "case_count": 6,
+      "recall_at_k": {
+        "1": 0.25,
+        "3": 0.3611111111111111,
+        "5": 0.4444444444444444
+      },
+      "mrr_at_k": 0.45,
+      "ndcg_at_k": {
+        "1": 0.3333333333333333,
+        "3": 0.3710076119513827,
+        "5": 0.3927585382295719
+      },
+      "average_duration_ms": 8.177941833347782,
+      "error_count": 0,
+      "meets_quality_gate": false
+    },
+    {
+      "channel": "reranked",
+      "case_count": 6,
+      "recall_at_k": {
+        "1": 0.25,
+        "3": 0.3888888888888889,
+        "5": 0.611111111111111
+      },
+      "mrr_at_k": 0.513888888888889,
+      "ndcg_at_k": {
+        "1": 0.3333333333333333,
+        "3": 0.3494939424190833,
+        "5": 0.46017366393121933
+      },
+      "average_duration_ms": 8.90778099998594,
+      "error_count": 0,
+      "meets_quality_gate": false
+    }
+  ],
+  "case_results": [
+    {
+      "case_id": "RET-021",
+      "title": "口语住宿额度",
+      "query": "我不是领导，去北京出差住一晚酒店最多能报多少？",
+      "relevant_chunk_ids": [
+        "TRAVEL_POLICY_001__v1_0__article_008",
+        "TRAVEL_POLICY_001__v1_0__article_007"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "relevance": 3,
+          "rationale": "普通员工住宿额度；助手依据原文生成，待人工复核"
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "relevance": 2,
+          "rationale": "北京对应一类城市；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_020",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 6.677932999991754,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "recall_at_k": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 0.42857142857142855,
+            "3": 0.3373519727104165,
+            "5": 0.3373519727104165
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 1.1010529999566643,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.1305055576691351
+          },
+          "first_relevant_rank": 5,
+          "reciprocal_rank": 0.2,
+          "duration_ms": 7.670708999967246,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_004"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.2128453970090281,
+            "5": 0.2128453970090281
+          },
+          "first_relevant_rank": 2,
+          "reciprocal_rank": 0.5,
+          "duration_ms": 8.666691000144056,
+          "error": null
+        }
+      ]
+    },
+    {
+      "case_id": "RET-022",
+      "title": "凭证丢失口语问法",
+      "query": "火车票找不到了，财务会让我补啥才能报出差的钱？",
+      "relevant_chunk_ids": [
+        "TRAVEL_POLICY_001__v1_0__article_018"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_018",
+          "relevance": 3,
+          "rationale": "交通票据遗失补充材料；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "LEAVE_POLICY_001__v1_0__article_037",
+            "LEAVE_POLICY_001__v1_0__article_029",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_034",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_031",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_001"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 6.879511000079219,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 1.0705400000006193,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "LEAVE_POLICY_001__v1_0__article_037",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "LEAVE_POLICY_001__v1_0__article_029"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 7.567746999939118,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 8.898830999896745,
+          "error": null
+        }
+      ]
+    },
+    {
+      "case_id": "RET-023",
+      "title": "精确条款与阿拉伯数字",
+      "query": "采购管理制度第十八条对 8 万元采购的有效报价数量和书面记录有什么要求？",
+      "relevant_chunk_ids": [
+        "PROCUREMENT_POLICY_001__v1_0__article_018"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "PROCUREMENT_POLICY_001__v1_0__article_018",
+          "relevance": 3,
+          "rationale": "五万至二十万元区间三家报价及书面比价记录；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "first_relevant_rank": 3,
+          "reciprocal_rank": 0.3333333333333333,
+          "duration_ms": 7.01522000008481,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_024",
+            "LEAVE_POLICY_001__v1_0__article_038"
+          ],
+          "recall_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 1.4879369998652692,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016"
+          ],
+          "recall_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 8.364040000060413,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016"
+          ],
+          "recall_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 9.268515000030675,
+          "error": null
+        }
+      ]
+    },
+    {
+      "case_id": "RET-024",
+      "title": "跨制度逾期报销",
+      "query": "出差结束三十多天和普通费用发生三十多天才报销，各自会怎么处理？",
+      "relevant_chunk_ids": [
+        "TRAVEL_POLICY_001__v1_0__article_019",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_019",
+          "relevance": 3,
+          "rationale": "差旅超过三十自然日无合理说明可拒收；助手依据原文生成，待人工复核"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "relevance": 3,
+          "rationale": "普通费用超过三十自然日需说明并由部门负责人审批；助手依据原文生成，待人工复核"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "relevance": 2,
+          "rationale": "超时报销另需财务管理部复核；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_005",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_019"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.3333333333333333,
+            "5": 0.6666666666666666
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.2709710647400135,
+            "5": 0.4806228988880274
+          },
+          "first_relevant_rank": 3,
+          "reciprocal_rank": 0.3333333333333333,
+          "duration_ms": 11.089534000120693,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_004"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.3333333333333333,
+            "5": 0.6666666666666666
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.2709710647400135,
+            "5": 0.5043728357394366
+          },
+          "first_relevant_rank": 3,
+          "reciprocal_rank": 0.3333333333333333,
+          "duration_ms": 1.2956089999534015,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_012"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.6666666666666666,
+            "5": 0.6666666666666666
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.6128984789428379,
+            "5": 0.6128984789428379
+          },
+          "first_relevant_rank": 2,
+          "reciprocal_rank": 0.5,
+          "duration_ms": 10.015527999939877,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.3333333333333333,
+            "5": 0.6666666666666666
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.2709710647400135,
+            "5": 0.5043728357394366
+          },
+          "first_relevant_rank": 3,
+          "reciprocal_rank": 0.3333333333333333,
+          "duration_ms": 8.969139999862819,
+          "error": null
+        }
+      ]
+    },
+    {
+      "case_id": "RET-025",
+      "title": "换一种说法询问账号共享",
+      "query": "我今天不在，能让同事用我的公司登录名帮我操作一下吗？",
+      "relevant_chunk_ids": [
+        "INFORMATION_SECURITY_POLICY_001__v1_0__article_009"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+          "relevance": 3,
+          "rationale": "实名账号只能本人使用，禁止出借；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_024",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 6.867693000003783,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_043",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_005",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_042",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.38685280723454163
+          },
+          "first_relevant_rank": 5,
+          "reciprocal_rank": 0.2,
+          "duration_ms": 1.129981000076441,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_042",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_032",
+            "LEAVE_POLICY_001__v1_0__article_002",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_002"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "first_relevant_rank": null,
+          "reciprocal_rank": 0.0,
+          "duration_ms": 7.690934000038396,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_043",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_005",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003"
+          ],
+          "recall_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.43067655807339306
+          },
+          "first_relevant_rank": 4,
+          "reciprocal_rank": 0.25,
+          "duration_ms": 8.950623999908203,
+          "error": null
+        }
+      ]
+    },
+    {
+      "case_id": "RET-026",
+      "title": "跨制度专项证明材料",
+      "query": "报销培训费和连续两天病假，分别要留哪些专项凭证？",
+      "relevant_chunk_ids": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+        "LEAVE_POLICY_001__v1_0__article_012"
+      ],
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+          "relevance": 3,
+          "rationale": "培训报销专项材料；助手依据原文生成，待人工复核"
+        },
+        {
+          "chunk_id": "LEAVE_POLICY_001__v1_0__article_012",
+          "relevance": 3,
+          "rationale": "连续病假超过一天的医疗材料；助手依据原文生成，待人工复核"
+        }
+      ],
+      "channels": [
+        {
+          "channel": "vector",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "LEAVE_POLICY_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_033",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_001"
+          ],
+          "recall_at_k": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 0.6131471927654584,
+            "5": 0.6131471927654584
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 6.746207000105642,
+          "error": null
+        },
+        {
+          "channel": "bm25",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "LEAVE_POLICY_001__v1_0__article_023"
+          ],
+          "recall_at_k": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 0.6131471927654584,
+            "5": 0.8772153153380492
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 1.784838000048694,
+          "error": null
+        },
+        {
+          "channel": "hybrid",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_034"
+          ],
+          "recall_at_k": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 0.6131471927654584,
+            "5": 0.6131471927654584
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 7.758693000141648,
+          "error": null
+        },
+        {
+          "channel": "reranked",
+          "retrieved_chunk_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_003"
+          ],
+          "recall_at_k": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "ndcg_at_k": {
+            "1": 1.0,
+            "3": 0.6131471927654584,
+            "5": 0.6131471927654584
+          },
+          "first_relevant_rank": 1,
+          "reciprocal_rank": 1.0,
+          "duration_ms": 8.692885000073147,
+          "error": null
+        }
+      ]
+    }
+  ]
+}

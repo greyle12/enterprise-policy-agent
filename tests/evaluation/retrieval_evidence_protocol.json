@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "protocol_version": "retrieval-evidence-2026-09-06-v1",
+  "candidate_k": 20,
+  "final_k": 5,
+  "rrf_rank_constant": 60,
+  "relevance_positive_grades": [1, 2, 3],
+  "tuning_performed_this_run": false,
+  "held_out_test_set": false,
+  "cohorts": [
+    {
+      "name": "legacy_dev",
+      "path": "tests/evaluation/retrieval_test_cases.jsonl",
+      "sha256_lf": "3b4343f681ed13c530d257394058245b2dfa42b1a7ae35c185216f540fa06789",
+      "case_count": 20,
+      "source": "Existing repository Phase 31 queries and Phase 32 graded judgments; unchanged.",
+      "label_status": "仓库原有标注。文档称单一开发者标注；未发现独立人工复核记录。长期用于 CI/候选窗口实验，属于开发集。",
+      "known_label_questions": [
+        "RET-003 涉及北京，但未像 RET-001 一样标注城市分类第七条；保留原标签，提示标注完整性争议。",
+        "Grade 1 背景也计入 Recall/MRR 的正相关集合，不等价于必要回答证据。",
+        "未完整标注每条查询对所有 199 个 Chunk 的相关性。"
+      ]
+    },
+    {
+      "name": "exploratory_unreviewed",
+      "path": "tests/evaluation/retrieval_exploratory_cases.jsonl",
+      "sha256_lf": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95",
+      "case_count": 6,
+      "source": "Assistant-generated paraphrases/composite questions based on the checked-in synthetic policy clauses, before running these queries. Not real user traffic.",
+      "label_status": "助手依据仓库原条款生成并核对引用存在性，未经过人工复核；仅供探索，不与原 20 条合并或宣称独立测试集。",
+      "human_reviewed": false,
+      "related_legacy_cases": ["RET-001", "RET-005", "RET-006", "RET-012", "RET-014", "RET-017", "RET-019"],
+      "known_label_questions": ["改写问题与开发集共享信息需求，存在相关性；需要人工补全漏标和复核跨制度问题。"]
+    }
+  ]
+}

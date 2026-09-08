@@ -1,0 +1,2156 @@
+{
+  "schema_version": "1.0",
+  "status": "completed",
+  "mode": "recorded_real_bge_postprocessing_replay",
+  "fresh_model_inference": false,
+  "numeric_resume_ready": false,
+  "scope": "Post-hoc development ablation; rules informed by observed failures; no held-out claim",
+  "baseline_git": {
+    "head": "2779d0d555af045167526fd92891e96e6980dfce",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "baseline_source_sha256": "4f2cd32b4d5ca2ae528d788c8008aaa7fa9c4cab17f087f2589a1cbddf7c1f7a",
+  "corpus_sha256": "a881d971ed61681c89770d552b833e0ee742acf9c543902217404eef6dcbc338",
+  "model_lock": {
+    "schema_version": "1.0",
+    "models": {
+      "embedding": {
+        "repo_id": "BAAI/bge-small-zh-v1.5",
+        "revision": "7999e1d3359715c523056ef9478215996d62a620",
+        "files": {
+          "1_Pooling/config.json": "aaa8861589f80c961a03cc86c7eeaef7605c1676b9ab55329d33a304738769c6",
+          "config.json": "3853a7979202c348751b753e36f579c41d8da7d36af617d3d907e1fc9b441f2a",
+          "config_sentence_transformers.json": "940d5f50db195fa6e5e6a4f122c095f77880de259d74b14a65779ed48bdd7c56",
+          "model.safetensors": "354763b9b1357bc9c44f62c6be2276321081ed2567773608c0d0785b61d5a026",
+          "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+          "sentence_bert_config.json": "84e39fda68ccbff05bfa723ae9c0e70e23e2ec373b76e0f8c6e71af72a693cbf",
+          "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+          "tokenizer.json": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+          "tokenizer_config.json": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a",
+          "vocab.txt": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+        }
+      },
+      "reranker": {
+        "repo_id": "BAAI/bge-reranker-v2-m3",
+        "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+        "files": {
+          "config.json": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a",
+          "model.safetensors": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+          "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15",
+          "tokenizer_config.json": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+        }
+      }
+    }
+  },
+  "configuration": {
+    "vector_index": "InMemoryVectorIndex exact cosine; normalized BGE in bge mode",
+    "bm25": "InMemoryBM25Index; NFKC/CJK bigrams; k1=1.2; b=0.75; positive scores only",
+    "text": "PolicyChunk.retrieval_text for every channel",
+    "candidate_k_per_channel": 20,
+    "rrf_rank_constant": 60,
+    "rrf_union_upper_bound": 40,
+    "rerank_window": 20,
+    "final_k": 5,
+    "embedding_batch_size": 32,
+    "reranker_batch_size": 8,
+    "warmup_full_passes_per_cohort": 1,
+    "measured_repetitions": 1,
+    "latency_for_resume": false,
+    "latency_scope": "query embedding + retrieval (+ fusion/reranker); no loading/indexing",
+    "empty_or_unlabeled_queries": "reject before inference; zero samples in these cohorts",
+    "unauthorized_judgments": "reject before inference; test ACL separately",
+    "missing_judgments": "unjudged results count as no hit; relevance completeness unknown",
+    "query_errors": "retain in N with zero scores, mark experiment incomplete"
+  },
+  "access_context": {
+    "employee_id": "RETRIEVAL-EVAL-001",
+    "department": "评测部门",
+    "roles": [
+      "EMPLOYEE"
+    ],
+    "security_clearance": "internal",
+    "region": "中国大陆",
+    "identity_source": "test_fixture"
+  },
+  "as_of_date": "2026-08-20",
+  "rules": {
+    "schema_version": "1.0",
+    "status": "post_hoc_development_hypothesis_not_human_reviewed",
+    "selection": {
+      "anchor_top_k": 2,
+      "preserve_top_k": 4,
+      "final_k": 5,
+      "max_supplements": 1
+    },
+    "rules": [
+      {
+        "id": "city_category_for_lodging_table",
+        "source_title_contains": "住宿标准",
+        "source_content_contains": [
+          "城市类别",
+          "住宿费用上限"
+        ],
+        "target_title": "城市分类",
+        "target_content_contains": [
+          "城市消费水平",
+          "一类城市",
+          "二类城市"
+        ],
+        "rationale": "住宿上限表按城市类别给出金额，城市分类条款解释该维度。关系由制度原文提出，不代表每条住宿查询都需要它。"
+      },
+      {
+        "id": "finance_review_for_overdue_expense",
+        "source_title_contains": "超时报销",
+        "source_content_contains": [
+          "三十个自然日",
+          "部门负责人审批"
+        ],
+        "target_title": "特殊费用审批",
+        "target_content_contains": [
+          "超过报销时限的费用",
+          "财务管理部复核"
+        ],
+        "rationale": "超时报销条款给出时限和部门审批，特殊费用条款另要求超时费用由财务复核。"
+      }
+    ]
+  },
+  "rules_sha256": "b58a07e34142310032909778eeccb40d945d392f3cc8ea0c54ac21ff0e67ea12",
+  "derived_links": [
+    {
+      "rule_id": "finance_review_for_overdue_expense",
+      "source": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+      "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+      "rationale": "超时报销条款给出时限和部门审批，特殊费用条款另要求超时费用由财务复核。",
+      "source_text_sha256": "773d0e909f8d11868425bb75511f02b7f29ac830c3b40b8ac60071990576e6c9",
+      "target_text_sha256": "c0375ca5071ece3c3f92fd666b11f66e53f5f732e98327cb4acba55bea710ec9"
+    },
+    {
+      "rule_id": "city_category_for_lodging_table",
+      "source": "TRAVEL_POLICY_001__v1_0__article_008",
+      "target": "TRAVEL_POLICY_001__v1_0__article_007",
+      "rationale": "住宿上限表按城市类别给出金额，城市分类条款解释该维度。关系由制度原文提出，不代表每条住宿查询都需要它。",
+      "source_text_sha256": "87881b6d9a2736d1b56e90716e655d5192189ac8af885459a4f62f6500fb5fbc",
+      "target_text_sha256": "bd7538bce5b49052cbfc03242886f4949c54fbaca20a870d846c37fc3ce57970"
+    },
+    {
+      "rule_id": "city_category_for_lodging_table",
+      "source": "TRAVEL_POLICY_001__v1_0__article_009",
+      "target": "TRAVEL_POLICY_001__v1_0__article_007",
+      "rationale": "住宿上限表按城市类别给出金额，城市分类条款解释该维度。关系由制度原文提出，不代表每条住宿查询都需要它。",
+      "source_text_sha256": "91d32f425c60bda154837881cf59a5c4b0c8e7f4af83ac6da01a868d13a15e53",
+      "target_text_sha256": "bd7538bce5b49052cbfc03242886f4949c54fbaca20a870d846c37fc3ce57970"
+    }
+  ],
+  "cohorts": [
+    {
+      "name": "legacy_dev",
+      "label_status": "仓库原有标注。文档称单一开发者标注；未发现独立人工复核记录。长期用于 CI/候选窗口实验，属于开发集。",
+      "dataset_sha256": "3b4343f681ed13c530d257394058245b2dfa42b1a7ae35c185216f540fa06789",
+      "summaries": {
+        "vector": {
+          "effective_n": 20,
+          "recall_at_5": 0.9,
+          "mrr_at_5": 0.8291666666666666,
+          "ndcg_at_5": 0.84084137893141
+        },
+        "bm25": {
+          "effective_n": 20,
+          "recall_at_5": 0.9,
+          "mrr_at_5": 0.925,
+          "ndcg_at_5": 0.8961537816563349
+        },
+        "hybrid": {
+          "effective_n": 20,
+          "recall_at_5": 0.925,
+          "mrr_at_5": 0.925,
+          "ndcg_at_5": 0.9054785995718116
+        },
+        "reranked": {
+          "effective_n": 20,
+          "recall_at_5": 0.925,
+          "mrr_at_5": 0.95,
+          "ndcg_at_5": 0.9195823407199819
+        },
+        "coverage": {
+          "effective_n": 20,
+          "recall_at_5": 1.0,
+          "mrr_at_5": 0.95,
+          "ndcg_at_5": 0.9391581743703522
+        }
+      },
+      "candidate_recall": 1.0,
+      "changed_count": 4,
+      "recall_improved_count": 3,
+      "regression_case_ids": [],
+      "cases": [
+        {
+          "case_id": "RET-001",
+          "query": "普通员工去北京出差，每晚住宿费上限是多少？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_006"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_001",
+            "LEAVE_POLICY_001__v1_0__article_039",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_041",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_032"
+          ],
+          "vector": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "bm25": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "hybrid": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "reranked": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_006"
+              ]
+            }
+          ],
+          "missing_after": [],
+          "gained_judged_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "lost_judged_ids": [],
+          "changed": true,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-002",
+          "query": "部门负责人在上海出差的酒店住宿标准是多少？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "LEAVE_POLICY_001__v1_0__article_022",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_002"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.3333333333333333,
+            "ndcg_at_5": 0.5240828591646209
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9324441894571632
+          },
+          "reranked": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_005"
+              ]
+            }
+          ],
+          "missing_after": [],
+          "gained_judged_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "lost_judged_ids": [],
+          "changed": true,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-003",
+          "query": "普通员工去北京住酒店的标准是多少，住宿费超标又要怎么处理？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_006"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_022",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_041",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "LEAVE_POLICY_001__v1_0__article_039",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "TRAVEL_POLICY_001__v1_0__article_015"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_006"
+              ]
+            }
+          ],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": true,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-004",
+          "query": "出差回来报销要交哪些必备材料，最迟什么时候提交？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_017"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_017"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_037",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_021",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_039",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8503449055347546
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9197207891481876
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8772153153380492
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8772153153380492
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-005",
+          "query": "出差的交通票据丢了，报销时要补什么证明？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-006",
+          "query": "采购预算八万元需要谁审批，至少要取得几家供应商报价？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_014"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_014"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "PROCUREMENT_POLICY_001__v1_0__article_006",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_009",
+            "PROCUREMENT_POLICY_001__v1_0__article_008",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_022",
+            "PROCUREMENT_POLICY_001__v1_0__article_033",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_001",
+            "PROCUREMENT_POLICY_001__v1_0__article_014",
+            "PROCUREMENT_POLICY_001__v1_0__article_004",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_011",
+            "PROCUREMENT_POLICY_001__v1_0__article_015"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.25,
+            "ndcg_at_5": 0.5012658353418871
+          },
+          "bm25": {
+            "recall_at_5": 0.0,
+            "mrr_at_5": 0.0,
+            "ndcg_at_5": 0.0
+          },
+          "hybrid": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.38685280723454163
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6509209298071325
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6509209298071325
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-007",
+          "query": "采购金额三万元，需要至少找几家合格供应商报价？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_016"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_016"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_023",
+            "PROCUREMENT_POLICY_001__v1_0__article_009",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_008",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_022",
+            "PROCUREMENT_POLICY_001__v1_0__article_004",
+            "PROCUREMENT_POLICY_001__v1_0__article_033",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_032",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "PROCUREMENT_POLICY_001__v1_0__article_021",
+            "PROCUREMENT_POLICY_001__v1_0__article_014",
+            "PROCUREMENT_POLICY_001__v1_0__article_011"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6309297535714575
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6309297535714575
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-008",
+          "query": "采购总金额二十五万元，原则上应该采用什么采购方式？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_023"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_023"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "PROCUREMENT_POLICY_001__v1_0__article_023",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_014",
+            "PROCUREMENT_POLICY_001__v1_0__article_003",
+            "PROCUREMENT_POLICY_001__v1_0__article_011",
+            "PROCUREMENT_POLICY_001__v1_0__article_025",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_026",
+            "PROCUREMENT_POLICY_001__v1_0__article_024",
+            "LEAVE_POLICY_001__v1_0__article_025",
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "PROCUREMENT_POLICY_001__v1_0__article_001",
+            "PROCUREMENT_POLICY_001__v1_0__article_028"
+          ],
+          "vector": {
+            "recall_at_5": 0.0,
+            "mrr_at_5": 0.0,
+            "ndcg_at_5": 0.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6309297535714575
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-009",
+          "query": "第一次合作的供应商需要提供哪些准入材料？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_021",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_017"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_021",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_017"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "PROCUREMENT_POLICY_001__v1_0__article_021",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_032",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_001",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_022",
+            "PROCUREMENT_POLICY_001__v1_0__article_004",
+            "PROCUREMENT_POLICY_001__v1_0__article_033",
+            "PROCUREMENT_POLICY_001__v1_0__article_005",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_035",
+            "PROCUREMENT_POLICY_001__v1_0__article_023",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_002",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_026"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-010",
+          "query": "申请采购付款需要合同、发票、验收记录之外的哪些材料？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_029",
+            "PROCUREMENT_POLICY_001__v1_0__article_024"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_029",
+            "PROCUREMENT_POLICY_001__v1_0__article_024"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_029",
+            "PROCUREMENT_POLICY_001__v1_0__article_026",
+            "PROCUREMENT_POLICY_001__v1_0__article_006",
+            "PROCUREMENT_POLICY_001__v1_0__article_024",
+            "PROCUREMENT_POLICY_001__v1_0__article_023",
+            "PROCUREMENT_POLICY_001__v1_0__article_003",
+            "PROCUREMENT_POLICY_001__v1_0__article_001",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_035",
+            "PROCUREMENT_POLICY_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_019"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-011",
+          "query": "提交普通费用报销时，通用报销材料有哪些？",
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_016"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_016"
+          ],
+          "candidate_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_037",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_033",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_041",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_030",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-012",
+          "query": "培训费报销需要课程介绍、完课证明和哪些材料？",
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016"
+          ],
+          "candidate_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_008",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_037",
+            "LEAVE_POLICY_001__v1_0__article_037",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_039",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "PROCUREMENT_POLICY_001__v1_0__article_010"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9828422279067397
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9828422279067397
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-013",
+          "query": "电子发票能不能只上传手机截图，应该提交什么格式？",
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_017",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_017",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032"
+          ],
+          "candidate_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_030",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_037",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_043",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_040",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-014",
+          "query": "费用发生超过三十天才报销，需要说明和履行什么审批？",
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "candidate_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_038",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_039",
+            "LEAVE_POLICY_001__v1_0__article_039",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_037"
+          ],
+          "vector": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.4966392596877323
+          },
+          "bm25": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "hybrid": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "reranked": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+              ]
+            }
+          ],
+          "missing_after": [],
+          "gained_judged_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "lost_judged_ids": [],
+          "changed": true,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-015",
+          "query": "客户电话号码、账户和交易信息属于哪一级敏感数据？",
+          "baseline_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_007",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_021"
+          ],
+          "selected_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_007",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_021"
+          ],
+          "candidate_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_007",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_023",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_031",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_041",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_021",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_029",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_018",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_030",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_035",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_025",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_006",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_010",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_043",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_024"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-016",
+          "query": "API 密钥、数据库密码和加密私钥属于什么数据等级？",
+          "baseline_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_028",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_023",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_031"
+          ],
+          "selected_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_028",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_023",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_031"
+          ],
+          "candidate_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_028",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_008",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_004",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_010",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_018",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_023",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_007",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_031",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_024",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_030",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_005",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_021",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_041",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_013",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_006",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_022",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_042",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_025",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_012",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_043"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.5518544320968081
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.95583058934618
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6653152460429406
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9324441894571632
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9324441894571632
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-017",
+          "query": "公司实名账号可以借给同事临时使用吗？",
+          "baseline_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_014",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_034"
+          ],
+          "selected_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_014",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_034"
+          ],
+          "candidate_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_014",
+            "LEAVE_POLICY_001__v1_0__article_006",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_020",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_029",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_034",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_031",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_030",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_010",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_023",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "LEAVE_POLICY_001__v1_0__article_017",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_015",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_025",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_024",
+            "LEAVE_POLICY_001__v1_0__article_043",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_041"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-018",
+          "query": "申请两天年休假要至少提前几个工作日提交？",
+          "baseline_ids": [
+            "LEAVE_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_020"
+          ],
+          "selected_ids": [
+            "LEAVE_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_020"
+          ],
+          "candidate_ids": [
+            "LEAVE_POLICY_001__v1_0__article_007",
+            "LEAVE_POLICY_001__v1_0__article_006",
+            "LEAVE_POLICY_001__v1_0__article_011",
+            "LEAVE_POLICY_001__v1_0__article_025",
+            "LEAVE_POLICY_001__v1_0__article_005",
+            "LEAVE_POLICY_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_028",
+            "LEAVE_POLICY_001__v1_0__article_017",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_014",
+            "LEAVE_POLICY_001__v1_0__article_029",
+            "PROCUREMENT_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "LEAVE_POLICY_001__v1_0__article_033",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "LEAVE_POLICY_001__v1_0__article_030",
+            "LEAVE_POLICY_001__v1_0__article_034",
+            "LEAVE_POLICY_001__v1_0__article_026"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-019",
+          "query": "连续病假超过一个工作日，要提交哪些医疗证明材料？",
+          "baseline_ids": [
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "LEAVE_POLICY_001__v1_0__article_007"
+          ],
+          "selected_ids": [
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "LEAVE_POLICY_001__v1_0__article_007"
+          ],
+          "candidate_ids": [
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_007",
+            "LEAVE_POLICY_001__v1_0__article_037",
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_025",
+            "LEAVE_POLICY_001__v1_0__article_011",
+            "LEAVE_POLICY_001__v1_0__article_019",
+            "LEAVE_POLICY_001__v1_0__article_018",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "LEAVE_POLICY_001__v1_0__article_035",
+            "LEAVE_POLICY_001__v1_0__article_036",
+            "LEAVE_POLICY_001__v1_0__article_006",
+            "LEAVE_POLICY_001__v1_0__article_029",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_039",
+            "LEAVE_POLICY_001__v1_0__article_022",
+            "LEAVE_POLICY_001__v1_0__article_017"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-020",
+          "query": "请假超过五个工作日需要经过哪些审批人？",
+          "baseline_ids": [
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_022",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_023"
+          ],
+          "selected_ids": [
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_022",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_023"
+          ],
+          "candidate_ids": [
+            "LEAVE_POLICY_001__v1_0__article_021",
+            "LEAVE_POLICY_001__v1_0__article_009",
+            "LEAVE_POLICY_001__v1_0__article_020",
+            "LEAVE_POLICY_001__v1_0__article_022",
+            "LEAVE_POLICY_001__v1_0__article_007",
+            "LEAVE_POLICY_001__v1_0__article_025",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "LEAVE_POLICY_001__v1_0__article_005",
+            "LEAVE_POLICY_001__v1_0__article_010",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "LEAVE_POLICY_001__v1_0__article_028",
+            "LEAVE_POLICY_001__v1_0__article_032",
+            "LEAVE_POLICY_001__v1_0__article_026",
+            "LEAVE_POLICY_001__v1_0__article_043",
+            "PROCUREMENT_POLICY_001__v1_0__article_008",
+            "LEAVE_POLICY_001__v1_0__article_029",
+            "LEAVE_POLICY_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_039",
+            "LEAVE_POLICY_001__v1_0__article_017"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6309297535714575
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        }
+      ]
+    },
+    {
+      "name": "exploratory_unreviewed",
+      "label_status": "助手依据仓库原条款生成并核对引用存在性，未经过人工复核；仅供探索，不与原 20 条合并或宣称独立测试集。",
+      "dataset_sha256": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95",
+      "summaries": {
+        "vector": {
+          "effective_n": 6,
+          "recall_at_5": 0.8055555555555555,
+          "mrr_at_5": 0.8333333333333334,
+          "ndcg_at_5": 0.7799554266522403
+        },
+        "bm25": {
+          "effective_n": 6,
+          "recall_at_5": 0.6944444444444445,
+          "mrr_at_5": 0.5888888888888889,
+          "ndcg_at_5": 0.5176321551704074
+        },
+        "hybrid": {
+          "effective_n": 6,
+          "recall_at_5": 0.611111111111111,
+          "mrr_at_5": 0.5833333333333334,
+          "ndcg_at_5": 0.6021497464904729
+        },
+        "reranked": {
+          "effective_n": 6,
+          "recall_at_5": 0.8611111111111112,
+          "mrr_at_5": 0.9166666666666666,
+          "ndcg_at_5": 0.8967514672284306
+        },
+        "coverage": {
+          "effective_n": 6,
+          "recall_at_5": 0.9444444444444445,
+          "mrr_at_5": 0.9166666666666666,
+          "ndcg_at_5": 0.9185023935066198
+        }
+      },
+      "candidate_recall": 0.9444444444444445,
+      "changed_count": 1,
+      "recall_improved_count": 1,
+      "regression_case_ids": [],
+      "cases": [
+        {
+          "case_id": "RET-021",
+          "query": "我不是领导，去北京出差住一晚酒店最多能报多少？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_001",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_022",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_026"
+          ],
+          "vector": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "bm25": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.3373519727104165
+          },
+          "hybrid": {
+            "recall_at_5": 0.0,
+            "mrr_at_5": 0.0,
+            "ndcg_at_5": 0.0
+          },
+          "reranked": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.4966392596877323
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6271448173568673
+          },
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_014"
+              ]
+            }
+          ],
+          "missing_after": [],
+          "gained_judged_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "lost_judged_ids": [],
+          "changed": true,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-022",
+          "query": "火车票找不到了，财务会让我补啥才能报出差的钱？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_021"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_021"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_001",
+            "PROCUREMENT_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_021",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 0.0,
+            "mrr_at_5": 0.0,
+            "ndcg_at_5": 0.0
+          },
+          "hybrid": {
+            "recall_at_5": 0.0,
+            "mrr_at_5": 0.0,
+            "ndcg_at_5": 0.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-023",
+          "query": "采购管理制度第十八条对 8 万元采购的有效报价数量和书面记录有什么要求？",
+          "baseline_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_016"
+          ],
+          "selected_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_016"
+          ],
+          "candidate_ids": [
+            "PROCUREMENT_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_017",
+            "PROCUREMENT_POLICY_001__v1_0__article_028",
+            "PROCUREMENT_POLICY_001__v1_0__article_024",
+            "PROCUREMENT_POLICY_001__v1_0__article_027",
+            "PROCUREMENT_POLICY_001__v1_0__article_019",
+            "PROCUREMENT_POLICY_001__v1_0__article_012",
+            "PROCUREMENT_POLICY_001__v1_0__article_010",
+            "PROCUREMENT_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_013",
+            "LEAVE_POLICY_001__v1_0__article_038",
+            "PROCUREMENT_POLICY_001__v1_0__article_014",
+            "LEAVE_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_023",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "PROCUREMENT_POLICY_001__v1_0__article_031",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "PROCUREMENT_POLICY_001__v1_0__article_001",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_018"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6309297535714575
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-024",
+          "query": "出差结束三十多天和普通费用发生三十多天才报销，各自会怎么处理？",
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "candidate_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_004",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_021",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "TRAVEL_POLICY_001__v1_0__article_020"
+          ],
+          "vector": {
+            "recall_at_5": 0.3333333333333333,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.34192741420282435
+          },
+          "bm25": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 0.3333333333333333,
+            "ndcg_at_5": 0.5043728357394366
+          },
+          "hybrid": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6128984789428379
+          },
+          "reranked": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8838695436828513
+          },
+          "coverage": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8838695436828513
+          },
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "outside_authorized_candidate_window"
+            }
+          ],
+          "missing_after": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 0.6666666666666666
+        },
+        {
+          "case_id": "RET-025",
+          "query": "我今天不在，能让同事用我的公司登录名帮我操作一下吗？",
+          "baseline_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_015",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033"
+          ],
+          "selected_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_015",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033"
+          ],
+          "candidate_ids": [
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_009",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_033",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_018",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_032",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_016",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_043",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_005",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_042",
+            "LEAVE_POLICY_001__v1_0__article_040",
+            "LEAVE_POLICY_001__v1_0__article_036",
+            "LEAVE_POLICY_001__v1_0__article_037",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_046",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_031",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_003",
+            "LEAVE_POLICY_001__v1_0__article_038",
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_029",
+            "INFORMATION_SECURITY_POLICY_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_004"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 0.2,
+            "ndcg_at_5": 0.38685280723454163
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        },
+        {
+          "case_id": "RET-026",
+          "query": "报销培训费和连续两天病假，分别要留哪些专项凭证？",
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_018"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_018"
+          ],
+          "candidate_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_012",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_006",
+            "LEAVE_POLICY_001__v1_0__article_013",
+            "LEAVE_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013",
+            "PROCUREMENT_POLICY_001__v1_0__article_015",
+            "LEAVE_POLICY_001__v1_0__article_023",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_043",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_032",
+            "LEAVE_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_033",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_034"
+          ],
+          "vector": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9197207891481876
+          },
+          "bm25": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8772153153380492
+          },
+          "hybrid": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "reranked": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "coverage": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "events": [],
+          "missing_after": [],
+          "gained_judged_ids": [],
+          "lost_judged_ids": [],
+          "changed": false,
+          "candidate_recall": 1.0
+        }
+      ]
+    }
+  ],
+  "runtime_changed": false,
+  "latency_claim": null,
+  "generated_at": "2026-09-08T02:20:28.591602+00:00",
+  "baseline_zip_sha256": "40f7706edfe4f6610e5908960101fb80a19992a456eeb58a500ae078a28ae101",
+  "experiment_script_sha256": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10",
+  "python": "3.12.13 (main, Aug  7 2026, 02:25:39) [Clang 22.1.3 ]",
+  "platform": "Linux-6.18.35-x86_64-with-glibc2.39",
+  "experiment_git_head": "c4b76cc5201f246f055c71adad033e9928e5666e"
+}

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from dataclasses import dataclass, replace
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -14,6 +14,7 @@ from app.persistence.sqlite_schema import (
     connect_database,
     initialize_database,
 )
+from app.persistence.state_models import StoredAgentSession
 from app.tools.draft_models import (
     ApplicationDraft,
     DraftGenerationResult,
@@ -37,20 +38,6 @@ def _aware_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=UTC)
     return value.astimezone(UTC)
-
-
-@dataclass(frozen=True, slots=True)
-class StoredAgentSession:
-    """Minimal query model for one persisted Agent session."""
-
-    session_id: str
-    turn_number: int
-    phase: AgentSessionPhase
-    active_draft_id: str | None
-    draft_revision: int | None
-    pending_confirmation: bool
-    checkpoint_backend: str
-    updated_at: datetime
 
 
 class SQLiteAgentStateStore:
