@@ -1,0 +1,10 @@
+{
+  "status": "user_confirmation_recorded",
+  "case_count": 15,
+  "judgment_count": 34,
+  "cov001_preserved": true,
+  "full_corpus_review": false,
+  "retrieval_executed": false,
+  "numeric_resume_ready": false,
+  "validation_note": "Confirmation is an explicit user acceptance of AI-assisted labels; it is not an independently human-reviewed relevance set."
+}

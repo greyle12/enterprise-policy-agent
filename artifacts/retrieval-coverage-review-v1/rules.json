@@ -1,0 +1,41 @@
+{
+  "schema_version": "1.0",
+  "status": "post_hoc_development_hypothesis_not_human_reviewed",
+  "selection": {
+    "anchor_top_k": 2,
+    "preserve_top_k": 4,
+    "final_k": 5,
+    "max_supplements": 1
+  },
+  "rules": [
+    {
+      "id": "city_category_for_lodging_table",
+      "source_title_contains": "住宿标准",
+      "source_content_contains": [
+        "城市类别",
+        "住宿费用上限"
+      ],
+      "target_title": "城市分类",
+      "target_content_contains": [
+        "城市消费水平",
+        "一类城市",
+        "二类城市"
+      ],
+      "rationale": "住宿上限表按城市类别给出金额，城市分类条款解释该维度。关系由制度原文提出，不代表每条住宿查询都需要它。"
+    },
+    {
+      "id": "finance_review_for_overdue_expense",
+      "source_title_contains": "超时报销",
+      "source_content_contains": [
+        "三十个自然日",
+        "部门负责人审批"
+      ],
+      "target_title": "特殊费用审批",
+      "target_content_contains": [
+        "超过报销时限的费用",
+        "财务管理部复核"
+      ],
+      "rationale": "超时报销条款给出时限和部门审批，特殊费用条款另要求超时费用由财务复核。"
+    }
+  ]
+}

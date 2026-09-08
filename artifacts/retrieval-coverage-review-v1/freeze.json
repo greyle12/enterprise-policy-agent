@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-09-08T05:28:39.294886+00:00",
+  "git_head": "c4b76cc5201f246f055c71adad033e9928e5666e",
+  "baseline_zip_sha256": "40f7706edfe4f6610e5908960101fb80a19992a456eeb58a500ae078a28ae101",
+  "baseline_git": {
+    "head": "2779d0d555af045167526fd92891e96e6980dfce",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "corpus_snapshot_sha256": "07575bba0a94fbd3c55cc6a06718f7397de8899c4e82b903bc44bab9e5f97393",
+  "query_set_sha256": "04dc0ce5d7be693cd505625763734beed3cd756b6a0d74ff4b48e0310a139745",
+  "rules_sha256": "b58a07e34142310032909778eeccb40d945d392f3cc8ea0c54ac21ff0e67ea12",
+  "selector_sha256_lf": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10",
+  "model_lock": {
+    "schema_version": "1.0",
+    "models": {
+      "embedding": {
+        "repo_id": "BAAI/bge-small-zh-v1.5",
+        "revision": "7999e1d3359715c523056ef9478215996d62a620",
+        "files": {
+          "1_Pooling/config.json": "aaa8861589f80c961a03cc86c7eeaef7605c1676b9ab55329d33a304738769c6",
+          "config.json": "3853a7979202c348751b753e36f579c41d8da7d36af617d3d907e1fc9b441f2a",
+          "config_sentence_transformers.json": "940d5f50db195fa6e5e6a4f122c095f77880de259d74b14a65779ed48bdd7c56",
+          "model.safetensors": "354763b9b1357bc9c44f62c6be2276321081ed2567773608c0d0785b61d5a026",
+          "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+          "sentence_bert_config.json": "84e39fda68ccbff05bfa723ae9c0e70e23e2ec373b76e0f8c6e71af72a693cbf",
+          "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+          "tokenizer.json": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+          "tokenizer_config.json": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a",
+          "vocab.txt": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+        }
+      },
+      "reranker": {
+        "repo_id": "BAAI/bge-reranker-v2-m3",
+        "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+        "files": {
+          "config.json": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a",
+          "model.safetensors": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+          "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15",
+          "tokenizer_config.json": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+        }
+      }
+    }
+  },
+  "configuration": {
+    "vector_index": "InMemoryVectorIndex exact cosine; normalized BGE in bge mode",
+    "bm25": "InMemoryBM25Index; NFKC/CJK bigrams; k1=1.2; b=0.75; positive scores only",
+    "text": "PolicyChunk.retrieval_text for every channel",
+    "candidate_k_per_channel": 20,
+    "rrf_rank_constant": 60,
+    "rrf_union_upper_bound": 40,
+    "rerank_window": 20,
+    "final_k": 5,
+    "embedding_batch_size": 32,
+    "reranker_batch_size": 8,
+    "warmup_full_passes_per_cohort": 1,
+    "measured_repetitions": 1,
+    "latency_for_resume": false,
+    "latency_scope": "query embedding + retrieval (+ fusion/reranker); no loading/indexing",
+    "empty_or_unlabeled_queries": "reject before inference; zero samples in these cohorts",
+    "unauthorized_judgments": "reject before inference; test ACL separately",
+    "missing_judgments": "unjudged results count as no hit; relevance completeness unknown",
+    "query_errors": "retain in N with zero scores, mark experiment incomplete"
+  },
+  "scope": "prospective_targeted_validation_not_independent_test",
+  "rule_changes_after_freeze_allowed": false
+}

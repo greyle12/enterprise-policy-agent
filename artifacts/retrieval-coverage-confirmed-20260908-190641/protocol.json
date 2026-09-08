@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "suite_name": "enterprise_policy_agent_retrieval_coverage_confirmed",
+  "scope": "targeted_validation_not_independent_test",
+  "label_status": "user_confirmed_ai_assisted_development_set",
+  "numeric_resume_ready": false,
+  "input": {
+    "review_freeze_sha256": "17c611140a800d703d4c4a472d4e03dcdd54114dc02eec9f4b91bd52995f7474",
+    "confirmed_review_sha256": "34643166b8321bb32950d1fcadb51fa054300816c4f1c86b8cdc39489cd63ecf",
+    "user_confirmation_sha256": "9c32bff55ca62d3bf914e4fad838727a86ada7e38ab8ff9d83f0f8fa246c4dba",
+    "query_set_sha256": "04dc0ce5d7be693cd505625763734beed3cd756b6a0d74ff4b48e0310a139745",
+    "corpus_snapshot_sha256": "07575bba0a94fbd3c55cc6a06718f7397de8899c4e82b903bc44bab9e5f97393",
+    "rules_sha256": "b58a07e34142310032909778eeccb40d945d392f3cc8ea0c54ac21ff0e67ea12",
+    "selector_sha256_lf": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10",
+    "dataset_sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+  },
+  "mode": "bge",
+  "models": {
+    "lock_sha256": "ac01f4cfb64ebe936eb114e75224eb990ab26ff614f8e2b7306ecbbfb33b38c6",
+    "real_model_inference_required": true
+  },
+  "configuration": {
+    "candidate_k_per_channel": 20,
+    "rrf_rank_constant": 60,
+    "rerank_window": 20,
+    "final_k": 5,
+    "selector": {
+      "anchor_top_k": 2,
+      "preserve_top_k": 4,
+      "max_supplements": 1
+    },
+    "as_of_date": "2026-08-20",
+    "access_context": {
+      "employee_id": "RETRIEVAL-EVAL-001",
+      "department": "评测部门",
+      "roles": [
+        "EMPLOYEE"
+      ],
+      "security_clearance": "internal",
+      "region": "中国大陆",
+      "identity_source": "test_fixture"
+    },
+    "warmups": 1,
+    "measured_repetitions": 1,
+    "latency_for_resume": false
+  }
+}
