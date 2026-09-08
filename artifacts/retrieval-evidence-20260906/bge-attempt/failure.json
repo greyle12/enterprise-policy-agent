@@ -1,0 +1,18 @@
+{
+  "status": "blocked",
+  "mode": "bge",
+  "git": {
+    "head": "c4b76cc5201f246f055c71adad033e9928e5666e",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "requested_device": "cpu",
+  "requested_models": {
+    "embedding": "BAAI/bge-small-zh-v1.5",
+    "reranker": "BAAI/bge-reranker-v2-m3"
+  },
+  "real_model_inference_completed": false,
+  "numeric_resume_ready": false,
+  "error_type": "ModuleNotFoundError",
+  "error": "No module named 'torch'"
+}

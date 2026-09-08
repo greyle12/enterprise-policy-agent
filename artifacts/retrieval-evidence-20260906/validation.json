@@ -1,0 +1,30 @@
+{
+  "targeted_pytest": {
+    "tests": 80,
+    "failures": 0,
+    "errors": 0
+  },
+  "ruff": {
+    "exit_code": 0,
+    "stdout": "All checks passed!"
+  },
+  "ruff_format": {
+    "exit_code": 0,
+    "stdout": "3 files already formatted"
+  },
+  "legacy_verifiers": {
+    "verify_retrieval_evaluation": "passed/offline",
+    "verify_graded_relevance": "passed/offline"
+  },
+  "broader_test_collection": {
+    "status": "blocked",
+    "reason": "environment missing libpq/psycopg_binary; golden CLI and FastAPI security imports failed; no full-suite pass claimed"
+  },
+  "preserved_preexisting_changes": true,
+  "modified_preexisting_files_this_task": [
+    "docs/retrieval_evaluation.md"
+  ],
+  "local_head": "c4b76cc5201f246f055c71adad033e9928e5666e",
+  "remote_main_at_audit": "2a033a5804347b50ebc2023d51fb57b3a856fb76",
+  "remote_difference": "one Checkpointer commit; no retrieval implementation/dataset/corpus changes"
+}

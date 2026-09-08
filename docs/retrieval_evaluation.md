@@ -106,7 +106,10 @@ Offline 使用已有确定性哈希词法向量和确定性词项重排，完全
 - 授权先于相似度与 Reranker；
 - 报告、退出码和 CI 回归。
 
-它不是语义 Embedding，也不能证明 BGE 的真实质量。当前确定性 v1 基线是：
+它不是语义 Embedding，也不能证明 BGE 的真实质量。以下是 Phase 31 **旧二元标注**的历史回归
+快照；当前 Phase 32 graded 标注增加了相关 Chunk 分母，不能沿用这张表作为当前结果。
+当前基线见 `docs/graded_relevance_ndcg.md`，可复现证据入口见
+[`retrieval_quality_evidence.md`](retrieval_quality_evidence.md)。
 
 | 通道 | Recall@1 | Recall@3 | Recall@5 | MRR@5 |
 |---|---:|---:|---:|---:|
@@ -156,7 +159,8 @@ Retrieval Evaluation 是组件评测。答案正确率还受 Context Builder、P
 
 Recall@K 对“是否找全证据”敏感，MRR@K 对“首个证据是否靠前”敏感，二者容易解释且符合
 当前 Top-5 Context Builder。替代指标包括 Precision@K、Hit Rate、MAP 和 nDCG；当相关性具有
-多级评分时，nDCG 更合适。当前数据只有二元相关标注，所以先使用 Recall 和 MRR。
+多级评分时，nDCG 更合适。Phase 32 已提供 graded relevance 和 nDCG；Recall 和 MRR 仍将
+Grade 1/2/3 都视为正相关。
 
 ### 为什么同时保留 Offline 和 BGE
 
@@ -166,7 +170,7 @@ Recall@K 对“是否找全证据”敏感，MRR@K 对“首个证据是否靠�
 ## 6. 生产不足与下一步实验
 
 - 20 条自建查询规模小，且标注者单一；应扩展到真实匿名查询并进行双人标注与争议仲裁；
-- 当前相关性是二元判断；需要 graded relevance 后再加入 nDCG@K；
+- 已有 graded relevance 和 nDCG，但相关性标注完整性与独立人工复核仍需补齐；
 - 尚未按部门、角色、文档格式、OCR 来源、短/长查询和时间切片分层报告；
 - 未统计索引更新后的回归差异和置信区间；
 - pgvector 当前生产默认仍为精确检索；Phase 34 已提供 HNSW `m` / `ef_construction` / `ef_search`
