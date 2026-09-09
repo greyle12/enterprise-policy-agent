@@ -1,0 +1,278 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "semantic-request-facets-v0.1-confirmed-1",
+  "status": "user_confirmed",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "source_dataset_version": "semantic-dev-v1-confirmed-1",
+  "sample_count": 7,
+  "accepted_case_count": 7,
+  "accepted_facet_instance_count": 8,
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "model_inference": false,
+  "retrieval_executed": false,
+  "parser_runtime_integration": false,
+  "allowed_facets": [
+    {
+      "facet": "PROCEDURE",
+      "definition": "用户询问如何处理、需要哪些步骤或采用何种办理方式。",
+      "positive_cues": [
+        "怎么办",
+        "怎么处理"
+      ],
+      "exclusions": [
+        "仅询问是否可行",
+        "仅询问材料、时间或责任人"
+      ]
+    },
+    {
+      "facet": "MATERIAL",
+      "definition": "用户询问需要补充、提交或准备的说明、凭证或材料。",
+      "positive_cues": [
+        "补什么说明",
+        "需要什么材料"
+      ],
+      "exclusions": [
+        "不能把财务要做什么自动解释为材料"
+      ]
+    },
+    {
+      "facet": "DEADLINE",
+      "definition": "用户询问时间点、期限、天数阈值或逾期后何时可以采取某动作。",
+      "positive_cues": [
+        "多久后",
+        "什么时候"
+      ],
+      "exclusions": [
+        "原句只陈述已过去的天数时，不自动生成时间询问"
+      ]
+    },
+    {
+      "facet": "RESPONSIBLE_ROLE",
+      "definition": "用户询问部门、岗位、人员或审批主体由谁负责。",
+      "positive_cues": [
+        "哪些人",
+        "由谁审批",
+        "哪个部门"
+      ],
+      "exclusions": [
+        "不能补出制度未指定的具体人名或岗位"
+      ]
+    },
+    {
+      "facet": "PROCESS_CHOICE",
+      "definition": "用户在多个可能办理流程之间询问应选择哪一个流程。",
+      "positive_cues": [
+        "按哪个流程",
+        "走哪条流程"
+      ],
+      "exclusions": [
+        "单纯询问办理步骤归 PROCEDURE；不能替用户选择具体制度流程"
+      ]
+    }
+  ],
+  "binding_statuses": [
+    {
+      "status": "BOUND",
+      "meaning": "请求维度和目标对象均有可回查的唯一原文绑定。"
+    },
+    {
+      "status": "UNBOUND",
+      "meaning": "请求维度在原文中出现，但目标对象、候选流程或断言内容不唯一。"
+    },
+    {
+      "status": "MISSING",
+      "meaning": "当前样本没有安全可标注的该请求维度，或现有契约没有对应动作表达。"
+    }
+  ],
+  "cases": [
+    {
+      "case_id": "COV-007",
+      "record_line": 1,
+      "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+      "accepted_facets": [
+        {
+          "facet": "MATERIAL",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 17,
+              "end": 22,
+              "text": "补什么说明"
+            }
+          ],
+          "rationale": "明确询问需要补充的说明。"
+        },
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 23,
+              "end": 34,
+              "text": "部门和财务分别要做什么"
+            }
+          ],
+          "rationale": "明确询问部门与财务的职责，但不补具体制度职责。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "request_act"
+      ],
+      "note": "材料和职责是信息维度；不把“财务要做什么”升级为财务复核动作。"
+    },
+    {
+      "case_id": "COV-008",
+      "record_line": 2,
+      "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+      "accepted_facets": [
+        {
+          "facet": "DEADLINE",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 6,
+              "end": 11,
+              "text": "发生多久后"
+            }
+          ],
+          "rationale": "明确询问财务原则上拒收的时间阈值。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "request_act"
+      ],
+      "note": "不需要审批流程仍是回答范围排除，不是制度免审批断言。"
+    },
+    {
+      "case_id": "COV-009",
+      "record_line": 3,
+      "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+      "accepted_facets": [
+        {
+          "facet": "PROCEDURE",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 21,
+              "end": 32,
+              "text": "制度对这种超时怎么处理"
+            }
+          ],
+          "rationale": "明确询问逾期情形的处理方式，但不指定某一审批或复核动作。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "request_act"
+      ],
+      "note": "可行性问题仍由既有 VERIFY_ASSERTION 表达；开放式处理问题单独保留为 PROCEDURE。"
+    },
+    {
+      "case_id": "COV-010",
+      "record_line": 4,
+      "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+      "accepted_facets": [
+        {
+          "facet": "DEADLINE",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 16,
+              "end": 21,
+              "text": "在什么时候"
+            }
+          ],
+          "rationale": "询问说明应在何时进行。"
+        },
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "status": "EXPRESSED",
+          "binding": "BOUND",
+          "source_spans": [
+            {
+              "start": 22,
+              "end": 25,
+              "text": "哪些人"
+            },
+            {
+              "start": 38,
+              "end": 42,
+              "text": "由谁审批"
+            }
+          ],
+          "rationale": "分别询问说明接收人和普通费用审批主体。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "request_act"
+      ],
+      "note": "差旅和普通费用保持不同作用域，不补具体人员。"
+    },
+    {
+      "case_id": "V3U-004",
+      "record_line": 5,
+      "query": "普通费用拖了四十天，这个现在怎么办？",
+      "accepted_facets": [
+        {
+          "facet": "PROCEDURE",
+          "status": "EXPRESSED",
+          "binding": "UNBOUND",
+          "source_spans": [
+            {
+              "start": 12,
+              "end": 17,
+              "text": "现在怎么办"
+            }
+          ],
+          "rationale": "出现开放式处理询问，但“这个”绑定的具体办理对象不唯一。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "request_act",
+        "action_target"
+      ],
+      "note": "请求维度可以识别，动作目标仍然未知。"
+    },
+    {
+      "case_id": "V3U-006",
+      "record_line": 6,
+      "query": "普通费用拖了四十天，那个要求还要吗？",
+      "accepted_facets": [],
+      "preserved_unresolved_output_types": [
+        "assertion_target"
+      ],
+      "note": "这是核实动作的对象缺失，不强行增加 PROCEDURE 或 PROCESS_CHOICE。"
+    },
+    {
+      "case_id": "V3U-009",
+      "record_line": 7,
+      "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+      "accepted_facets": [
+        {
+          "facet": "PROCESS_CHOICE",
+          "status": "EXPRESSED",
+          "binding": "UNBOUND",
+          "source_spans": [
+            {
+              "start": 21,
+              "end": 26,
+              "text": "按哪个流程"
+            }
+          ],
+          "rationale": "明确询问流程选择，但候选流程没有唯一绑定。"
+        }
+      ],
+      "preserved_unresolved_output_types": [
+        "reported_assertion_content",
+        "request_act",
+        "action_target"
+      ],
+      "note": "“都说过了”保留为转述且内容未知，不解释为已批准或已复核。"
+    }
+  ]
+}
