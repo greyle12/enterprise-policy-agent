@@ -1,0 +1,332 @@
+{
+  "schema_version": "1.0",
+  "status": "pending_user_confirmation",
+  "provenance": "AI authored after gate freeze; checked against frozen corpus by assistant; no independent human review; targeted challenge set, not representative random holdout",
+  "metrics": "macro Recall@5 over listed positive chunks; MRR@5 first positive reciprocal rank, miss=0; all grades=3; unjudged is not judged irrelevant",
+  "cases": [
+    {
+      "case_id": "CHG-001",
+      "category": "否定作用域",
+      "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "双重否定没有排除审批；27给出部门审批，25要求财务复核。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "title": "特殊费用审批",
+          "content": "### 第二十五条 特殊费用审批\n\n以下费用无论金额大小，均应当由财务管理部复核：\n\n1. 无发票费用；\n2. 业务招待费；\n3. 超过报销时限的费用；\n4. 费用类型难以判断的支出；\n5. 付款人和报销人不一致的费用；\n6. 涉及个人敏感信息的费用；\n7. 财务系统识别为高风险的费用。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-002",
+      "category": "否定作用域",
+      "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "grade": 3
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "否定仅作用于同住；南京类别和普通员工金额需分别引用。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "title": "城市分类",
+          "content": "### 第七条 城市分类\n\n本制度按照城市消费水平将中国大陆出差目的地分为三类。\n\n一类城市包括：\n\n- 北京；\n- 上海；\n- 广州；\n- 深圳。\n\n二类城市包括：\n\n- 其他省会城市；\n- 直辖市；\n- 计划单列市；\n- 苏州；\n- 杭州；\n- 南京；\n- 宁波；\n- 厦门；\n- 青岛。\n\n除一类城市和二类城市以外的中国大陆城市，均按照三类城市执行。"
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "title": "普通员工住宿标准",
+          "content": "### 第八条 普通员工住宿标准\n\n普通员工每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币500元 |\n| 二类城市 | 人民币400元 |\n| 三类城市 | 人民币300元 |\n\n住宿费用按照实际入住夜数计算。\n\n两名同性员工前往同一地点出差，在行程安排合理的情况下，鼓励合住标准间，但不得强制合住。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-003",
+      "category": "否定作用域",
+      "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": false,
+      "rationale": "问题明确限定拒收时限；27足以回答。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-004",
+      "category": "询问城市类别",
+      "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "grade": 3
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "类别是待判断信息，不能当作已知类别。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "title": "城市分类",
+          "content": "### 第七条 城市分类\n\n本制度按照城市消费水平将中国大陆出差目的地分为三类。\n\n一类城市包括：\n\n- 北京；\n- 上海；\n- 广州；\n- 深圳。\n\n二类城市包括：\n\n- 其他省会城市；\n- 直辖市；\n- 计划单列市；\n- 苏州；\n- 杭州；\n- 南京；\n- 宁波；\n- 厦门；\n- 青岛。\n\n除一类城市和二类城市以外的中国大陆城市，均按照三类城市执行。"
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "title": "普通员工住宿标准",
+          "content": "### 第八条 普通员工住宿标准\n\n普通员工每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币500元 |\n| 二类城市 | 人民币400元 |\n| 三类城市 | 人民币300元 |\n\n住宿费用按照实际入住夜数计算。\n\n两名同性员工前往同一地点出差，在行程安排合理的情况下，鼓励合住标准间，但不得强制合住。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-005",
+      "category": "询问城市类别",
+      "query": "一类城市包括哪些地方？请只列出制度里的城市名单。",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": false,
+      "rationale": "直接检索城市分类即可；不需住宿表补充。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "title": "城市分类",
+          "content": "### 第七条 城市分类\n\n本制度按照城市消费水平将中国大陆出差目的地分为三类。\n\n一类城市包括：\n\n- 北京；\n- 上海；\n- 广州；\n- 深圳。\n\n二类城市包括：\n\n- 其他省会城市；\n- 直辖市；\n- 计划单列市；\n- 苏州；\n- 杭州；\n- 南京；\n- 宁波；\n- 厦门；\n- 青岛。\n\n除一类城市和二类城市以外的中国大陆城市，均按照三类城市执行。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-006",
+      "category": "询问城市类别",
+      "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_009",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": false,
+      "rationale": "类别已给定，负责人金额表足够。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_009",
+          "title": "部门负责人住宿标准",
+          "content": "### 第九条 部门负责人住宿标准\n\n部门负责人每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币700元 |\n| 二类城市 | 人民币600元 |\n| 三类城市 | 人民币500元 |"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-007",
+      "category": "复合需求",
+      "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "grade": 3
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "合住问题与按城市计算限额并存，不能整体否决类别证据。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_007",
+          "title": "城市分类",
+          "content": "### 第七条 城市分类\n\n本制度按照城市消费水平将中国大陆出差目的地分为三类。\n\n一类城市包括：\n\n- 北京；\n- 上海；\n- 广州；\n- 深圳。\n\n二类城市包括：\n\n- 其他省会城市；\n- 直辖市；\n- 计划单列市；\n- 苏州；\n- 杭州；\n- 南京；\n- 宁波；\n- 厦门；\n- 青岛。\n\n除一类城市和二类城市以外的中国大陆城市，均按照三类城市执行。"
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "title": "普通员工住宿标准",
+          "content": "### 第八条 普通员工住宿标准\n\n普通员工每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币500元 |\n| 二类城市 | 人民币400元 |\n| 三类城市 | 人民币300元 |\n\n住宿费用按照实际入住夜数计算。\n\n两名同性员工前往同一地点出差，在行程安排合理的情况下，鼓励合住标准间，但不得强制合住。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-008",
+      "category": "复合需求",
+      "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "同时问拒收边界和办理要求，两条共同覆盖。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "title": "特殊费用审批",
+          "content": "### 第二十五条 特殊费用审批\n\n以下费用无论金额大小，均应当由财务管理部复核：\n\n1. 无发票费用；\n2. 业务招待费；\n3. 超过报销时限的费用；\n4. 费用类型难以判断的支出；\n5. 付款人和报销人不一致的费用；\n6. 涉及个人敏感信息的费用；\n7. 财务系统识别为高风险的费用。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-009",
+      "category": "复合需求",
+      "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+      "judgments": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "grade": 3
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_009",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": false,
+      "rationale": "需要两种身份金额表，但不需要解释已知类别。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_008",
+          "title": "普通员工住宿标准",
+          "content": "### 第八条 普通员工住宿标准\n\n普通员工每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币500元 |\n| 二类城市 | 人民币400元 |\n| 三类城市 | 人民币300元 |\n\n住宿费用按照实际入住夜数计算。\n\n两名同性员工前往同一地点出差，在行程安排合理的情况下，鼓励合住标准间，但不得强制合住。"
+        },
+        {
+          "chunk_id": "TRAVEL_POLICY_001__v1_0__article_009",
+          "title": "部门负责人住宿标准",
+          "content": "### 第九条 部门负责人住宿标准\n\n部门负责人每人每晚住宿费用上限如下：\n\n| 城市类别 | 住宿费用上限 |\n|---|---:|\n| 一类城市 | 人民币700元 |\n| 二类城市 | 人民币600元 |\n| 三类城市 | 人民币500元 |"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-010",
+      "category": "隐含审批意图",
+      "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "经过哪些人隐含部门审批和财务复核，27还要求说明原因。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "title": "特殊费用审批",
+          "content": "### 第二十五条 特殊费用审批\n\n以下费用无论金额大小，均应当由财务管理部复核：\n\n1. 无发票费用；\n2. 业务招待费；\n3. 超过报销时限的费用；\n4. 费用类型难以判断的支出；\n5. 付款人和报销人不一致的费用；\n6. 涉及个人敏感信息的费用；\n7. 财务系统识别为高风险的费用。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-011",
+      "category": "隐含审批意图",
+      "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": true,
+      "rationale": "不能只给说明原因；仍需部门审批及财务复核。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        },
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+          "title": "特殊费用审批",
+          "content": "### 第二十五条 特殊费用审批\n\n以下费用无论金额大小，均应当由财务管理部复核：\n\n1. 无发票费用；\n2. 业务招待费；\n3. 超过报销时限的费用；\n4. 费用类型难以判断的支出；\n5. 付款人和报销人不一致的费用；\n6. 涉及个人敏感信息的费用；\n7. 财务系统识别为高风险的费用。"
+        }
+      ]
+    },
+    {
+      "case_id": "CHG-012",
+      "category": "隐含审批意图",
+      "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+      "judgments": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "grade": 3
+        }
+      ],
+      "supplement_needed": false,
+      "rationale": "范围仅为原因说明，不补充财务复核。",
+      "label_status": "ai_source_checked_pending_user_confirmation",
+      "source_evidence": [
+        {
+          "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+          "title": "超时报销",
+          "content": "### 第二十七条 超时报销\n\n费用发生超过三十个自然日后提交的，应当说明原因，并由部门负责人审批。\n\n费用发生超过九十个自然日后提交的，除特殊情况外，财务管理部可以拒绝受理。"
+        }
+      ]
+    }
+  ]
+}

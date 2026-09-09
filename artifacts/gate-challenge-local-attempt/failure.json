@@ -1,0 +1,5 @@
+{
+  "status": "blocked",
+  "error": "torch is not installed; no real inference executed",
+  "numeric_resume_ready": false
+}

@@ -1,0 +1,8 @@
+{
+  "status": "user_confirmed",
+  "confirmation_text": "确认",
+  "confirmation_date": "2026-09-09",
+  "scope": "all 12 draft queries and judgments",
+  "draft_sha256": "d69e847fe9f12c5a83738940c516901ffccf2e6afe74210c45a22230ddf41b9d",
+  "label_provenance": "AI source checked, user confirmed; not independent double annotation"
+}

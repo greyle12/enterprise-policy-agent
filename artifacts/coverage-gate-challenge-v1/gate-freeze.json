@@ -1,0 +1,20 @@
+{
+  "status": "gate_frozen_before_challenge_authoring",
+  "created_at": "2026-09-08T14:33:00.868892+00:00",
+  "gate_variant": "explicit_veto",
+  "windows": [
+    20,
+    40
+  ],
+  "final_k": 5,
+  "preserve_top_k": 4,
+  "max_supplements": 1,
+  "files": {
+    "scripts/experiment_coverage_gate.py": "76d50530444c24b6da5159ddfeb71655e2578fdad35bca7370941365aa0b6252",
+    "scripts/replay_coverage_windows.py": "87c1af8e5e3c839e67e71429cfc3c9a71e98a52ddb565c770ccf14aba7be7fc2",
+    "scripts/run_retrieval_coverage_ablation.py": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10",
+    "tests/evaluation/retrieval_coverage_rules.json": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb",
+    "artifacts/retrieval-coverage-review-v1/corpus.json": "cd637ccfe2822e4bba9205f12f64066ec7b7b370fa99b7ccf558c5b6e6c1a147",
+    "artifacts/retrieval-coverage-review-v1/review.user-confirmed.json": "b8ff8368c1c38ab7332344d6f57b92deed36896173408d8919fd39af7f3f6d48"
+  }
+}
