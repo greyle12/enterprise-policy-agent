@@ -1,0 +1,622 @@
+{
+  "status": "completed",
+  "scope": "direct_query_rule_diagnostic",
+  "new_model_inference": false,
+  "numeric_resume_ready": false,
+  "pair_label_status": "assistant_derived_rule_pairs_from_user_confirmed_supplement_labels_not_separately_human_reviewed",
+  "assumption": "Hypothetical valid authorized source anchor and missing target in candidate window; evaluate necessity only, not actual retrieval opportunities.",
+  "excluded": {
+    "CHG-005": "Direct request for city list; city category is primary evidence, not supplemental to a lodging table. Existing supplement_needed=false is not a target-irrelevance label."
+  },
+  "sources": {
+    "challenge_development": {
+      "status": "user_confirmed",
+      "confirmation_text": "确认",
+      "confirmation_date": "2026-09-09",
+      "scope": "all 12 draft queries and judgments",
+      "draft_sha256": "d69e847fe9f12c5a83738940c516901ffccf2e6afe74210c45a22230ddf41b9d",
+      "label_provenance": "AI source checked, user confirmed; not independent double annotation"
+    },
+    "v2_unseen_now_observed": {
+      "status": "user_confirmed",
+      "confirmation_text": "确认",
+      "confirmation_date": "2026-09-09",
+      "scope": "all 8 V2U queries and judgments",
+      "draft_sha256": "2a3585b0d16043c084e5b8eb63eb3d015b2921f0bf54295a5eb57b602f15f835",
+      "provenance": "AI source checked and user confirmed; not independent blind annotation"
+    }
+  },
+  "suites": {
+    "challenge_development": {
+      "metrics": {
+        "v1": {
+          "n": 11,
+          "tp": 3,
+          "tn": 2,
+          "fp_unnecessary_allowed": 2,
+          "fn_needed_blocked": 4,
+          "accuracy": 0.45454545454545453,
+          "needed_allow_recall": 0.42857142857142855,
+          "unnecessary_block_recall": 0.5,
+          "allow_precision": 0.6
+        },
+        "v2": {
+          "n": 11,
+          "tp": 7,
+          "tn": 2,
+          "fp_unnecessary_allowed": 2,
+          "fn_needed_blocked": 0,
+          "accuracy": 0.8181818181818182,
+          "needed_allow_recall": 1.0,
+          "unnecessary_block_recall": 0.5,
+          "allow_precision": 0.7777777777777778
+        }
+      },
+      "rows": [
+        {
+          "case_id": "CHG-001",
+          "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "双重否定没有排除审批；27给出部门审批，25要求财务复核。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "不是不需要审批流程",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "这笔普通费用拖了四十天",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "请说清部门和财务各要做什么",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-002",
+          "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": true,
+          "label_rationale": "否定仅作用于同住；南京类别和普通员工金额需分别引用。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "我不问同住安排",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "只想知道普通员工去南京住酒店每晚限额",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-003",
+          "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": false,
+          "label_rationale": "问题明确限定拒收时限；27足以回答。",
+          "v1": true,
+          "v2": false,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "不要展开审批流程",
+              "need": false,
+              "veto": true
+            },
+            {
+              "clause": "只告诉我普通费用拖到多少天后可能被拒收",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-004",
+          "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": true,
+          "label_rationale": "类别是待判断信息，不能当作已知类别。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "苏州到底算不算一类城市",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "普通员工每晚住宿标准对应多少钱",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-006",
+          "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": false,
+          "label_rationale": "类别已给定，负责人金额表足够。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "已确认目的地属于三类城市",
+              "need": false,
+              "veto": true
+            },
+            {
+              "clause": "部门负责人住一晚酒店的上限是多少",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-007",
+          "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": true,
+          "label_rationale": "合住问题与按城市计算限额并存，不能整体否决类别证据。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "普通员工到青岛出差",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "每晚能报多少住宿费",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "两名同性同事还必须合住吗",
+              "need": false,
+              "veto": true
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-008",
+          "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "同时问拒收边界和办理要求，两条共同覆盖。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通费用拖到一百天会不会被拒收",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "如果属于特殊情况继续办",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "部门审批和财务复核分别有什么要求",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-009",
+          "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": false,
+          "label_rationale": "需要两种身份金额表，但不需要解释已知类别。",
+          "v1": false,
+          "v2": true,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "普通员工与部门负责人在已确定的二类城市出差",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "各自每晚住宿上限是多少",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-010",
+          "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "经过哪些人隐含部门审批和财务复核，27还要求说明原因。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "一笔普通费用放了五十天才想起来报",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "现在要经过哪些人才能继续往下办",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-011",
+          "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "不能只给说明原因；仍需部门审批及财务复核。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通费用过了四十天才交",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "我写好原因之后是不是就能直接报了",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "CHG-012",
+          "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": false,
+          "label_rationale": "范围仅为原因说明，不补充财务复核。",
+          "v1": true,
+          "v2": false,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通费用晚交了四十天",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "我只想知道要不要写明迟交原因",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "其他环节先不讲",
+              "need": false,
+              "veto": true
+            }
+          ]
+        }
+      ],
+      "all_errors": {
+        "v1": [
+          "CHG-001",
+          "CHG-002",
+          "CHG-003",
+          "CHG-004",
+          "CHG-007",
+          "CHG-012"
+        ],
+        "v2": [
+          "CHG-006",
+          "CHG-009"
+        ]
+      }
+    },
+    "v2_unseen_now_observed": {
+      "metrics": {
+        "v1": {
+          "n": 8,
+          "tp": 4,
+          "tn": 1,
+          "fp_unnecessary_allowed": 3,
+          "fn_needed_blocked": 0,
+          "accuracy": 0.625,
+          "needed_allow_recall": 1.0,
+          "unnecessary_block_recall": 0.25,
+          "allow_precision": 0.5714285714285714
+        },
+        "v2": {
+          "n": 8,
+          "tp": 3,
+          "tn": 1,
+          "fp_unnecessary_allowed": 3,
+          "fn_needed_blocked": 1,
+          "accuracy": 0.5,
+          "needed_allow_recall": 0.75,
+          "unnecessary_block_recall": 0.25,
+          "allow_precision": 0.5
+        }
+      },
+      "rows": [
+        {
+          "case_id": "V2U-001",
+          "query": "目的地的类别已经核实，是二类。出差人是普通员工。请只给每晚住宿金额上限。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": false,
+          "label_rationale": "类别作为跨句前提给定；普通员工表足够，不需要再次确认城市分类。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "目的地的类别已经核实",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "是二类",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "出差人是普通员工",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "请只给每晚住宿金额上限",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-002",
+          "query": "此次目的地是厦门，但类别还没查。出差人是部门负责人。每晚住宿费用最高多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": true,
+          "label_rationale": "厦门属于二类需要城市分类；负责人金额需要第九条。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "此次目的地是厦门",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "类别还没查",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "出差人是部门负责人",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "每晚住宿费用最高多少",
+              "need": true,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-003",
+          "query": "普通费用交晚了五十天，部门负责人已经批过。这是否意味着不用再交财务复核？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "这指前句部门审批，不能替代第二十五条的财务复核。",
+          "v1": true,
+          "v2": false,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通费用交晚了五十天",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "部门负责人已经批过",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "这是否意味着不用再交财务复核",
+              "need": false,
+              "veto": true
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-004",
+          "query": "这里说的是两名同性普通员工合住标准间。这种安排能由公司强制执行吗？只回答是否强制。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": false,
+          "label_rationale": "这种安排指合住，不涉及城市分类或金额。",
+          "v1": false,
+          "v2": false,
+          "v1_reason": "explicit_veto",
+          "v2_clauses": [
+            {
+              "clause": "这里说的是两名同性普通员工合住标准间",
+              "need": false,
+              "veto": true
+            },
+            {
+              "clause": "这种安排能由公司强制执行吗",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "只回答是否强制",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-005",
+          "query": "普通员工，宁波，一晚。酒店最多报多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_allow": true,
+          "label_rationale": "省略完整句式，但城市映射与金额表均必要。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通员工",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "宁波",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "一晚",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "酒店最多报多少",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-006",
+          "query": "普通费用，四十二天后交。只问原因说明：要写吗？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": false,
+          "label_rationale": "限定原因说明，不要求额外财务复核流程。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "普通费用",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "四十二天后交",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "只问原因说明",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "要写吗",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-007",
+          "query": "不是要免掉财务复核，也不想略过部门审批。普通费用迟交六十天，完整要求是什么？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": true,
+          "label_rationale": "否定的是免掉与略过，实际要求完整办理要求。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "不是要免掉财务复核",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "也不想略过部门审批",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "普通费用迟交六十天",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "完整要求是什么",
+              "need": false,
+              "veto": false
+            }
+          ]
+        },
+        {
+          "case_id": "V2U-008",
+          "query": "不是问报销能否通过，也不是问由谁审批；只问费用超过多少天可能不予受理。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_allow": false,
+          "label_rationale": "排除结果与审批问题，仅需拒收时限。",
+          "v1": true,
+          "v2": true,
+          "v1_reason": "allowed",
+          "v2_clauses": [
+            {
+              "clause": "不是问报销能否通过",
+              "need": false,
+              "veto": false
+            },
+            {
+              "clause": "也不是问由谁审批",
+              "need": true,
+              "veto": false
+            },
+            {
+              "clause": "只问费用超过多少天可能不予受理",
+              "need": false,
+              "veto": false
+            }
+          ]
+        }
+      ],
+      "all_errors": {
+        "v1": [
+          "V2U-001",
+          "V2U-006",
+          "V2U-008"
+        ],
+        "v2": [
+          "V2U-001",
+          "V2U-003",
+          "V2U-006",
+          "V2U-008"
+        ]
+      }
+    }
+  },
+  "source_sha256": {
+    "scripts/evaluate_gate_decisions.py": "acaf8d906dd868471fdb9575a685eec2be2319be32bb74cff707d9ddb2146307",
+    "scripts/coverage_gate_v2.py": "c61f5255c15a549e106d57a61747bd9e5ce96fd7d2f3363a7446b7fef930f7a4",
+    "scripts/experiment_coverage_gate.py": "76d50530444c24b6da5159ddfeb71655e2578fdad35bca7370941365aa0b6252"
+  }
+}
