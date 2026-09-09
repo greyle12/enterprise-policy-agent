@@ -53,9 +53,11 @@ def check_records(lines: Iterable[str]) -> dict[str, object]:
     for line_number, raw_line in enumerate(lines, start=1):
         if not raw_line.strip():
             continue
+        record_count += 1
         try:
             payload = json.loads(raw_line)
         except json.JSONDecodeError as exc:
+            invalid_record_count += 1
             errors.append(
                 _issue_dict(
                     line_number=line_number,
@@ -69,6 +71,7 @@ def check_records(lines: Iterable[str]) -> dict[str, object]:
         try:
             record = SemanticParseRecord.from_dict(payload, path=f"line[{line_number}]")
         except ContractDecodeError as exc:
+            invalid_record_count += 1
             errors.append(
                 _issue_dict(
                     line_number=line_number,
@@ -79,7 +82,6 @@ def check_records(lines: Iterable[str]) -> dict[str, object]:
             )
             continue
 
-        record_count += 1
         if record.missing_outputs:
             records_with_missing_outputs += 1
         issues = validate_record(record)
@@ -95,7 +97,7 @@ def check_records(lines: Iterable[str]) -> dict[str, object]:
                 line_number=None,
                 code="NO_RECORDS",
                 path="input",
-                message="input did not contain a decodable semantic record",
+                message="input did not contain any non-blank record lines",
             )
         )
 
@@ -134,7 +136,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_argument_parser().parse_args(argv)
     try:
         summary = check_file(args.input)
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         summary = {
             "status": "failed",
             "schema_version": "1.0",
@@ -146,7 +148,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "errors": [
                 _issue_dict(
                     line_number=None,
-                    code="INPUT_READ_ERROR",
+                    code=(
+                        "INPUT_ENCODING_ERROR"
+                        if isinstance(exc, UnicodeDecodeError)
+                        else "INPUT_READ_ERROR"
+                    ),
                     path=str(args.input),
                     message=str(exc),
                 )

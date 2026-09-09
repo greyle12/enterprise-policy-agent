@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
+import tempfile
 import unittest
 from dataclasses import replace
+from pathlib import Path
 
 from scripts.check_semantic_parse_records import check_records
 from scripts.semantic_parse_contract import (
@@ -19,6 +23,7 @@ from scripts.semantic_parse_contract import (
     SemanticScope,
     ScopeType,
     Span,
+    _find_cycle,
     validate_record,
 )
 
@@ -275,6 +280,161 @@ class SemanticParseContractTests(unittest.TestCase):
         self.assertTrue(
             any(error["code"] == "MISSING_OUTPUTS_REQUIRED" for error in summary["errors"])
         )
+
+    def test_checker_counts_all_failure_stages_and_preserves_lines(self) -> None:
+        valid = json.dumps(self._valid_record().to_dict())
+        invalid = json.dumps(
+            replace(self._valid_record(), query="", status=ParseStatus.FAILED).to_dict()
+        )
+        summary = check_records(["\n", valid, "{bad json", "{}", invalid, "  ", valid])
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["record_count"], 5)
+        self.assertEqual(summary["valid_record_count"], 2)
+        self.assertEqual(summary["invalid_record_count"], 3)
+        self.assertEqual(
+            summary["record_count"], summary["valid_record_count"] + summary["invalid_record_count"]
+        )
+        errors = summary["errors"]
+        self.assertEqual(errors[0]["line"], 3)
+        self.assertEqual(errors[0]["code"], "INVALID_JSON")
+        self.assertTrue(errors[0]["message"])
+        self.assertEqual(errors[1]["line"], 4)
+        self.assertEqual(errors[1]["code"], "CONTRACT_DECODE_ERROR")
+        self.assertTrue(all(error["line"] == 5 for error in errors[2:]))
+        self.assertGreater(summary["error_count"], summary["invalid_record_count"])
+
+    def test_checker_all_undecodable_records_are_counted(self) -> None:
+        summary = check_records(["{", "{}", "null"])
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["record_count"], 3)
+        self.assertEqual(summary["valid_record_count"], 0)
+        self.assertEqual(summary["invalid_record_count"], 3)
+        self.assertEqual(summary["error_count"], 3)
+        self.assertNotIn("NO_RECORDS", [error["code"] for error in summary["errors"]])
+
+    def test_checker_empty_input_is_not_a_failed_record(self) -> None:
+        for lines in ([], ["", "  ", "\n", "\t"]):
+            with self.subTest(lines=lines):
+                summary = check_records(lines)
+                self.assertEqual(summary["status"], "failed")
+                for key in ("record_count", "valid_record_count", "invalid_record_count"):
+                    self.assertEqual(summary[key], 0)
+                self.assertEqual(summary["error_count"], 1)
+                self.assertEqual(summary["errors"][0]["code"], "NO_RECORDS")
+                self.assertIsNone(summary["errors"][0]["line"])
+
+
+class SemanticGraphTests(unittest.TestCase):
+    def test_long_relation_and_scope_chains(self) -> None:
+        count = 2000
+        nodes = tuple(
+            SemanticNode(str(i), NodeType.ENTITY, "x", (Span(0, 1, "x"),)) for i in range(count)
+        )
+        edges = tuple(
+            SemanticEdge(str(i), str(i), str(i + 1), RelationType.REFERS_TO)
+            for i in range(count - 1)
+        )
+        scopes = tuple(
+            SemanticScope(
+                str(i),
+                ScopeType.QUERY,
+                (Span(0, 1, "x"),),
+                (),
+                str(i + 1) if i < count - 1 else None,
+            )
+            for i in range(count)
+        )
+        record = SemanticParseRecord(
+            "x", ParseStatus.COMPLETE, nodes=nodes, edges=edges, scopes=scopes
+        )
+        self.assertEqual(validate_record(record), ())
+        cyclic = replace(
+            record,
+            edges=edges + (SemanticEdge("back", str(count - 1), "0", RelationType.REFERS_TO),),
+            scopes=scopes[:-1] + (replace(scopes[-1], parent_scope_id="0"),),
+        )
+        self.assertEqual(
+            {issue.code for issue in validate_record(cyclic)}, {"RELATION_CYCLE", "SCOPE_CYCLE"}
+        )
+
+    def test_cycle_selection_ignores_insertion_order(self) -> None:
+        graph = {"a": ["c", "b"], "b": ["a"], "c": ["a"]}
+        reordered = {key: list(reversed(graph[key])) for key in reversed(graph)}
+        self.assertEqual(_find_cycle(graph), ("a", "b", "a"))
+        self.assertEqual(_find_cycle(reordered), ("a", "b", "a"))
+
+    def test_shared_descendant_is_not_cycle(self) -> None:
+        self.assertIsNone(_find_cycle({"a": ["b", "c"], "b": ["d"], "c": ["d"], "d": []}))
+        self.assertEqual(_find_cycle({"a": ["a"]}), ("a", "a"))
+
+
+class SemanticCheckerCLITests(unittest.TestCase):
+    def run_cli(self, content: bytes | None) -> tuple[int, dict]:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "records.jsonl"
+            if content is not None:
+                path.write_bytes(content)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-X",
+                    "utf8",
+                    "-m",
+                    "scripts.check_semantic_parse_records",
+                    str(path),
+                ],
+                cwd=Path(__file__).resolve().parents[2],
+                capture_output=True,
+                encoding="utf-8",
+                timeout=15,
+                check=False,
+            )
+        self.assertEqual(result.stderr, "")
+        return result.returncode, json.loads(result.stdout)
+
+    def test_utf8_and_bom_files(self) -> None:
+        record = SemanticParseRecord(
+            query="请核实这句话。",
+            status=ParseStatus.PARTIAL,
+            missing_outputs=(MissingSemanticOutput("target", "ambiguous_reference"),),
+        )
+        for encoding in ("utf-8", "utf-8-sig"):
+            with self.subTest(encoding=encoding):
+                code, summary = self.run_cli(
+                    json.dumps(record.as_dict(), ensure_ascii=False).encode(encoding)
+                )
+                self.assertEqual(code, 0)
+                self.assertEqual(summary["status"], "passed")
+                self.assertEqual(summary["valid_record_count"], 1)
+                self.assertEqual(summary["records_with_missing_outputs"], 1)
+
+    def test_mixed_file_keeps_counts_and_line_numbers(self) -> None:
+        record = SemanticParseRecord(
+            query="example",
+            status=ParseStatus.FAILED,
+            missing_outputs=(MissingSemanticOutput("parse", "unavailable"),),
+        )
+        content = "\n" + json.dumps(record.as_dict()) + "\n{\n{}\n"
+        code, summary = self.run_cli(content.encode("utf-8"))
+        self.assertEqual(code, 1)
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["record_count"], 3)
+        self.assertEqual(summary["valid_record_count"], 1)
+        self.assertEqual(summary["invalid_record_count"], 2)
+        self.assertEqual([error["line"] for error in summary["errors"]], [3, 4])
+
+    def test_missing_file_returns_json_error(self) -> None:
+        code, summary = self.run_cli(None)
+        self.assertEqual(code, 1)
+        self.assertEqual(summary["errors"][0]["code"], "INPUT_READ_ERROR")
+
+    def test_invalid_utf8_returns_json_error(self) -> None:
+        code, summary = self.run_cli(b"\xff\n")
+        self.assertEqual(code, 1)
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["errors"][0]["code"], "INPUT_ENCODING_ERROR")
+        self.assertIsNone(summary["errors"][0]["line"])
+        self.assertEqual(summary["record_count"], 0)
 
 
 if __name__ == "__main__":

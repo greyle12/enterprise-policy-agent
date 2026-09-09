@@ -8,7 +8,7 @@ serialized records.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import TypeVar
@@ -507,36 +507,38 @@ def _validate_span(
 
 
 def _find_cycle(adjacency: Mapping[str, Sequence[str]]) -> tuple[str, ...] | None:
-    """Return one deterministic directed cycle, if one exists."""
+    """Return the first cycle in lexical DFS order, without Python recursion."""
 
     colors: dict[str, int] = {}
     stack: list[str] = []
     positions: dict[str, int] = {}
 
-    def visit(node_id: str) -> tuple[str, ...] | None:
+    frames: list[Iterator[str]] = []
+    for node_id in sorted(adjacency):
+        if colors.get(node_id, 0) != 0:
+            continue
         colors[node_id] = 1
-        positions[node_id] = len(stack)
+        positions[node_id] = 0
         stack.append(node_id)
-        for target_id in adjacency.get(node_id, ()):
+        frames.append(iter(sorted(adjacency[node_id])))
+        while frames:
+            target_id = next(frames[-1], None)
+            if target_id is None:
+                finished = stack.pop()
+                positions.pop(finished)
+                colors[finished] = 2
+                frames.pop()
+                continue
             if target_id not in adjacency:
                 continue
             target_color = colors.get(target_id, 0)
-            if target_color == 0:
-                cycle = visit(target_id)
-                if cycle is not None:
-                    return cycle
-            elif target_color == 1:
+            if target_color == 1:
                 return tuple(stack[positions[target_id] :] + [target_id])
-        stack.pop()
-        positions.pop(node_id, None)
-        colors[node_id] = 2
-        return None
-
-    for node_id in adjacency:
-        if colors.get(node_id, 0) == 0:
-            cycle = visit(node_id)
-            if cycle is not None:
-                return cycle
+            if target_color == 0:
+                colors[target_id] = 1
+                positions[target_id] = len(stack)
+                stack.append(target_id)
+                frames.append(iter(sorted(adjacency[target_id])))
     return None
 
 

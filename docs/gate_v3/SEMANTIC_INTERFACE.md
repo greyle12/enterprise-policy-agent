@@ -121,6 +121,8 @@ REPORT_ASSERTION 不能挂在 USER_REQUEST 上；VERIFY_ASSERTION 和 DENY_REQUE
 
 每条边的 source 和 target 必须指向已声明节点，否则是悬空关系。当前契约要求节点关系图无有向环；作用域的 parent_scope_id 也必须指向已声明作用域且不能形成环。检查器会分别报告 DANGLING_*、RELATION_CYCLE 和 SCOPE_CYCLE。
 
+环检测使用显式栈遍历，长关系链及作用域父链不再依赖 Python 递归深度。节点 ID 和邻接节点按字符串字典序遍历，对同一图稳定报告首个环；并不枚举所有环，也不保证返回最短环。排序可能改变旧版错误消息中的环起点或所选环，但不改变是否存在环的判定和错误码。此处测试为人工构造图的算法验收，不代表语义模型效果。
+
 作用域必须有唯一的 scope_id、scope_type、至少一个 source span 和 node_ids。一个节点可以通过 scope_id 归属一个作用域。
 
 ## Span 与缺失输出
@@ -150,6 +152,16 @@ Set-Location D:\Ai_agent_program\demo1
 - 退出码 0：所有记录通过；
 - 退出码 1：存在 JSON、解码或契约校验错误；
 - 摘要包含 record_count、valid_record_count、invalid_record_count、records_with_missing_outputs 和逐项 errors。
+
+统计口径：每个非空 JSONL 行计入 record_count。JSON 解析失败、契约解码失败和契约校验失败均计入 invalid_record_count，每条记录只计一次；始终满足 record_count = valid_record_count + invalid_record_count。空白行不计数，但错误行号保留其在原文件中的位置。
+
+error_count 是问题数量，一条记录可能产生多个问题，因此不能作为失败记录数。全部记录解码失败时仍保留全部记录计数；仅在没有非空行时报告 NO_RECORDS，此时三项记录计数均为 0，状态为 failed。records_with_missing_outputs 只统计成功解码且显式包含 missing_outputs 的记录，不推断无法解码记录中的缺失字段。
+
+例如输入 3 条记录，其中 1 条有效、1 条 JSON 错误、1 条解码错误，输出 record_count=3、valid_record_count=1、invalid_record_count=2。该统计仅表示结构校验结果，不是语义准确率。依赖旧版“仅统计成功解码记录”口径的消费者需要同步调整。
+
+文件输入支持 UTF-8 及 UTF-8 BOM。CLI 在文件不存在等读取错误时返回 INPUT_READ_ERROR，在非法 UTF-8 字节导致解码失败时返回 INPUT_ENCODING_ERROR；二者均输出 JSON 摘要并以退出码 1 结束，不输出 traceback。文件级失败的行号为 null、记录计数为 0，表示未完成文件统计，不能解释为文件没有记录；不返回此前可能已读取的部分统计。此行为不改变成功读取文件后的逐行计数规则。
+
+测试包含真实子进程 CLI 验收：UTF-8/BOM、混合失败、文件不存在及非法编码，检查标准输出 JSON、标准错误和退出码。
 
 契约测试：
 
