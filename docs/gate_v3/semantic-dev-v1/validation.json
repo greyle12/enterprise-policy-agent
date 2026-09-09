@@ -1,0 +1,10 @@
+{
+  "error_count": 0,
+  "errors": [],
+  "invalid_record_count": 0,
+  "record_count": 7,
+  "records_with_missing_outputs": 7,
+  "schema_version": "1.0",
+  "status": "passed",
+  "valid_record_count": 7
+}

@@ -1,0 +1,723 @@
+{
+  "cov": {
+    "20": [
+      {
+        "case_id": "COV-007",
+        "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "45天超过30个自然日，直接给出原因说明及部门审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 3,
+            "rationale": "直接规定超时费用不论金额都需财务复核。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "relevance": 2,
+            "rationale": "支持解释部门与财务分别检查什么。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.3333333333333333,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.541942129480027
+        },
+        "v2_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v3_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v31_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v31_trace": {
+          "decision": "UNRESOLVED",
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+            ]
+          },
+          "corrections": [],
+          "fallback_applied": true
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-008",
+        "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "直接给出拒绝受理的时间界限与例外。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v2_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v3_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v31_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v31_trace": {
+          "decision": "DENY",
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 29,
+              "end": 31,
+              "text": "审批"
+            },
+            {
+              "start": 29,
+              "end": 31,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+            ]
+          },
+          "corrections": [
+            {
+              "start": 26,
+              "end": 33,
+              "text": "不需要审批流程"
+            }
+          ],
+          "fallback_applied": false
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-009",
+        "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "100天触及拒绝受理条件；同条也给出超过30天的说明及部门审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 2,
+            "rationale": "支持说明特殊情况下继续办理仍需财务复核。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v2_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.9176601606601069
+        },
+        "v3_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v31_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v31_trace": {
+          "decision": "DENY",
+          "reason_code": "ONLY_DEADLINE_OR_REASON_REQUESTED",
+          "evidence_spans": [
+            {
+              "start": 26,
+              "end": 28,
+              "text": "超时"
+            }
+          ],
+          "unresolved_reasons": [],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+            ]
+          },
+          "corrections": [],
+          "fallback_applied": false
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [
+            "recall_at_5",
+            "ndcg_at_5"
+          ],
+          "v2": [
+            "recall_at_5",
+            "ndcg_at_5"
+          ],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-010",
+        "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+        "judgments": [
+          {
+            "chunk_id": "TRAVEL_POLICY_001__v1_0__article_019",
+            "relevance": 3,
+            "rationale": "直接回答差旅逾期说明的时间与对象，并给出十个工作日正常期限。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "直接回答普通费用超过30自然日时的说明和审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 2,
+            "rationale": "补充超时费用财务复核，区分复核与部门审批。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.8838695436828513
+        },
+        "v2_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.8838695436828513
+        },
+        "v3_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.8838695436828513
+        },
+        "v31_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.8838695436828513
+        },
+        "v31_trace": {
+          "decision": null,
+          "fallback_applied": false,
+          "proposal": null
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      }
+    ],
+    "40": [
+      {
+        "case_id": "COV-007",
+        "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "45天超过30个自然日，直接给出原因说明及部门审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 3,
+            "rationale": "直接规定超时费用不论金额都需财务复核。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_044",
+            "relevance": 2,
+            "rationale": "支持解释部门与财务分别检查什么。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.3333333333333333,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.541942129480027
+        },
+        "v2_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v3_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v31_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7515939636280409
+        },
+        "v31_trace": {
+          "decision": "UNRESOLVED",
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+            ]
+          },
+          "corrections": [],
+          "fallback_applied": true
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-008",
+        "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "直接给出拒绝受理的时间界限与例外。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v2_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v3_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v31_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 1
+        },
+        "v31_trace": {
+          "decision": "DENY",
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 29,
+              "end": 31,
+              "text": "审批"
+            },
+            {
+              "start": 29,
+              "end": 31,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+            ]
+          },
+          "corrections": [
+            {
+              "start": 26,
+              "end": 33,
+              "text": "不需要审批流程"
+            }
+          ],
+          "fallback_applied": false
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-009",
+        "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+        "judgments": [
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "100天触及拒绝受理条件；同条也给出超过30天的说明及部门审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 2,
+            "rationale": "支持说明特殊情况下继续办理仍需财务复核。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v2_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.9176601606601069
+        },
+        "v3_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v31_metrics": {
+          "recall_at_5": 0.5,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.7871546029909718
+        },
+        "v31_trace": {
+          "decision": "DENY",
+          "reason_code": "ONLY_DEADLINE_OR_REASON_REQUESTED",
+          "evidence_spans": [
+            {
+              "start": 26,
+              "end": 28,
+              "text": "超时"
+            }
+          ],
+          "unresolved_reasons": [],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+            ]
+          },
+          "corrections": [],
+          "fallback_applied": false
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [
+            "recall_at_5",
+            "ndcg_at_5"
+          ],
+          "v2": [
+            "recall_at_5",
+            "ndcg_at_5"
+          ],
+          "v3": []
+        }
+      },
+      {
+        "case_id": "COV-010",
+        "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+        "judgments": [
+          {
+            "chunk_id": "TRAVEL_POLICY_001__v1_0__article_019",
+            "relevance": 3,
+            "rationale": "直接回答差旅逾期说明的时间与对象，并给出十个工作日正常期限。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "relevance": 3,
+            "rationale": "直接回答普通费用超过30自然日时的说明和审批。"
+          },
+          {
+            "chunk_id": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "relevance": 2,
+            "rationale": "补充超时费用财务复核，区分复核与部门审批。"
+          }
+        ],
+        "baseline_metrics": {
+          "recall_at_5": 0.6666666666666666,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.8838695436828513
+        },
+        "v2_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.9737203297462859
+        },
+        "v3_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.9737203297462859
+        },
+        "v31_metrics": {
+          "recall_at_5": 1,
+          "mrr_at_5": 1,
+          "ndcg_at_5": 0.9737203297462859
+        },
+        "v31_trace": {
+          "decision": "UNRESOLVED",
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "proposal": {
+            "rule_id": "finance_review_for_overdue_expense",
+            "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "action": "supplemented",
+            "evicted": [
+              "TRAVEL_POLICY_001__v1_0__article_020"
+            ]
+          },
+          "corrections": [],
+          "fallback_applied": true
+        },
+        "v31_regressions": {
+          "baseline": [],
+          "frozen": [],
+          "v2": [],
+          "v3": []
+        }
+      }
+    ]
+  },
+  "ambiguity": [
+    {
+      "case_id": "V3U-004",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "cross_clause_unbound_reference",
+      "query": "普通费用拖了四十天，这个现在怎么办？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "前句只给出逾期事实，后句的“这个”没有明确绑定到部门审批、财务复核、原因说明或拒收；不能把泛问句解释成财务复核需求。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "两条逾期费用相关条款已核对；多个可能的办理目标使关系判断不唯一。",
+      "label_status": "user_confirmed_ai_authored_source_checked_not_independently_double_annotated",
+      "review_status": "user_confirmed"
+    },
+    {
+      "case_id": "V3U-006",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "ellipsis_without_antecedent",
+      "query": "普通费用拖了四十天，那个要求还要吗？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "“那个要求”省略了具体对象，可能指原因说明、部门审批或财务复核；缺少唯一先行项时不能安全决定。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "逾期费用条款已核对；该样本用于检验省略对象时的弃权边界。",
+      "label_status": "user_confirmed_ai_authored_source_checked_not_independently_double_annotated",
+      "review_status": "user_confirmed"
+    },
+    {
+      "case_id": "V3U-009",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "multiple_possible_processes",
+      "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "问题提到部门和财务，但没有明确要确认审批、复核、原因说明还是其他流程；多个潜在目标不能由关键词替代。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "部门审批和财务复核在不同条款中均有要求；样本用于检验多流程省略时是否弃权。",
+      "label_status": "user_confirmed_ai_authored_source_checked_not_independently_double_annotated",
+      "review_status": "user_confirmed"
+    }
+  ],
+  "historical_summary": {
+    "20": {
+      "n": 16,
+      "metrics": {
+        "baseline": {
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204
+        },
+        "frozen": {
+          "recall_at_5": 0.8208333333333333,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.8893454510390968
+        },
+        "v2": {
+          "recall_at_5": 0.8208333333333333,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.8893454510390968
+        },
+        "v3": {
+          "recall_at_5": 0.7895833333333333,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.8811888536847758
+        },
+        "v31": {
+          "recall_at_5": 0.7895833333333333,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.8811888536847758
+        }
+      },
+      "regressions": {
+        "baseline": [],
+        "frozen": [
+          "COV-009"
+        ],
+        "v2": [
+          "COV-009"
+        ],
+        "v3": []
+      },
+      "control_n": 7,
+      "control_supplements": [],
+      "fallback_ids": [
+        "COV-007"
+      ],
+      "mean_selection_ms": 0.04579068749421822
+    },
+    "40": {
+      "n": 16,
+      "metrics": {
+        "baseline": {
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204
+        },
+        "frozen": {
+          "recall_at_5": 0.8885416666666667,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.9093253412934029
+        },
+        "v2": {
+          "recall_at_5": 0.8885416666666667,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.9093253412934029
+        },
+        "v3": {
+          "recall_at_5": 0.8572916666666667,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.901168743939082
+        },
+        "v31": {
+          "recall_at_5": 0.8572916666666667,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.901168743939082
+        }
+      },
+      "regressions": {
+        "baseline": [],
+        "frozen": [
+          "COV-009"
+        ],
+        "v2": [
+          "COV-009"
+        ],
+        "v3": []
+      },
+      "control_n": 7,
+      "control_supplements": [],
+      "fallback_ids": [
+        "COV-007",
+        "COV-010"
+      ],
+      "mean_selection_ms": 0.043353749958896515
+    }
+  },
+  "source_experiment": {
+    "head": "2fa68aff35ca77d390754a86c5bbec78b1371d45",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "source_model_lock": {
+    "schema_version": "1.0",
+    "models": {
+      "embedding": {
+        "repo_id": "BAAI/bge-small-zh-v1.5",
+        "revision": "7999e1d3359715c523056ef9478215996d62a620",
+        "files": {
+          "1_Pooling/config.json": "aaa8861589f80c961a03cc86c7eeaef7605c1676b9ab55329d33a304738769c6",
+          "config.json": "3853a7979202c348751b753e36f579c41d8da7d36af617d3d907e1fc9b441f2a",
+          "config_sentence_transformers.json": "940d5f50db195fa6e5e6a4f122c095f77880de259d74b14a65779ed48bdd7c56",
+          "model.safetensors": "354763b9b1357bc9c44f62c6be2276321081ed2567773608c0d0785b61d5a026",
+          "modules.json": "84e40c8e006c9b1d6c122e02cba9b02458120b5fb0c87b746c41e0207cf642cf",
+          "sentence_bert_config.json": "84e39fda68ccbff05bfa723ae9c0e70e23e2ec373b76e0f8c6e71af72a693cbf",
+          "special_tokens_map.json": "b6d346be366a7d1d48332dbc9fdf3bf8960b5d879522b7799ddba59e76237ee3",
+          "tokenizer.json": "48cea5d44424912a6fd1ea647bf4fe50b55ab8b1e5879c3275f80e339e8fae26",
+          "tokenizer_config.json": "e6f3b96db926a37d4039995fbf5ad17de158dfb8f6343d607e4dbaad18d75f5a",
+          "vocab.txt": "45bbac6b341c319adc98a532532882e91a9cefc0329aa57bac9ae761c27b291c"
+        }
+      },
+      "reranker": {
+        "repo_id": "BAAI/bge-reranker-v2-m3",
+        "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+        "files": {
+          "config.json": "13dcd6c31d9fec9d1d8e158702072f62d7fa7d312a64b9fe057bec9a08cfe41a",
+          "model.safetensors": "d9e3e081faff1eefb84019509b2f5558fd74c1a05a2c7db22f74174fcedb5286",
+          "sentencepiece.bpe.model": "cfc8146abe2a0488e9e2a0c56de7952f7c11ab059eca145a0a727afce0db2865",
+          "special_tokens_map.json": "8c785abebea9ae3257b61681b4e6fd8365ceafde980c21970d001e834cf10835",
+          "tokenizer.json": "69564b696052886ed0ac63fa393e928384e0f8caada38c1f4864a9bfbf379c15",
+          "tokenizer_config.json": "7e4c1cc848840aeccdd763458c18dd525eb0f795c992e00ebe9c28554e7db2d4"
+        }
+      }
+    }
+  },
+  "source_dataset_sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+}
