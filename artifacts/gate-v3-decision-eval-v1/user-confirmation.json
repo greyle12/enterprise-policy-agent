@@ -1,0 +1,9 @@
+{
+  "status": "user_confirmed",
+  "confirmation_text": "确认",
+  "date": "2026-09-09",
+  "scope": "All 9 V3U review rows: proposed decision UNRESOLVED",
+  "provenance": "AI-authored source-checked review explicitly confirmed by user; not independent double annotation",
+  "review_sha256": "a6f72e13fd53ff57d301e586ddd2d514306afd14fa31d261c671aff8d21e210c",
+  "freeze_sha256": "6b024a8a9ecbdc6fea7e202fc5e66b660983026213ded9c2751baad94a254643"
+}

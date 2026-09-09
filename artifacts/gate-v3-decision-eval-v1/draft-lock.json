@@ -1,0 +1,8 @@
+{
+  "status": "pending_user_confirmation",
+  "draft_sha256": "fbe9feb5e4f96683a371395704973c409002b2d411dd4b282b636b87d3e94747",
+  "freeze_sha256": "6b024a8a9ecbdc6fea7e202fc5e66b660983026213ded9c2751baad94a254643",
+  "gate_executed": false,
+  "inference_executed": false,
+  "numeric_report_generated": false
+}

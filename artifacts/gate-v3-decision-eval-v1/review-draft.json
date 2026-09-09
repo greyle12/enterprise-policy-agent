@@ -1,0 +1,158 @@
+{
+  "schema_version": "1.0",
+  "phase": 38,
+  "step": 3,
+  "substep": 2,
+  "status": "pending_user_confirmation",
+  "provenance": "AI-authored after v3 Step 1 and source-checked against the frozen policy corpus; not independently double-annotated",
+  "purpose": "Decision-layer four-value evaluation only; this file contains no retrieval grades and no model-inference result",
+  "decision_values": [
+    "ALLOW",
+    "DENY",
+    "UNRESOLVED",
+    "NOT_APPLICABLE"
+  ],
+  "label_policy": {
+    "proposed_decision": "UNRESOLVED",
+    "review_status": "pending_user_confirmation",
+    "confirmation_required_before_scoring": true,
+    "unresolved_means": "The query has insufficient, conflicting, or non-uniquely bound information for a safe deterministic relation decision; it is not a retrieval failure label."
+  },
+  "cases": [
+    {
+      "case_id": "V3U-001",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "unbound_reference_without_topic",
+      "query": "这个怎么处理？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "“这个”没有可唯一绑定的前文对象，也没有明确指出逾期费用、审批或财务复核；不能猜测要不要补充财务复核条款。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "目标关系对应的两条制度条款已存在；查询本身没有足够语义把它绑定到任一条款。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-002",
+      "rule_id": "city_category_for_lodging_table",
+      "category": "unbound_reference_without_topic",
+      "query": "这个怎么判断？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "“这个”没有前文主题，无法判断是在问城市分类、住宿金额还是其他制度事实；不能默认触发城市分类补充。",
+      "target_evidence": [
+        "TRAVEL_POLICY_001__v1_0__article_007",
+        "TRAVEL_POLICY_001__v1_0__article_008"
+      ],
+      "source_check": "目标关系对应的城市分类和住宿标准条款已存在；查询没有明确目标。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-003",
+      "rule_id": "city_category_for_lodging_table",
+      "category": "conflicting_city_condition",
+      "query": "目的地类别已经确定，是二类；但系统里又显示类别未确定。普通员工每晚住宿上限是多少？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "同一城市类别同时被陈述为已确定和未确定；在冲突未解决前，不能决定是否需要城市分类条款。",
+      "target_evidence": [
+        "TRAVEL_POLICY_001__v1_0__article_007",
+        "TRAVEL_POLICY_001__v1_0__article_008"
+      ],
+      "source_check": "城市类别映射和普通员工住宿表均已核对；标签仅判断门控关系，不断言哪一条系统信息真实。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-004",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "cross_clause_unbound_reference",
+      "query": "普通费用拖了四十天，这个现在怎么办？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "前句只给出逾期事实，后句的“这个”没有明确绑定到部门审批、财务复核、原因说明或拒收；不能把泛问句解释成财务复核需求。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "两条逾期费用相关条款已核对；多个可能的办理目标使关系判断不唯一。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-005",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "underspecified_action_scope",
+      "query": "普通费用拖了四十天，要不要处理？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "“处理”没有说明要问原因说明、部门审批、财务复核还是拒收时限；逾期事实本身不足以确定补充关系。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "条款中存在多个不同后续动作；未将泛化动作词当作明确审批需求。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-006",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "ellipsis_without_antecedent",
+      "query": "普通费用拖了四十天，那个要求还要吗？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "“那个要求”省略了具体对象，可能指原因说明、部门审批或财务复核；缺少唯一先行项时不能安全决定。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "逾期费用条款已核对；该样本用于检验省略对象时的弃权边界。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-007",
+      "rule_id": "city_category_for_lodging_table",
+      "category": "unknown_condition_without_target_request",
+      "query": "城市类别还没查。请先看看。",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "虽然说明类别未知，但没有提出住宿金额或城市分类的具体需求；不能仅因存在未知事实就自动触发补充。",
+      "target_evidence": [
+        "TRAVEL_POLICY_001__v1_0__article_007",
+        "TRAVEL_POLICY_001__v1_0__article_008"
+      ],
+      "source_check": "城市分类和住宿条款已核对；样本刻意区分“未知条件”与“存在需要回答的目标”。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-008",
+      "rule_id": "city_category_for_lodging_table",
+      "category": "destination_given_but_referent_unbound",
+      "query": "目的地是南京，这个怎么判断？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "南京这一事实已给出，但“这个”仍未说明是在问城市类别、住宿金额还是别的判断；目的地事实不能替代明确请求。",
+      "target_evidence": [
+        "TRAVEL_POLICY_001__v1_0__article_007",
+        "TRAVEL_POLICY_001__v1_0__article_008"
+      ],
+      "source_check": "南京在城市分类条款中有明确映射；本标签只记录请求对象仍未绑定。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    },
+    {
+      "case_id": "V3U-009",
+      "rule_id": "finance_review_for_overdue_expense",
+      "category": "multiple_possible_processes",
+      "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+      "proposed_decision": "UNRESOLVED",
+      "rationale": "问题提到部门和财务，但没有明确要确认审批、复核、原因说明还是其他流程；多个潜在目标不能由关键词替代。",
+      "target_evidence": [
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+        "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027"
+      ],
+      "source_check": "部门审批和财务复核在不同条款中均有要求；样本用于检验多流程省略时是否弃权。",
+      "label_status": "ai_authored_source_checked_pending_user_confirmation",
+      "review_status": "pending_user_confirmation"
+    }
+  ]
+}
