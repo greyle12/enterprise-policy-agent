@@ -259,6 +259,51 @@ class SemanticParseContractTests(unittest.TestCase):
         with self.assertRaises(ContractDecodeError):
             SemanticParseRecord.from_dict(payload)
 
+    def test_decoder_rejects_unknown_fields_at_every_object_level(self) -> None:
+        paths = (
+            (),
+            ("nodes", 0),
+            ("edges", 0),
+            ("scopes", 0),
+            ("missing_outputs", 0),
+            ("nodes", 0, "source_spans", 0),
+            ("edges", 0, "source_spans", 0),
+            ("scopes", 0, "source_spans", 0),
+            ("missing_outputs", 0, "source_spans", 0),
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                record = self._valid_record()
+                evidence = record.nodes[0].source_spans
+                record = replace(
+                    record,
+                    status=ParseStatus.PARTIAL,
+                    edges=(replace(record.edges[0], source_spans=evidence),),
+                    missing_outputs=(MissingSemanticOutput("target", "ambiguous", evidence),),
+                )
+                payload = record.as_dict()
+                target = payload
+                expected_path = "record"
+                for part in path:
+                    target = target[part]
+                    expected_path += f"[{part}]" if isinstance(part, int) else f".{part}"
+                target["unexpected_field"] = "must not disappear"
+                with self.assertRaises(ContractDecodeError) as caught:
+                    SemanticParseRecord.from_dict(payload)
+                self.assertIn(expected_path, str(caught.exception))
+                self.assertIn("unexpected_field", str(caught.exception))
+
+    def test_checker_counts_unknown_field_and_continues(self) -> None:
+        valid = self._valid_record().as_dict()
+        unknown = dict(valid, missing_output=[])
+        summary = check_records([json.dumps(unknown), json.dumps(valid)])
+        self.assertEqual(summary["status"], "failed")
+        self.assertEqual(summary["record_count"], 2)
+        self.assertEqual(summary["valid_record_count"], 1)
+        self.assertEqual(summary["invalid_record_count"], 1)
+        self.assertEqual(summary["errors"][0]["line"], 1)
+        self.assertEqual(summary["errors"][0]["code"], "CONTRACT_DECODE_ERROR")
+
     def test_jsonl_checker_reports_valid_and_invalid_records(self) -> None:
         valid_payload = self._valid_record().to_dict()
         invalid_payload = replace(

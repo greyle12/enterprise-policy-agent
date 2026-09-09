@@ -9,7 +9,7 @@ serialized records.
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 from enum import StrEnum
 from typing import TypeVar
 
@@ -97,9 +97,15 @@ class ContractValidationError(ValueError):
 EnumT = TypeVar("EnumT", bound=StrEnum)
 
 
-def _require_mapping(value: object, path: str) -> Mapping[str, object]:
+def _require_mapping(
+    value: object, path: str, allowed_fields: Iterable[str]
+) -> Mapping[str, object]:
     if not isinstance(value, Mapping):
         raise ContractDecodeError(f"{path} must be an object")
+    unknown = set(value) - set(allowed_fields)
+    if unknown:
+        names = ", ".join(sorted(repr(name) for name in unknown))
+        raise ContractDecodeError(f"{path} has unknown fields: {names}")
     return value
 
 
@@ -166,7 +172,7 @@ class Span:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "span") -> Span:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         start = _required(mapping, "start", path)
         end = _required(mapping, "end", path)
         text = _required(mapping, "text", path)
@@ -205,7 +211,7 @@ class SemanticNode:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "node") -> SemanticNode:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         raw_act = _required(mapping, "act", path)
         raw_scope_id = _required(mapping, "scope_id", path)
         return cls(
@@ -246,7 +252,7 @@ class SemanticEdge:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "edge") -> SemanticEdge:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         return cls(
             edge_id=_parse_string(_required(mapping, "edge_id", path), f"{path}.edge_id"),
             source=_parse_string(_required(mapping, "source", path), f"{path}.source"),
@@ -284,7 +290,7 @@ class SemanticScope:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "scope") -> SemanticScope:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         raw_parent_scope_id = _required(mapping, "parent_scope_id", path)
         return cls(
             scope_id=_parse_string(_required(mapping, "scope_id", path), f"{path}.scope_id"),
@@ -326,7 +332,7 @@ class MissingSemanticOutput:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "missing_output") -> MissingSemanticOutput:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         return cls(
             output_type=_parse_string(
                 _required(mapping, "output_type", path),
@@ -374,7 +380,7 @@ class SemanticParseRecord:
 
     @classmethod
     def from_dict(cls, value: object, *, path: str = "record") -> SemanticParseRecord:
-        mapping = _require_mapping(value, path)
+        mapping = _require_mapping(value, path, (field.name for field in fields(cls)))
         raw_nodes = _required(mapping, "nodes", path)
         raw_edges = _required(mapping, "edges", path)
         raw_scopes = _required(mapping, "scopes", path)
