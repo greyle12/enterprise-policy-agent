@@ -1,0 +1,33 @@
+{
+  "accepted_sha256": "9a08e784406dd5ce18846a85a5be62cf36c6237229bfcaecb01500aa008d013e",
+  "case_ids": [
+    "COV-007",
+    "COV-008",
+    "COV-009",
+    "COV-010",
+    "V3U-004",
+    "V3U-006",
+    "V3U-009"
+  ],
+  "code_head": "0bc04f3bc5698750a1976e648a4630189b9bd06b",
+  "dataset_version": "semantic-request-facets-v0.1-confirmed-1",
+  "exporter_sha256": "00a6c892d4a9aad5cd1cce9ab1f31e48b6b1803b2283c43af923982d0981b76c",
+  "independent_test_set": false,
+  "manifest_hashes_verified": true,
+  "model_id": null,
+  "model_inference": false,
+  "model_revision": null,
+  "model_visible_files": [
+    "prompt.txt",
+    "requests.jsonl"
+  ],
+  "numeric_resume_ready": false,
+  "prompt_sha256": "1e327a051e0f2f0cdd0137930e9931fa665a749bace653977f5adc42edf6af2a",
+  "prompt_version": "semantic-facet-prompt-v1",
+  "requests_sha256": "b8c8e476b020c901b2b7168702d30c981595822ffeefb2e1262523036a97d2c4",
+  "sample_count": 7,
+  "schema_version": "1.0",
+  "source_dataset_version": "semantic-dev-v1-confirmed-1",
+  "source_records_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c",
+  "working_tree_dirty": true
+}
