@@ -68,4 +68,4 @@ bundle = load_semantic_request_facet_bundle(
 
 ## CI 接入
 
-quality job 会使用同一组确认数据运行 adapter，并把 `artifacts/evaluation/semantic-request-facets-report.json` 纳入质量证据 artifact。CI 配置契约同时检查 adapter 命令、四个输入文件、项目根目录和报告输出路径，避免校验步骤或证据路径被静默移除。
+quality job 会使用同一组确认数据运行 adapter，并把 `artifacts/evaluation/semantic-request-facets-report.json` 纳入质量证据 artifact。CI 配置契约会定位唯一的 adapter step，要求它运行在默认成功路径并保留失败退出码；同时检查四个输入文件、项目根目录、报告输出路径，以及报告是否属于 `if: ${{ always() }}` 的上传步骤。
