@@ -1,0 +1,218 @@
+from __future__ import annotations
+
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from scripts.evaluate_semantic_request_facets import (
+    SemanticFacetEvaluationError,
+    build_evaluation_report,
+    load_prediction_dataset,
+    evaluate_predictions,
+)
+from scripts.semantic_request_facets_adapter import load_semantic_request_facet_bundle
+
+ROOT = Path(__file__).resolve().parents[2]
+RECORDS_PATH = ROOT / "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl"
+ACCEPTED_PATH = ROOT / "docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json"
+CONFIRMATION_PATH = ROOT / "docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json"
+MANIFEST_PATH = ROOT / "docs/gate_v3/semantic-request-facets-v1-confirmed/manifest.json"
+_CASE_FACETS = {
+    "COV-007": [("MATERIAL", "BOUND"), ("RESPONSIBLE_ROLE", "BOUND")],
+    "COV-008": [("DEADLINE", "BOUND")],
+    "COV-009": [("PROCEDURE", "BOUND")],
+    "COV-010": [("DEADLINE", "BOUND"), ("RESPONSIBLE_ROLE", "BOUND")],
+    "V3U-004": [("PROCEDURE", "UNBOUND")],
+    "V3U-006": [],
+    "V3U-009": [("PROCESS_CHOICE", "UNBOUND")],
+}
+
+
+def _bundle():
+    return load_semantic_request_facet_bundle(
+        RECORDS_PATH,
+        ACCEPTED_PATH,
+        CONFIRMATION_PATH,
+        manifest_path=MANIFEST_PATH,
+        project_root=ROOT,
+    )
+
+
+def _row(case_id: str, facets: list[tuple[str, str]] | None = None) -> dict[str, object]:
+    return {
+        "schema_version": "1.0",
+        "case_id": case_id,
+        "predicted_facets": [
+            {"facet": facet, "binding": binding}
+            for facet, binding in (_CASE_FACETS[case_id] if facets is None else facets)
+        ],
+    }
+
+
+def _write_predictions(path: Path, rows: list[dict[str, object]]) -> Path:
+    path.write_text(
+        "\n".join(json.dumps(row, ensure_ascii=False, sort_keys=True) for row in rows) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _load_predictions(path: Path):
+    return load_prediction_dataset(path)
+
+
+def test_perfect_predictions_report_provenance_and_facet_metrics(tmp_path: Path) -> None:
+    predictions_path = _write_predictions(
+        tmp_path / "predictions.jsonl",
+        [_row(case_id) for case_id in _CASE_FACETS],
+    )
+    report = build_evaluation_report(
+        ROOT,
+        _bundle(),
+        _load_predictions(predictions_path),
+        prediction_kind="human_fixture",
+        prediction_source="unit-test-fixture",
+        model_id="none",
+        model_revision="none",
+    )
+
+    assert report["status"] == "passed"
+    assert report["semantic_accuracy"] is None
+    assert report["independent_test_set"] is False
+    assert report["numeric_resume_ready"] is False
+    assert report["source"]["dataset_version"] == "semantic-request-facets-v0.1-confirmed-1"
+    assert report["source"]["source_dataset_version"] == "semantic-dev-v1-confirmed-1"
+    assert report["source"]["accepted_facet_instance_count"] == 8
+    assert re.fullmatch(r"[0-9a-f]{64}", report["prediction"]["sha256"])
+    assert report["prediction"]["kind"] == "human_fixture"
+    assert report["prediction"]["model_id"] == "none"
+    assert re.fullmatch(r"[0-9a-f]{40}", report["evaluator"]["git"]["head"])
+    assert report["evaluator"]["model_inference_performed_by_evaluator"] is False
+
+    label_metrics = report["metrics"]["facet_label"]
+    assert label_metrics == {
+        "expected_count": 8,
+        "predicted_count": 8,
+        "true_positive": 8,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1": 1.0,
+    }
+    assert report["metrics"]["binding"]["accuracy"] == 1.0
+    assert report["metrics"]["case_exact_match"]["matched_count"] == 7
+    assert report["metrics"]["prediction_coverage"]["rate"] == 1.0
+    assert report["missing_prediction_case_ids"] == []
+    assert "request_act" in report["excluded_unresolved_output_types"]
+
+
+def test_wrong_binding_and_missing_prediction_remain_visible(tmp_path: Path) -> None:
+    rows = [_row(case_id) for case_id in _CASE_FACETS if case_id != "V3U-006"]
+    rows[0] = _row("COV-007", [("MATERIAL", "BOUND"), ("PROCEDURE", "BOUND")])
+    rows[4] = _row("V3U-004", [("PROCEDURE", "BOUND")])
+    predictions = _load_predictions(_write_predictions(tmp_path / "predictions.jsonl", rows))
+
+    evaluated = evaluate_predictions(_bundle(), predictions)
+
+    label_metrics = evaluated["metrics"]["facet_label"]
+    assert label_metrics["true_positive"] == 7
+    assert label_metrics["false_positive"] == 1
+    assert label_metrics["false_negative"] == 1
+    assert evaluated["metrics"]["binding"]["mismatch_count"] == 1
+    assert evaluated["metrics"]["prediction_coverage"]["predicted_case_count"] == 6
+    assert evaluated["missing_prediction_case_ids"] == ["V3U-006"]
+    rows_by_id = {row["case_id"]: row for row in evaluated["cases"]}
+    assert rows_by_id["COV-007"]["false_positive_facets"] == ["PROCEDURE"]
+    assert rows_by_id["V3U-004"]["binding_mismatches"] == [
+        {"facet": "PROCEDURE", "expected": "UNBOUND", "predicted": "BOUND"}
+    ]
+    assert rows_by_id["V3U-006"]["prediction_present"] is False
+    assert rows_by_id["V3U-006"]["exact_match"] is False
+
+
+@pytest.mark.parametrize(
+    ("row", "error_code"),
+    [
+        (_row("COV-007", [("UNKNOWN", "BOUND")]), "UNKNOWN_FACET"),
+        (_row("COV-007", [("MATERIAL", "BOUND"), ("MATERIAL", "BOUND")]), "DUPLICATE_FACET"),
+    ],
+)
+def test_prediction_structure_errors_are_rejected(
+    tmp_path: Path,
+    row: dict[str, object],
+    error_code: str,
+) -> None:
+    with pytest.raises(SemanticFacetEvaluationError, match=error_code):
+        load_prediction_dataset(_write_predictions(tmp_path / "predictions.jsonl", [row]))
+
+
+def test_unknown_case_id_is_rejected_after_prediction_decode(tmp_path: Path) -> None:
+    predictions = _load_predictions(
+        _write_predictions(
+            tmp_path / "predictions.jsonl",
+            [
+                _row("COV-007"),
+                {"schema_version": "1.0", "case_id": "UNKNOWN", "predicted_facets": []},
+            ],
+        )
+    )
+
+    with pytest.raises(SemanticFacetEvaluationError, match="UNKNOWN_CASE_ID"):
+        evaluate_predictions(_bundle(), predictions)
+
+
+def test_cli_writes_full_report_and_preserves_structured_failure(tmp_path: Path) -> None:
+    predictions_path = _write_predictions(
+        tmp_path / "predictions.jsonl",
+        [_row(case_id) for case_id in _CASE_FACETS],
+    )
+    report_path = tmp_path / "reports" / "facet-evaluation.json"
+    command = [
+        sys.executable,
+        "-X",
+        "utf8",
+        "-m",
+        "scripts.evaluate_semantic_request_facets",
+        "--records",
+        str(RECORDS_PATH),
+        "--accepted",
+        str(ACCEPTED_PATH),
+        "--confirmation",
+        str(CONFIRMATION_PATH),
+        "--manifest",
+        str(MANIFEST_PATH),
+        "--predictions",
+        str(predictions_path),
+        "--project-root",
+        str(ROOT),
+        "--prediction-kind",
+        "human_fixture",
+        "--prediction-source",
+        "unit-test-fixture",
+        "--model-id",
+        "none",
+        "--model-revision",
+        "none",
+        "--output",
+        str(report_path),
+    ]
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+    stdout_report = json.loads(result.stdout)
+    file_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert stdout_report == file_report
+    assert stdout_report["status"] == "passed"
+    assert stdout_report["metrics"]["facet_label"]["f1"] == 1.0
