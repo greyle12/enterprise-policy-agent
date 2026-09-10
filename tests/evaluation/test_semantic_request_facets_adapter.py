@@ -149,6 +149,41 @@ class SemanticRequestFacetsAdapterTests(unittest.TestCase):
         self.assertEqual(summary["accepted_facet_instance_count"], 8)
         self.assertTrue(summary["manifest_hashes_verified"])
 
+    def test_cli_writes_success_report_and_creates_parent_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            report_path = Path(temporary) / "nested" / "evidence.json"
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-X",
+                    "utf8",
+                    "-m",
+                    "scripts.check_semantic_request_facets",
+                    "--records",
+                    str(RECORDS_PATH),
+                    "--accepted",
+                    str(ACCEPTED_PATH),
+                    "--confirmation",
+                    str(CONFIRMATION_PATH),
+                    "--manifest",
+                    str(MANIFEST_PATH),
+                    "--project-root",
+                    str(ROOT),
+                    "--output",
+                    str(report_path),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads(result.stdout)
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(report, summary)
+        self.assertEqual(report["status"], "passed")
+
     def test_cli_returns_structured_error_without_traceback(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             accepted = self._write_json_copy(
@@ -157,6 +192,7 @@ class SemanticRequestFacetsAdapterTests(unittest.TestCase):
                 "accepted.json",
                 lambda payload: payload.update({"unexpected": True}),
             )
+            report_path = Path(temporary) / "evidence" / "semantic-request-facets-report.json"
             result = subprocess.run(
                 [
                     sys.executable,
@@ -174,17 +210,21 @@ class SemanticRequestFacetsAdapterTests(unittest.TestCase):
                     str(MANIFEST_PATH),
                     "--project-root",
                     str(ROOT),
+                    "--output",
+                    str(report_path),
                 ],
                 cwd=ROOT,
                 capture_output=True,
                 text=True,
                 encoding="utf-8",
             )
-        self.assertEqual(result.returncode, 1)
-        self.assertEqual(result.stderr, "")
-        summary = json.loads(result.stdout)
-        self.assertEqual(summary["status"], "failed")
-        self.assertEqual(summary["errors"][0]["code"], "UNKNOWN_FIELD")
+            self.assertEqual(result.returncode, 1)
+            self.assertEqual(result.stderr, "")
+            summary = json.loads(result.stdout)
+            self.assertEqual(summary["status"], "failed")
+            self.assertEqual(summary["errors"][0]["code"], "UNKNOWN_FIELD")
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(report, summary)
 
 
 if __name__ == "__main__":

@@ -118,6 +118,30 @@ def test_rejects_missing_format_gate_command(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_semantic_request_facet_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.check_semantic_request_facets",
+        "python -X utf8 -c \"print('semantic Facet gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_semantic_request_facet_report_output(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "--output artifacts/evaluation/semantic-request-facets-report.json",
+        "--output artifacts/evaluation/other-report.json",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_runtime_observability_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(

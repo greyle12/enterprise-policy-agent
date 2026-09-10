@@ -13,6 +13,14 @@ from scripts.semantic_request_facets_adapter import (
 )
 
 
+def _write_report(path: Path, summary: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+
+
 def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Validate and join semantic records with the confirmed request Facet sidecar."
@@ -30,6 +38,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("."),
         help="Project root used to resolve manifest-relative paths",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optional UTF-8 JSON report path; parent directories are created",
     )
     return parser
 
@@ -56,6 +69,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             "errors": [exc.as_dict()],
         }
         exit_code = 1
+    if args.output is not None:
+        try:
+            _write_report(args.output, summary)
+        except OSError as exc:
+            summary = {
+                "status": "failed",
+                "schema_version": "1.0",
+                "record_count": 0,
+                "facet_case_count": 0,
+                "error_count": 1,
+                "errors": [
+                    {
+                        "code": "REPORT_WRITE_FAILED",
+                        "path": str(args.output),
+                        "message": str(exc),
+                    }
+                ],
+            }
+            exit_code = 1
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True))
     return exit_code
 

@@ -38,10 +38,13 @@ Set-Location D:\Ai_agent_program\demo1
   --accepted .\docs\gate_v3\semantic-request-facets-v1-confirmed\accepted.json `
   --confirmation .\docs\gate_v3\semantic-request-facets-v1-confirmed\confirmation.json `
   --manifest .\docs\gate_v3\semantic-request-facets-v1-confirmed\manifest.json `
-  --project-root .
+  --project-root . `
+  --output .\artifacts\evaluation\semantic-request-facets-report.json
 ```
 
 成功退出码为 0，失败退出码为 1。两种结果都输出单行 JSON；失败结果包含 `code`、`path` 和 `message`，不输出 traceback。
+
+传入 `--output` 后，adapter 会创建父目录并写入格式化的 UTF-8 JSON 报告。校验成功和校验失败都会尝试写入报告；失败报告保留 `status: failed` 与结构化错误，便于 CI 在 `always()` artifact 步骤中收集。
 
 成功结果只表示数据结构和血缘校验通过，不能解释为语义模型准确率、检索提升或端到端答案质量。
 
@@ -61,4 +64,8 @@ bundle = load_semantic_request_facet_bundle(
 )
 ```
 
-当前确认版预期结果是 7 条 source records、7 条 Facet cases、8 个 Facet 实例和 7 条带 `missing_outputs` 的 `PARTIAL` 记录。这个 adapter 是数据读取准备工作；下一步才可以讨论是否为 v1.1 设计序列化或 adapter 版本演进。
+当前确认版预期结果是 7 条 source records、7 条 Facet cases、8 个 Facet 实例和 7 条带 `missing_outputs` 的 `PARTIAL` 记录。这个 adapter 仍是数据读取准备工作；CI 接入只校验结构与血缘，不改变这些语义状态。
+
+## CI 接入
+
+quality job 会使用同一组确认数据运行 adapter，并把 `artifacts/evaluation/semantic-request-facets-report.json` 纳入质量证据 artifact。CI 配置契约同时检查 adapter 命令、四个输入文件、项目根目录和报告输出路径，避免校验步骤或证据路径被静默移除。
