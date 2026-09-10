@@ -47,6 +47,18 @@ case ID、非法 JSON、非法 UTF-8 和空预测文件。有效但错误的 Fac
 `independent_test_set=false`、`numeric_resume_ready=false` 和 `semantic_accuracy=null`。
 当前 7 条 case、8 个 Facet 实例来自用户确认的开发集，不能解释为独立测试集语义准确率。
 
+## 失败与零分母口径
+
+输入或对齐契约失败时，CLI 返回码为 1，报告的 `status` 为 `failed`、`metrics` 为 `null`，
+并在 `errors` 中保留结构化错误。指定 `--output` 时，标准输出和落盘文件写入同一份报告。
+预测输入合法但得分较低时，CLI 返回码仍为 0，报告的 `status` 为 `passed`；低分结果通过逐例
+`false_positive_facets`、`false_negative_facets` 和缺失 case ID 保留，不由 evaluator 转换为输入错误。
+
+Facet label 使用 micro 统计：当预测数为 0 时，precision 为 JSON `null`；当存在期望 Facet
+但没有命中时，recall 为 `0.0`；只要 precision 或 recall 无法定义，F1 为 JSON `null`。当没有
+任何名称匹配的 Facet 时，binding accuracy 也为 JSON `null`。这些 `null` 表示分母为 0，
+不表示 evaluator 失败，也不构成质量阈值。
+
 ## 可追溯信息
 
 报告记录：
