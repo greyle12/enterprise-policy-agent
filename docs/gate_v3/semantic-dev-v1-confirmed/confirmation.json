@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "semantic-dev-v1-confirmed-1",
+  "status": "user_confirmed",
+  "recorded_at": "2026-09-09T12:32:04.9977431Z",
+  "source": "current conversation, seven explicit user replies to case-specific review questions",
+  "confirmation_order": [
+    "COV-008",
+    "COV-009",
+    "V3U-009",
+    "COV-007",
+    "COV-010",
+    "V3U-004",
+    "V3U-006"
+  ],
+  "parent_files": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/review.json",
+      "sha256": "32bca1e1ca02f7e83dc319a44f8d371632b1ab0f22b6145a7822122918d1101b"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/manifest.json",
+      "sha256": "0769d4920a23eb81c3afffc33e9382fb927af72578a832662cb3385039dbfc72"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/source-excerpts.json",
+      "sha256": "a2132c72288dc52f75730209444a2e27c6486d73be9951c2d40a7a9aef14986e"
+    }
+  ],
+  "accepted_count": 7,
+  "rejected_count": 0,
+  "pending_count": 0,
+  "records_changed": false,
+  "partial_records_remain_partial": true,
+  "scope": "Acceptance of the seven existing draft semantic annotations, including acknowledged ambiguity and contract gaps; no inference or metric validation.",
+  "historical_labels_changed": false,
+  "model_inference": false,
+  "semantic_accuracy": null,
+  "independent_double_annotation": false
+}

@@ -10,18 +10,10 @@ from scripts.semantic_parse_contract import SemanticParseRecord, validate_record
 ROOT = Path(__file__).resolve().parents[2]
 DRAFT_PATH = ROOT / "docs" / "gate_v3" / "semantic-request-facets-v1" / "facets.json"
 CONFIRMED_PATH = (
-    ROOT
-    / "docs"
-    / "gate_v3"
-    / "semantic-request-facets-v1-confirmed"
-    / "accepted.json"
+    ROOT / "docs" / "gate_v3" / "semantic-request-facets-v1-confirmed" / "accepted.json"
 )
 CONFIRMATION_PATH = (
-    ROOT
-    / "docs"
-    / "gate_v3"
-    / "semantic-request-facets-v1-confirmed"
-    / "confirmation.json"
+    ROOT / "docs" / "gate_v3" / "semantic-request-facets-v1-confirmed" / "confirmation.json"
 )
 RECORDS_PATH = ROOT / "docs" / "gate_v3" / "semantic-dev-v1-confirmed" / "records.jsonl"
 
@@ -70,9 +62,7 @@ class ConfirmedSemanticRequestFacetsTests(unittest.TestCase):
 
     def test_confirmed_cases_match_proposed_facets_and_confirmation(self) -> None:
         draft_by_case = {case["case_id"]: case for case in self.draft["cases"]}
-        confirmed_by_case = {
-            case["case_id"]: case for case in self.confirmed["cases"]
-        }
+        confirmed_by_case = {case["case_id"]: case for case in self.confirmed["cases"]}
         confirmation_by_case = {
             case["case_id"]: case for case in self.confirmation["accepted_mappings"]
         }
@@ -102,9 +92,7 @@ class ConfirmedSemanticRequestFacetsTests(unittest.TestCase):
                 )
                 self.assertEqual(
                     confirmation["binding_by_facet"],
-                    {
-                        facet["facet"]: facet["binding"] for facet in expected_facets
-                    },
+                    {facet["facet"]: facet["binding"] for facet in expected_facets},
                 )
                 self.assertEqual(
                     confirmed_case["preserved_unresolved_output_types"],

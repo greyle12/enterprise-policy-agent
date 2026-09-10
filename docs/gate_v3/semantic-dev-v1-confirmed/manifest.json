@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "semantic-dev-v1-confirmed-1",
+  "parent_version": "semantic-dev-v1-draft-1",
+  "status": "user_confirmed",
+  "sample_count": 7,
+  "confirmed_semantic_label_count": 7,
+  "partial_record_count": 7,
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "annotation_origin": "AI_assisted_user_confirmed_development_annotations",
+  "model_inference": false,
+  "model": null,
+  "model_revision": null,
+  "semantic_accuracy": null,
+  "retrieval_executed": false,
+  "recorded_at": "2026-09-09T12:32:04.9977431Z",
+  "code_head": "4f5993f44f60e2e197c379891bd3e9e144e83be8",
+  "environment": {
+    "python": "Python 3.12.14",
+    "powershell": "7.6.5",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "dependencies": "stdlib and local contract/checker; no third-party dependencies used"
+  },
+  "dataset_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c",
+  "review_sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0",
+  "files": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/README.md",
+      "sha256": "6598c4b853f462eb5143955cbaafc703f744e9ed1a8122722e7c6addd587e75f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/confirmation.json",
+      "sha256": "1deda6fce920b52d3a187c3124b1f67beb9d83c266198f5840bf9b7ae23572c3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/validation.json",
+      "sha256": "a9da75a84e8eaa28809b1371e8f908927af807c12532604ef595908375329b01"
+    }
+  ],
+  "parent_files": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/review.json",
+      "sha256": "32bca1e1ca02f7e83dc319a44f8d371632b1ab0f22b6145a7822122918d1101b"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/manifest.json",
+      "sha256": "0769d4920a23eb81c3afffc33e9382fb927af72578a832662cb3385039dbfc72"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/source-excerpts.json",
+      "sha256": "a2132c72288dc52f75730209444a2e27c6486d73be9951c2d40a7a9aef14986e"
+    }
+  ],
+  "verification": "passed: original records byte-identical; seven acceptance bindings; parent hashes unchanged",
+  "provenance_erratum": "Parent manifest top-level review_sha256 points to historical review rather than draft review; parent files array is correct. Original kept unchanged. New bindings use full paths.",
+  "manifest_self_hash_included": false
+}

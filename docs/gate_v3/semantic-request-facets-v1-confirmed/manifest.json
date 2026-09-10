@@ -36,6 +36,26 @@
       "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
     },
     {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/README.md",
+      "sha256": "6598c4b853f462eb5143955cbaafc703f744e9ed1a8122722e7c6addd587e75f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/confirmation.json",
+      "sha256": "1deda6fce920b52d3a187c3124b1f67beb9d83c266198f5840bf9b7ae23572c3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/validation.json",
+      "sha256": "a9da75a84e8eaa28809b1371e8f908927af807c12532604ef595908375329b01"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/manifest.json",
+      "sha256": "a6ca0cdc465d2f7c9412bb9393d4f68954596c6fe85e01d0f3bd51132f66bf0f"
+    },
+    {
       "path": "docs/gate_v3/semantic-request-facets-v1/README.md",
       "sha256": "1c8367693c51929cc357a456871318111f22cd67e7e15c59415cc46c0f1ba3d1"
     },
@@ -45,6 +65,30 @@
     }
   ],
   "deliverables": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/README.md",
+      "sha256": "6598c4b853f462eb5143955cbaafc703f744e9ed1a8122722e7c6addd587e75f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/confirmation.json",
+      "sha256": "1deda6fce920b52d3a187c3124b1f67beb9d83c266198f5840bf9b7ae23572c3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/validation.json",
+      "sha256": "a9da75a84e8eaa28809b1371e8f908927af807c12532604ef595908375329b01"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/manifest.json",
+      "sha256": "a6ca0cdc465d2f7c9412bb9393d4f68954596c6fe85e01d0f3bd51132f66bf0f"
+    },
     {
       "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json",
       "sha256": "9a08e784406dd5ce18846a85a5be62cf36c6237229bfcaecb01500aa008d013e"
@@ -59,16 +103,24 @@
     },
     {
       "path": "tests/evaluation/test_semantic_request_facets_confirmed.py",
-      "sha256": "b9ec97baa1108c661a4d203d8b66033d0fbc1d1daac49261c831835e80a84de2"
+      "sha256": "d32ede224f284236f5ea7abde52a236d844f36ef96067a91d7e93037fe82970e"
     }
   ],
   "verification": {
-    "confirmation_mapping_test": "passed: 10 targeted tests",
-    "draft_definition_equality": "passed: 10 targeted tests",
-    "source_record_query_equality": "passed: 10 targeted tests",
-    "span_substrings": "passed: 10 targeted tests",
-    "unresolved_outputs_preserved": "passed: 10 targeted tests",
-    "v1_contract_unchanged": "passed: 10 targeted tests",
+    "confirmation_mapping_test": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "draft_definition_equality": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "source_record_query_equality": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "span_substrings": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "unresolved_outputs_preserved": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "v1_contract_unchanged": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "ruff_lint": "passed: isolated Git HEAD plus current-step files",
+    "ruff_format_changed_scope": "passed: two semantic facet test files already formatted",
+    "ruff_format_repository_baseline": "three pre-existing HEAD files remain unformatted; outside current step and unchanged",
+    "ruff_format_repository_baseline_files": [
+      "apply_patch.py",
+      "scripts/evaluate_gate_v3_decisions.py",
+      "scripts/verify_gate_v3_decision_review.py"
+    ],
     "confirmed_labels_modified": false
   },
   "non_goals": [
@@ -79,5 +131,5 @@
     "production runtime integration"
   ],
   "manifest_self_hash_included": false,
-  "generated_at": "2026-09-09T12:55:50.9542312Z"
+  "generated_at": "2026-09-09T23:52:14.5039986Z"
 }
