@@ -1,0 +1,44 @@
+{
+  "id": "15f420d2-2dfd-4de7-866a-1770ad04abed",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-006\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"UNBOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL per case. Need analyze query. Need extract facets. Query Chinese: \"出差报销时，我遇到了两件尚未说明的事。这个应该怎么办？\" Means \"When reimbursing business trip, I encountered two yet-to-be-explained things. What should I do about this?\" User asks how to handle. Facet PROCEDURE? \"应该怎么办\" how to do. But binding? Target object? \"两件尚未说明的事\" unspecified, \"这个\" ambiguous. They mention unprecised two things. The request dimension PROCEDURE appears (how to handle). But target object cannot unique determine; also omitted content. Binding UNBOUND. Need output predicted_facets array element facet PROCEDURE binding UNBOUND? The allowed binding values BOUND/UNBOUND. Facet PROCEDURE. Is it safe? They ask \"应该怎么办\" = how should do. Target object \"这个\" refers to two unexplained things, cannot unique. So PROCEDURE UNBOUND. Any other facets? \"出差报销\" is context; no deadline, material, responsible role, process choice. So only PROCEDURE UNBOUND. Need JSONL with case_id original, schema_version \"1.0\". Ensure no markdown."
+      }
+    }
+  ],
+  "created": 1789087119,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 294,
+    "prompt_tokens": 386,
+    "total_tokens": 680,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 255,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 258
+  }
+}

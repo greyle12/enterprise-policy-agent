@@ -15,16 +15,44 @@ def digest(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def export_requests(root: Path, output: Path) -> dict:
+def _rooted_path(root: Path, path: Path | None, default: Path) -> Path:
+    candidate = default if path is None else path
+    return (root / candidate if not candidate.is_absolute() else candidate).resolve()
+
+
+def export_requests(
+    root: Path,
+    output: Path,
+    *,
+    records_path: Path | None = None,
+    accepted_path: Path | None = None,
+    confirmation_path: Path | None = None,
+    manifest_path: Path | None = None,
+    prompt_path: Path | None = None,
+) -> dict:
     root = root.resolve()
-    source = root / "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl"
-    confirmed = root / "docs/gate_v3/semantic-request-facets-v1-confirmed"
-    prompt = root / "docs/gate_v3/semantic-facet-prompt-v1.txt"
+    source = _rooted_path(
+        root, records_path, Path("docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl")
+    )
+    confirmed = _rooted_path(
+        root, accepted_path, Path("docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json")
+    )
+    confirmation = _rooted_path(
+        root,
+        confirmation_path,
+        Path("docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json"),
+    )
+    source_manifest = _rooted_path(
+        root,
+        manifest_path,
+        Path("docs/gate_v3/semantic-request-facets-v1-confirmed/manifest.json"),
+    )
+    prompt = _rooted_path(root, prompt_path, Path("docs/gate_v3/semantic-facet-prompt-v1.txt"))
     bundle = load_semantic_request_facet_bundle(
         source,
-        confirmed / "accepted.json",
-        confirmed / "confirmation.json",
-        manifest_path=confirmed / "manifest.json",
+        confirmed,
+        confirmation,
+        manifest_path=source_manifest,
         project_root=root,
     )
     # Explicit allowlist: never serialize the annotated case or semantic record.
@@ -53,7 +81,12 @@ def export_requests(root: Path, output: Path) -> dict:
         "sample_count": len(rows),
         "case_ids": [row["case_id"] for row in rows],
         "source_records_sha256": digest(source),
-        "accepted_sha256": digest(confirmed / "accepted.json"),
+        "source_records_path": source.relative_to(root).as_posix(),
+        "accepted_sha256": digest(confirmed),
+        "accepted_path": confirmed.relative_to(root).as_posix(),
+        "confirmation_sha256": digest(confirmation),
+        "confirmation_path": confirmation.relative_to(root).as_posix(),
+        "source_manifest_path": source_manifest.relative_to(root).as_posix(),
         "requests_sha256": digest(requests),
         "prompt_sha256": digest(prompt),
         "exporter_sha256": digest(Path(__file__)),
@@ -77,8 +110,27 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--project-root", type=Path, default=Path("."))
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--records", type=Path)
+    parser.add_argument("--accepted", type=Path)
+    parser.add_argument("--confirmation", type=Path)
+    parser.add_argument("--manifest", type=Path)
+    parser.add_argument("--prompt", type=Path)
     args = parser.parse_args()
-    print(json.dumps(export_requests(args.project_root, args.output), ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            export_requests(
+                args.project_root,
+                args.output,
+                records_path=args.records,
+                accepted_path=args.accepted,
+                confirmation_path=args.confirmation,
+                manifest_path=args.manifest,
+                prompt_path=args.prompt,
+            ),
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":

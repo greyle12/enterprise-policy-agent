@@ -1,0 +1,44 @@
+{
+  "id": "d866ea26-a22a-4758-86c5-62abd28e939e",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-004\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"},{\"facet\":\"DEADLINE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze. Query: \"请说明这次差旅报销应按哪些步骤办理，以及最迟应在返程后多少天提交。\" Extract facets: PROCEDURE: steps for reimbursement. DEADLINE: latest days after return to submit. binding? Need determine BOUND/UNBOUND. Target object: \"这次差旅报销\" unique? query context maybe \"这次差旅报销\" specific? It asks steps and deadline. Facets present. Binding: For PROCEDURE, request dimension and target object? target object is 这次差旅报销. Is unique original binding? \"这次\" maybe refers to current case, but within query it's specific. Probably BOUND? For DEADLINE: \"最迟应在返程后多少天提交\" target object is submission after return for this travel reimbursement. BOUND? Need decide. In these tasks, binding considers whether target object/candidate process/assertion can be uniquely determined from original. There's no multiple processes. So BOUND. But maybe \"这次差旅报销\" unbound because no details? Hmm. The query asks \"应按哪些步骤办理\" for \"这次差旅报销\" - target object is uniquely this travel reimbursement. Binding likely BOUND. DEADLINE asks after return days, target object \"提交\" submission of reimbursement. BOUND.\n\nNeed output JSONL with schema_version \"1.0\", case_id original, predicted_facets array elements facet and binding. No markdown. Ensure valid JSON. One line.\n\nFinal only."
+      }
+    }
+  ],
+  "created": 1789087114,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 368,
+    "prompt_tokens": 392,
+    "total_tokens": 760,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 317,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 136
+  }
+}

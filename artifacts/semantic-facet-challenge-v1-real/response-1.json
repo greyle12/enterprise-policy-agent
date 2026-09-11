@@ -1,0 +1,44 @@
+{
+  "id": "23d54fdd-07ee-44e5-a331-79f5ed07d0eb",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-002\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"},{\"facet\":\"DEADLINE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need extract facets. Query: \"这笔采购费用报销需要准备哪些凭证，最迟应在发生后多少天提交？\" Chinese. It asks: what documents/vouchers need prepare for this procurement expense reimbursement; and latest how many days after occurrence to submit. So facets: MATERIAL (需要准备哪些凭证) binding? \"这笔采购费用报销\" target object? The request dimension and target object? MATERIAL: what vouchers for this procurement expense reimbursement. Unique? \"这笔\" refers to specific, but no context? In case query alone, \"这笔采购费用报销\" maybe binding to procurement expense reimbursement. Binding determination: BOUND if request dimension and target object have unique original binding; UNBOUND if dimension appeared but target object/candidate process/assertion not uniquely determined. \"这笔\" is deictic but target is procurement expense reimbursement. Could be BOUND? We need decide. Deadline: 最迟应在发生后多少天提交. DEADLINE. Binding likely BOUND? It asks deadline in days after occurrence for submission. Target object is reimbursement submission after occurrence. Unique? Maybe yes. Need only output facet and binding. Same facet once.\n\nNeed determine if PROCEDURE? It asks 需要准备哪些凭证 -> MATERIAL, not procedure. 最迟应在发生后多少天提交 -> DEADLINE. No responsible role. Process choice no.\n\nBinding: For MATERIAL: \"这笔采购费用报销\" target object. Is it unique? It says this procurement expense reimbursement. Without prior context, \"这笔\" not uniquely determined? The facet target object maybe \"采购费用报销\" enough. The rules: UNBOUND if target object, candidate process or assertion content cannot be uniquely determined. \"这笔\" could be deictic but type is procurement expense reimbursement. If evaluating within single query, target is a specific procurement expense reimbursement. \"这笔\" might not be uniquely identifiable but the category is. Usually binding labels in semantic facet tasks: BOUND means dimension and target have unique原文绑定. Here \"这笔采购费用报销需要准备哪些凭证\" clearly binds MATERIAL to reimbursement of this procurement expense. The target object is in the query. So BOUND. Deadline: binds to submission after occurrence. BOUND. But maybe because \"这笔\" is not specified, target object not unique -> UNBOUND? Let's parse instruction: \"BOUND 表示请求维度及目标对象有唯一原文绑定；UNBOUND 表示维度已出现，但目标对象、候选流程或断言内容不能唯一确定。不能推断省略对象。\" Here target object is \"这笔采购费用报销\" and \"发生后多少天提交\" likely target object \"这笔采购费用报销\" submission. Unique in original? \"这笔\" does refer to an object in discourse, but no prior context in this input. Is that considered cannot uniquely determine? Hmm.\n\nCase likely designed to test multiple facets: MATERIAL, DEADLINE. Binding maybe both BOUND? The mention \"这笔\" might indicate specific but not identified. Yet the target object is a procurement expense reimbursement, not multiple candidates. I'd output BOUND for both. Let's consider if any facet is UNBOUND: MATERIAL asks \"哪些凭证\" for \"这笔采购费用报销\" - unique target. DEADLINE asks \"多少天\" after \"发生\" - occurrence of what? It says \"发生后\" likely after expense occurrence, but target object is the reimbursement. Unique enough.\n\nNeed output one line JSON with case_id SFC-002, predicted_facets array. Ensure schema_version \"1.0\". No markdown."
+      }
+    }
+  ],
+  "created": 1789087107,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 786,
+    "prompt_tokens": 387,
+    "total_tokens": 1173,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 736,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 259
+  }
+}

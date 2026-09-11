@@ -1,0 +1,44 @@
+{
+  "dataset_version": "semantic-facet-challenge-v1-confirmed-1",
+  "deliverables": [
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/records.jsonl",
+      "sha256": "39a6e84d611f916b4de028df9cce5a144b6ee8f414fb6a180ef77432950672c1"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/accepted.json",
+      "sha256": "9221b5eadd62a01b865c94d4c5f75febb0c906ea1e04b459af788d897b313811"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/confirmation.json",
+      "sha256": "a0fa7b14a5b3f4406a1f0564470ccb6bd538016acccde86a04e726286639d4d8"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/README.md",
+      "sha256": "1b40aa57f39abf391f159489c831cbcb3d4fc5abf1ba19771242fcb1bb86de7a"
+    }
+  ],
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "retrieval_executed": false,
+  "sample_count": 12,
+  "schema_version": "1.0",
+  "source_dataset_version": "semantic-facet-challenge-v1-source-1",
+  "source_files": [
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-draft/cases.json",
+      "sha256": "b6e7f91c276ed4c9168da35c48384193b4f14b8014e7256400479b121eeefc49"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-prompt-v1.txt",
+      "sha256": "1e327a051e0f2f0cdd0137930e9931fa665a749bace653977f5adc42edf6af2a"
+    }
+  ],
+  "status": "user_confirmed"
+}

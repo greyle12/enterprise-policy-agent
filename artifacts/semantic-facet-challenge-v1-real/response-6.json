@@ -1,0 +1,44 @@
+{
+  "id": "9ae3ca17-642d-40b2-986a-1a0da88bda88",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-007\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer in JSONL. Need analyze query. Need output schema_version, case_id, predicted_facets array. Need identify facets. Query: \"我正在准备差旅报销。差旅报销需要提交哪些材料？\" This asks materials for travel reimbursement. Facet MATERIAL. Binding? Target object travel reimbursement uniquely determined, asks which materials. Binding BOUND? Need determine based on definitions. MATERIAL: need supplement, submit or prepare explanations, vouchers, materials. Query asks \"差旅报销需要提交哪些材料\" target \"差旅报销\" unique. So BOUND likely. No other facets. Output one line JSON. Ensure schema_version string 1.0. case_id exactly SFC-007. predicted_facets [{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]. Valid JSON. Need no markdown."
+      }
+    }
+  ],
+  "created": 1789087122,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 209,
+    "prompt_tokens": 384,
+    "total_tokens": 593,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 172,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 256
+  }
+}

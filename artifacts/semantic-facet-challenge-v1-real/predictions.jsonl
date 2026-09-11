@@ -1,0 +1,12 @@
+{"schema_version":"1.0","case_id":"SFC-001","predicted_facets":[{"facet":"MATERIAL","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-002","predicted_facets":[{"facet":"MATERIAL","binding":"BOUND"},{"facet":"DEADLINE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-003","predicted_facets":[{"facet":"PROCEDURE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-004","predicted_facets":[{"facet":"PROCEDURE","binding":"BOUND"},{"facet":"DEADLINE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-005","predicted_facets":[{"facet":"PROCEDURE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-006","predicted_facets":[{"facet":"PROCEDURE","binding":"UNBOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-007","predicted_facets":[{"facet":"MATERIAL","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-008","predicted_facets":[{"facet":"MATERIAL","binding":"UNBOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-009","predicted_facets":[{"facet":"PROCESS_CHOICE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-010","predicted_facets":[{"facet":"PROCESS_CHOICE","binding":"UNBOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-011","predicted_facets":[{"facet":"PROCESS_CHOICE","binding":"BOUND"}]}
+{"schema_version":"1.0","case_id":"SFC-012","predicted_facets":[{"facet":"PROCESS_CHOICE","binding":"UNBOUND"}]}

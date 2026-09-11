@@ -1,0 +1,44 @@
+{
+  "id": "364e9b6c-03c6-4c6b-b958-471fe038548c",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-003\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer in JSONL. Need analyze query. Need output for case SFC-003. Query: \"差旅结束已经一周了。请说明这次差旅报销应按哪些步骤办理。\" Need extract facets per rules.\n\nWe need only facets allowed. PROCEDURE: how handle, steps or processing method. Query asks \"请说明这次差旅报销应按哪些步骤办理。\" That's PROCEDURE. DEADLINE? \"差旅结束已经一周了\" states elapsed week, not asking time point or threshold. \"已经一周了\" maybe could imply deadline? But rule: only陈述已过去的天数不属于此类. So no DEADLINE. RESPONSIBLE_ROLE? no. MATERIAL? no. PROCESS_CHOICE? no.\n\nBinding: BOUND if request dimension and target object have unique original binding. Here target object: \"这次差旅报销\" (this travel reimbursement). Steps for reimbursement. Is unique? It refers to this travel expense reimbursement, likely unique within context? The dimension PROCEDURE and target object \"这次差旅报销\" uniquely bound in original text. So binding BOUND. Need output JSONL only.\n\nEnsure schema_version \"1.0\", case_id original, predicted_facets array element {\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}.\n\nFinal line JSON."
+      }
+    }
+  ],
+  "created": 1789087112,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 307,
+    "prompt_tokens": 388,
+    "total_tokens": 695,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 269,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 260
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "id": "8aaa25ee-7ce0-4472-833f-315a15f8145c",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-010\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"UNBOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need extract facets from user current request. Case: \"针对这笔培训费用，我应选择之前提过的那个流程，还是另一个流程？\" Chinese. User asks which process to choose between previously mentioned process and another process. This is PROCESS_CHOICE. Binding? Target object \"这笔培训费用\" and candidate processes: \"之前提过的那个流程\" vs \"另一个流程\". Can we uniquely determine? The query references previously mentioned process and another, but in input alone no original context, cannot uniquely determine which processes. So UNBOUND. Also perhaps PROCEDURE? They ask choose process, not steps. PROCESS_CHOICE only. Need output JSONL with schema_version 1.0, case_id original, predicted_facets array containing facet PROCESS_CHOICE, binding UNBOUND. Ensure no markdown."
+      }
+    }
+  ],
+  "created": 1789087129,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 221,
+    "prompt_tokens": 388,
+    "total_tokens": 609,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 179,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 260
+  }
+}

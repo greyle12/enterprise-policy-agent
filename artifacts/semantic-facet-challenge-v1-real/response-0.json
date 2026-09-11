@@ -1,0 +1,44 @@
+{
+  "id": "4b307c5a-aa40-4325-af67-d54369f381d1",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-001\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer JSONL. Need analyze each input? Only one case. Need extract facets from query. Query: \"这笔采购费用已经发生二十天了。报销需要准备哪些凭证？\" We need identify user current request dimensions. PROCEDURE? They ask \"报销需要准备哪些凭证\" = which vouchers/materials needed for reimbursement. MATERIAL:需要补充、提交或准备的说明、凭证或材料. Yes facet MATERIAL. Binding? Target object: 报销需要准备哪些凭证. There is \"这笔采购费用\" maybe reimbursement for this procurement expense. Is target uniquely bound? User asks for reimbursement vouchers. The query references \"这笔采购费用已经发生二十天了\" but not specific type? \"这笔采购费用\" likely unique in context? Binding definition: BOUND if request dimension and target object have unique original binding; UNBOUND if dimension appears but target object/candidate process/assertion cannot uniquely determine. Can't infer omitted objects. Here MATERIAL target object: 报销所需的凭证. Is it uniquely determined? They ask \"报销需要准备哪些凭证?\" without specifying what kind of reimbursement? It says \"这笔采购费用\" -> reimbursement for this procurement expense. Within query, target is reimbursement for this purchase expense, likely bound. Hmm.\n\nDEADLINE? \"费用已经发生二十天了\" is statement of elapsed days, not asking time point/期限. Rule: only陈述已过去的天数不属于此类. So no.\n\nPROCEDURE? \"报销需要准备哪些凭证\" not how to handle steps. It's materials. No PROCEDURE.\n\nRESPONSIBLE_ROLE? no.\n\nPROCESS_CHOICE? no.\n\nNeed output JSONL one line: {\"schema_version\":\"1.0\",\"case_id\":\"SFC-001\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]} Maybe binding? Let's examine if target object uniquely determined. The user asks \"报销需要准备哪些凭证？\" For this procurement expense. Does \"报销\" have multiple possible processes? They ask materials for reimbursement; object is \"凭证\" required for reimbursement. There is unique target: reimbursement materials for this procurement expense. I think BOUND. If no context beyond this? But case_id only query. The phrase \"这笔采购费用\" binds target. \"报销\" could be generic, but current request is clear enough: reimbursement for this purchase expense. So BOUND.\n\nNeed ensure only JSON no markdown. Final answer only line."
+      }
+    }
+  ],
+  "created": 1789087104,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 544,
+    "prompt_tokens": 384,
+    "total_tokens": 928,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 507,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 256
+  }
+}
