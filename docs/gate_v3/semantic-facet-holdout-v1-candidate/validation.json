@@ -1,0 +1,497 @@
+{
+  "annotation_template_sha256": "bc98127b4d010f87ce569b56904f01c2fd3dbd625d34880d8021a754b0f2feb5",
+  "authoring_boundary": "AI-assisted candidate; it requires two fresh human annotations and adjudication before freeze or model evaluation.",
+  "code_head": "f712068f33fbfff6c56e6f85f2cdab1a59d5ff9d",
+  "corpus_query_count": 2069,
+  "dataset_version": "semantic-facet-holdout-v1-candidate-1",
+  "dependencies": "standard-library-only",
+  "exact_overlap_count": 0,
+  "exact_overlaps": [],
+  "independent_double_annotation": false,
+  "independent_test_set": false,
+  "invalid_source_file_count": 0,
+  "invalid_source_files": [],
+  "label_policy": "No accepted labels, model predictions, or semantic score are present in this package.",
+  "model_id": null,
+  "model_inference": false,
+  "model_revision": null,
+  "near_match_count": 0,
+  "near_matches": [],
+  "near_method": "NFKC, remove punctuation/whitespace, SequenceMatcher; near matches require human review",
+  "near_threshold": 0.72,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "platform": "Windows-11-10.0.26200-SP0",
+  "python": "3.12.14",
+  "question_ids": [
+    "SHV-001",
+    "SHV-002",
+    "SHV-003",
+    "SHV-004",
+    "SHV-005",
+    "SHV-006",
+    "SHV-007",
+    "SHV-008",
+    "SHV-009",
+    "SHV-010",
+    "SHV-011",
+    "SHV-012",
+    "SHV-013",
+    "SHV-014",
+    "SHV-015",
+    "SHV-016",
+    "SHV-017",
+    "SHV-018"
+  ],
+  "question_sha256": "ad8cc16a4aa4e02dce6fa758313e6221b8ddc6b61e0be6f18500649d082ba847",
+  "retrieval_executed": false,
+  "sample_count": 18,
+  "schema_version": "1.0",
+  "scope": "label_free_holdout_candidate_structure_and_exact_overlap_screen",
+  "source_file_count": 87,
+  "source_files": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/records.jsonl",
+      "query_count": 7,
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/review.json",
+      "query_count": 7,
+      "sha256": "32bca1e1ca02f7e83dc319a44f8d371632b1ab0f22b6145a7822122918d1101b"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/source-excerpts.json",
+      "query_count": 11,
+      "sha256": "a2132c72288dc52f75730209444a2e27c6486d73be9951c2d40a7a9aef14986e"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "query_count": 7,
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "query_count": 7,
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/accepted.json",
+      "query_count": 18,
+      "sha256": "02903019c5beb4c90718fadbd2ec69c162aaa3149ba2d774db8b05943ac3303a"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/records.jsonl",
+      "query_count": 18,
+      "sha256": "e3d27d7184ac37af0d1c2e2963ced12f31e2f11e8cd37b74048bc183076eb7b3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-draft/questions.jsonl",
+      "query_count": 18,
+      "sha256": "e29ac7253973de429aaa476a56b7bcf78552cebd144f3bd48c02a847513b697c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/accepted.json",
+      "query_count": 12,
+      "sha256": "9221b5eadd62a01b865c94d4c5f75febb0c906ea1e04b459af788d897b313811"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/records.jsonl",
+      "query_count": 12,
+      "sha256": "39a6e84d611f916b4de028df9cce5a144b6ee8f414fb6a180ef77432950672c1"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-draft/cases.json",
+      "query_count": 12,
+      "sha256": "b6e7f91c276ed4c9168da35c48384193b4f14b8014e7256400479b121eeefc49"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "query_count": 7,
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json",
+      "query_count": 7,
+      "sha256": "9a08e784406dd5ce18846a85a5be62cf36c6237229bfcaecb01500aa008d013e"
+    },
+    {
+      "path": "artifacts/coverage-gate-20260908-222901/gate-report.json",
+      "query_count": 96,
+      "sha256": "0c3de04012cb044bb9f79fa4375b7efb0029befd10f6a0239f8fda90373ab985"
+    },
+    {
+      "path": "artifacts/coverage-gate-challenge-v1/review-draft.json",
+      "query_count": 12,
+      "sha256": "d69e847fe9f12c5a83738940c516901ffccf2e6afe74210c45a22230ddf41b9d"
+    },
+    {
+      "path": "artifacts/coverage-gate-v1/gate-report.json",
+      "query_count": 96,
+      "sha256": "d910674e670c364e6cd104070e930b46d53306bd9fe39f911d2a98c9882df409"
+    },
+    {
+      "path": "artifacts/coverage-replay-20260908-220900/replay-report.json",
+      "query_count": 32,
+      "sha256": "c0daab1c6142404decf384303b2e0cb6ed0b322abda82f2ebfa15062c9c0d668"
+    },
+    {
+      "path": "artifacts/evaluation/golden-evaluation-report.json",
+      "query_count": 30,
+      "sha256": "726be1c29a3a1a042ee015e0e2f45237724dfe71a7c3785dbc81e37a4b462ca0"
+    },
+    {
+      "path": "artifacts/evaluation/retrieval-evaluation-report.json",
+      "query_count": 20,
+      "sha256": "742a1dd5bbb0df6f759c55f4b9407aa42c89b8aab74498eedd1495e3e77ba2b6"
+    },
+    {
+      "path": "artifacts/gate-challenge-bge-20260909-090550/challenge-report.json",
+      "query_count": 36,
+      "sha256": "1bf45ea52b87c7285225bc8d1a1beab6c44f31ed678852e67b72f0ee63d7a6f3"
+    },
+    {
+      "path": "artifacts/gate-challenge-bge-20260909-090550/raw-20.json",
+      "query_count": 12,
+      "sha256": "9b93775a0c82ab3a6264fe3eac485997ad69eb6f05f815f9349d65e5ac4c2db1"
+    },
+    {
+      "path": "artifacts/gate-challenge-bge-20260909-090550/raw-40.json",
+      "query_count": 12,
+      "sha256": "f229dd42e46e51fc71f88c2365c12103138837131fe1bead519d4e0144dd5101"
+    },
+    {
+      "path": "artifacts/gate-decision-20260909-115913/decision-report.json",
+      "query_count": 19,
+      "sha256": "c2f27945a907714bd1a16a59620f5f75f7fdbd018733fb4c877f23a5181c51f8"
+    },
+    {
+      "path": "artifacts/gate-decision-contract-v1/review.json",
+      "query_count": 20,
+      "sha256": "fd78adc48fe9d76c0c95f5448670e04d72ced01a7133e431998da8fce9f89a8d"
+    },
+    {
+      "path": "artifacts/gate-decision-v1/decision-report.json",
+      "query_count": 19,
+      "sha256": "4ce96dfe0b5173beba69bc1d2db8bd34b189db95809a441cffdd7a1b6dd05a42"
+    },
+    {
+      "path": "artifacts/gate-v2-20260909-105141/gate-v2-report.json",
+      "query_count": 56,
+      "sha256": "df05d15134646f6494e6ac0a9e2160236ff8e7070ff30b6fbe2f3081cbfe4648"
+    },
+    {
+      "path": "artifacts/gate-v2-regression/gate-v2-report.json",
+      "query_count": 56,
+      "sha256": "c0dfcc9e9966eb2b304d2dfb9aecc2b997251f2a00c92dd5977a695a0f9d73dc"
+    },
+    {
+      "path": "artifacts/gate-v2-unseen-v1/review-draft.json",
+      "query_count": 8,
+      "sha256": "2a3585b0d16043c084e5b8eb63eb3d015b2921f0bf54295a5eb57b602f15f835"
+    },
+    {
+      "path": "artifacts/gate-v2-v3-comparison-v1/comparison.json",
+      "query_count": 96,
+      "sha256": "68fe73f000f541c621ed909f8427e5f19d408ee9a164e7bca1c175e4afcac2a8"
+    },
+    {
+      "path": "artifacts/gate-v3-decision-eval-v1/decision-report-confirmed/four-value-report.json",
+      "query_count": 116,
+      "sha256": "e602f470d29cbc7dcf2eed09552a00e6f527984eb0b4f02e9558b0c33fd49a88"
+    },
+    {
+      "path": "artifacts/gate-v3-decision-eval-v1/decision-report-rerun/four-value-report.json",
+      "query_count": 116,
+      "sha256": "6c439b10fb31360e8ac81df96197d3b3811ff9c1ed558420b462920432297469"
+    },
+    {
+      "path": "artifacts/gate-v3-decision-eval-v1/review-draft.json",
+      "query_count": 9,
+      "sha256": "fbe9feb5e4f96683a371395704973c409002b2d411dd4b282b636b87d3e94747"
+    },
+    {
+      "path": "artifacts/gate-v3-decision-eval-v1/review.json",
+      "query_count": 9,
+      "sha256": "a6f72e13fd53ff57d301e586ddd2d514306afd14fa31d261c671aff8d21e210c"
+    },
+    {
+      "path": "artifacts/gate-v3-replay-v1-delivery/replay-report.json",
+      "query_count": 96,
+      "sha256": "8b2c153eb84a6f4164b7248c9f7a354a78f691c7474327fc395f239b08cb3a2e"
+    },
+    {
+      "path": "artifacts/gate-v31-experiment-v1/report.json",
+      "query_count": 96,
+      "sha256": "97a5fd5758f7cf9335be5979c83e40376c5fe5942df1390edea9f53b75f752b1"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/evidence.json",
+      "query_count": 32,
+      "sha256": "0967be2a2ea97d9b2088decef1ed5c9591b282dda7efd972e65582cb39019389"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/exploratory_unreviewed/dataset.jsonl",
+      "query_count": 6,
+      "sha256": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/exploratory_unreviewed/judgment-review.json",
+      "query_count": 6,
+      "sha256": "494dd20c4d998226d000d109ebc163dc9483a070ff9aa2363bc6eba5fd1a1431"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/exploratory_unreviewed/retrieval-evaluation-report.json",
+      "query_count": 6,
+      "sha256": "aee5710e74e007b6570faff2564a23a0f781c6d12cf851de8c234ac605e8864b"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/legacy_dev/dataset.jsonl",
+      "query_count": 20,
+      "sha256": "3b4343f681ed13c530d257394058245b2dfa42b1a7ae35c185216f540fa06789"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/legacy_dev/judgment-review.json",
+      "query_count": 20,
+      "sha256": "9a13d7f62b1b2dac043220bb323835a57db1d34345895b2d5db8a9fd79ea6c9f"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-131510/legacy_dev/retrieval-evaluation-report.json",
+      "query_count": 20,
+      "sha256": "b248d9819af43bfd6e3e79d18ca23faf4c1c1fc861f094da9569e431fbc575fe"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/evidence.json",
+      "query_count": 32,
+      "sha256": "ca4f5c494190ac968ceed8f295cca140234a1a0def5dc3c892fc49c4c1bbae4e"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/exploratory_unreviewed/dataset.jsonl",
+      "query_count": 6,
+      "sha256": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/exploratory_unreviewed/judgment-review.json",
+      "query_count": 6,
+      "sha256": "494dd20c4d998226d000d109ebc163dc9483a070ff9aa2363bc6eba5fd1a1431"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/exploratory_unreviewed/retrieval-evaluation-report.json",
+      "query_count": 6,
+      "sha256": "475bdf2f5355ec60922354b1e38927d8496195ef124ad492e74b5865d71fbdb6"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/legacy_dev/dataset.jsonl",
+      "query_count": 20,
+      "sha256": "3b4343f681ed13c530d257394058245b2dfa42b1a7ae35c185216f540fa06789"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/legacy_dev/judgment-review.json",
+      "query_count": 20,
+      "sha256": "9a13d7f62b1b2dac043220bb323835a57db1d34345895b2d5db8a9fd79ea6c9f"
+    },
+    {
+      "path": "artifacts/retrieval-bge-20260906-133548/legacy_dev/retrieval-evaluation-report.json",
+      "query_count": 20,
+      "sha256": "9deac23c148a0cf1538ac3f2ad776c0e460512dce89480b987d7b0b146cff0d9"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/candidate-diagnostics.json",
+      "query_count": 32,
+      "sha256": "7d1132665aa6709c3662bbf5697da48150f6a1cc3ac3efc22d51a057eb611ae5"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/candidate-window-report.json",
+      "query_count": 16,
+      "sha256": "f3882c06b4834e02b229ee50e5ad2eae9abbc6b12fbf2dc18390ffd3ff8f2946"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/comparison.json",
+      "query_count": 16,
+      "sha256": "b3ab105187d083dff786c2906152da458dae30bb76707513bfd624b881215352"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/judgment-review.json",
+      "query_count": 16,
+      "sha256": "50b5f22ae96a9024911bc292a188096ec80fa2d0c65f23c13a3c9f890d31fbf0"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/queries.json",
+      "query_count": 16,
+      "sha256": "24a96b188a8d1b56ed0123bed471301d91f9c88fa9fd9f68c116a987e9571f2a"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/review.user-confirmed.json",
+      "query_count": 16,
+      "sha256": "24509a4faf60bf9c4b6b897573daad005d186438bebc664c7714a1a39a58044c"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/target-dataset.jsonl",
+      "query_count": 16,
+      "sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-20/candidate-diagnostics.json",
+      "query_count": 16,
+      "sha256": "7c91d144b3ba6d950cddd5f3a8ab5d8203ff611eb101938ac420adde6a2b025f"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-20/retrieval-evaluation-report.json",
+      "query_count": 16,
+      "sha256": "22565563b7a2d8034106c618a26bbfdd10dd0f17817d0b3350a80223db0f7779"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-20/target-dataset.jsonl",
+      "query_count": 16,
+      "sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-40/candidate-diagnostics.json",
+      "query_count": 16,
+      "sha256": "dddb94d603ecbe9b8ec65b6380872250fdab82e0b51a1059efc98370a4bd52e9"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-40/retrieval-evaluation-report.json",
+      "query_count": 16,
+      "sha256": "c56ccbe59b9749d8a08951695273e4f15e81f15e9651028b068bc47d4c2c286e"
+    },
+    {
+      "path": "artifacts/retrieval-candidate-window-bge-20260908-202536/window-40/target-dataset.jsonl",
+      "query_count": 16,
+      "sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-20260908/coverage-report.json",
+      "query_count": 26,
+      "sha256": "c3afdd31608cdf740a9efba8d4d59c9f1737d7efab4b11b10cea65911cb791b5"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-20260908-132259/coverage-report.json",
+      "query_count": 26,
+      "sha256": "b26b7d7b551656face22e8370d4c1b289d218bd9cbcd4cb59e990f42a525b13b"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/coverage-report.json",
+      "query_count": 32,
+      "sha256": "08cc0aaffdf72a4238da540e2c5978ea0ba98b85dc371e1531d4b2072d54fe6e"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/judgment-review.json",
+      "query_count": 16,
+      "sha256": "50b5f22ae96a9024911bc292a188096ec80fa2d0c65f23c13a3c9f890d31fbf0"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/queries.json",
+      "query_count": 16,
+      "sha256": "24a96b188a8d1b56ed0123bed471301d91f9c88fa9fd9f68c116a987e9571f2a"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/retrieval-evaluation-report.json",
+      "query_count": 16,
+      "sha256": "3c2e3fe283cc63a6599d7037276957c379175bbb209d403691f5d1a84eda35b2"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/review.user-confirmed.json",
+      "query_count": 16,
+      "sha256": "24509a4faf60bf9c4b6b897573daad005d186438bebc664c7714a1a39a58044c"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-confirmed-20260908-190641/target-dataset.jsonl",
+      "query_count": 16,
+      "sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-review-v1/queries.json",
+      "query_count": 16,
+      "sha256": "c90d5f4f96329af373624cdbe42c110b0ff0ad9a1a0dab6c2979605dfb8043b0"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-review-v1/review.json",
+      "query_count": 16,
+      "sha256": "ac5ea6252d3c9e000f63dd804a407ad04815d7e40a55ffc6cb075df6d1664634"
+    },
+    {
+      "path": "artifacts/retrieval-coverage-review-v1/review.user-confirmed.json",
+      "query_count": 16,
+      "sha256": "b8ff8368c1c38ab7332344d6f57b92deed36896173408d8919fd39af7f3f6d48"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/evidence.json",
+      "query_count": 46,
+      "sha256": "a86b23bb506e7679c2ca6ac6807f514eff7fe279b5afe8eee383f54ec8effee0"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/exploratory_unreviewed/dataset.jsonl",
+      "query_count": 6,
+      "sha256": "db7b25617690afc26bbf1339650a4aa1c273f8d8476aad69d016df6481033b95"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/exploratory_unreviewed/judgment-review.json",
+      "query_count": 6,
+      "sha256": "2d1373f3ac64a19ab5132eab5a4946ba6f2d69c2fbc5d6923761a6d7917ccfbb"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/exploratory_unreviewed/retrieval-evaluation-report.json",
+      "query_count": 6,
+      "sha256": "c18ec9b61a47a4c561600276390a3c6cd0d194dfe4e6a855748c1c8f99734891"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/legacy_dev/dataset.jsonl",
+      "query_count": 20,
+      "sha256": "3b4343f681ed13c530d257394058245b2dfa42b1a7ae35c185216f540fa06789"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/legacy_dev/judgment-review.json",
+      "query_count": 20,
+      "sha256": "522a583b875246c4fc5621b56070ca6e1213f1b01463dd39eb765f9512366eae"
+    },
+    {
+      "path": "artifacts/retrieval-evidence-20260906/offline-final/legacy_dev/retrieval-evaluation-report.json",
+      "query_count": 20,
+      "sha256": "925b668b38ef128495031c2c67465665777ba09e6f14de04258fa3c31c8c2653"
+    },
+    {
+      "path": "artifacts/semantic-facet-blind-v2-requests/requests.jsonl",
+      "query_count": 18,
+      "sha256": "b03be546d1891fb423fdc893a7323bfed31e205c8eff70c0aba28ef39f03e86c"
+    },
+    {
+      "path": "artifacts/semantic-facet-challenge-v1-requests/requests.jsonl",
+      "query_count": 12,
+      "sha256": "760a97507cc98d0fbd17236fd02c74e36a3a12baafc161f1346b631082a3640f"
+    },
+    {
+      "path": "artifacts/semantic-facet-requests-v1/requests.jsonl",
+      "query_count": 7,
+      "sha256": "b8c8e476b020c901b2b7168702d30c981595822ffeefb2e1262523036a97d2c4"
+    },
+    {
+      "path": "artifacts/semantic-facet-requests-v1-repeat/requests.jsonl",
+      "query_count": 7,
+      "sha256": "b8c8e476b020c901b2b7168702d30c981595822ffeefb2e1262523036a97d2c4"
+    },
+    {
+      "path": "artifacts/v2-unseen-bge-20260909-111432/raw-20.json",
+      "query_count": 8,
+      "sha256": "00dd5c04790d73436dc1fce2af423f8d7063eb251850742e2ca06044cc6a3217"
+    },
+    {
+      "path": "artifacts/v2-unseen-bge-20260909-111432/raw-40.json",
+      "query_count": 8,
+      "sha256": "aabe48f290b97ac09bda5573f94b3469c9f71e8877a0fa7ef8f2f37b2c3ef071"
+    },
+    {
+      "path": "artifacts/v2-unseen-bge-20260909-111432/v2-unseen-report.json",
+      "query_count": 24,
+      "sha256": "d661fc97154aea9a31e78e5274129e94a7f21b945c86cb1fdde7ca7ff0f620ac"
+    }
+  ],
+  "source_scope": [
+    "docs/gate_v3/**/*.json",
+    "docs/gate_v3/**/*.jsonl",
+    "artifacts/**/*.json",
+    "artifacts/**/*.jsonl"
+  ],
+  "status": "passed",
+  "validator_sha256": "ec703286c79333bf8447d10992d0fff4034ae1628a78e08e7d724292ae221bd7"
+}
