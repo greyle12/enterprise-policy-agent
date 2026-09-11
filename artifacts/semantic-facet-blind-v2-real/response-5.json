@@ -1,0 +1,44 @@
+{
+  "id": "9f443d7f-917f-4f81-a923-e953b6d00880",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\": \"1.0\", \"case_id\": \"SFB-006\", \"predicted_facets\": [{\"facet\": \"MATERIAL\", \"binding\": \"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer in JSONL only. Need analyze query. Need extract facets. Query: \"我同时有办公电脑领用和门禁补办两项事情。后者要提交什么资料？\" Chinese. User has two matters: office computer requisition and access control card replacement. \"后者要提交什么资料？\" The latter (门禁补办) needs what materials? So user current request: materials for access control replacement. Facet MATERIAL. Binding? Target object is 后者 refers to 门禁补办, uniquely identified from previous sentence. So BOUND. Also maybe PROCEDURE? Asked \"要提交什么资料\" specifically materials. Not asking how. So only MATERIAL. Output JSONL.\n\nNeed ensure schema_version \"1.0\", case_id original SFB-006, predicted_facets array object facet MATERIAL binding BOUND.\n\nFinal only JSONL."
+      }
+    }
+  ],
+  "created": 1789091096,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 224,
+    "prompt_tokens": 391,
+    "total_tokens": 615,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 179,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 135
+  }
+}

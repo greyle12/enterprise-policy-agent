@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "status": "user_confirmed_ai_assisted_labels",
+  "confirmed_case_ids": [
+    "COV-002",
+    "COV-003",
+    "COV-004",
+    "COV-005",
+    "COV-006",
+    "COV-007",
+    "COV-008",
+    "COV-009",
+    "COV-010",
+    "COV-011",
+    "COV-012",
+    "COV-013",
+    "COV-014",
+    "COV-015",
+    "COV-016"
+  ],
+  "confirmation_message": "同意这 15 条草案",
+  "confirmed_at": "2026-09-08T06:43:15.977Z",
+  "annotation_source": "AI-assisted proposal confirmed by user; not independently human-reviewed",
+  "full_authorized_corpus_review": false,
+  "reviewer": "",
+  "reviewed_at": "",
+  "checked_all_authorized_chunks": false,
+  "viewed_retrieval_outputs": false,
+  "retrieval_executed": false,
+  "numeric_resume_ready": false,
+  "cov001_status": "Preserved from current local review.json; not changed by this confirmation turn.",
+  "next_gate": "Complete human review declarations and run validator before any new retrieval evaluation."
+}

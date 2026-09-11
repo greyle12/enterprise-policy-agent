@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "semantic-facet-holdout-v1-candidate-1",
+  "status": "pending_double_annotation",
+  "sample_count": 18,
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "model_inference": false,
+  "independent_double_annotation": false,
+  "cases": [
+    {
+      "case_id": "SHV-001",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-002",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-003",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-004",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-005",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-006",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-007",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-008",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-009",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-010",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-011",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-012",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-013",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-014",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-015",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-016",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-017",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    },
+    {
+      "case_id": "SHV-018",
+      "annotator_a": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "annotator_b": {"status": "pending", "accepted_facets": null, "rationale": null},
+      "adjudication": {"status": "pending", "accepted_facets": null, "rationale": null}
+    }
+  ]
+}

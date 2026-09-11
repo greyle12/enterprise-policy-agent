@@ -24,6 +24,16 @@ _REQUIRED_ACTIONS = {
     "actions/setup-python",
     "actions/upload-artifact",
 }
+_SEMANTIC_FACET_GATE_COMMAND = "python -X utf8 -m scripts.check_semantic_request_facets"
+_SEMANTIC_FACET_GATE_ARGUMENTS = (
+    "--records docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+    "--accepted docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json",
+    "--confirmation docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json",
+    "--manifest docs/gate_v3/semantic-request-facets-v1-confirmed/manifest.json",
+    "--project-root .",
+    "--output artifacts/evaluation/semantic-request-facets-report.json",
+)
+_SEMANTIC_FACET_REPORT_PATH = "artifacts/evaluation/semantic-request-facets-report.json"
 _REQUIRED_QUALITY_COMMANDS = (
     'python -m pip install -e ".[dev]"',
     "python -m pip check",
@@ -31,6 +41,8 @@ _REQUIRED_QUALITY_COMMANDS = (
     "python -m ruff check .",
     "python -m ruff format --check .",
     "python -m pytest --junitxml=artifacts/test-results/pytest.xml",
+    _SEMANTIC_FACET_GATE_COMMAND,
+    *_SEMANTIC_FACET_GATE_ARGUMENTS,
     "python -X utf8 -m scripts.run_golden_evaluation --mode offline",
     "python -X utf8 -m scripts.run_performance_benchmark --warmups 1 --iterations 5",
     "python -X utf8 -m scripts.verify_llm_cache",
@@ -203,6 +215,50 @@ def _collect_action_pins(
     return dict(sorted(pins.items()))
 
 
+def _validate_semantic_facet_gate(quality_steps: Sequence[Mapping[str, Any]]) -> None:
+    gate_steps = [
+        step for step in quality_steps if _SEMANTIC_FACET_GATE_COMMAND in str(step.get("run", ""))
+    ]
+    if len(gate_steps) != 1:
+        raise CIConfigurationError(
+            "quality job must define exactly one semantic Facet gate command step"
+        )
+
+    gate_step = gate_steps[0]
+    if "if" in gate_step:
+        raise CIConfigurationError(
+            "semantic Facet gate must run on the quality job default success path"
+        )
+    if "continue-on-error" in gate_step:
+        raise CIConfigurationError("semantic Facet gate must fail the quality job")
+
+    run_text = str(gate_step.get("run", ""))
+    for argument in _SEMANTIC_FACET_GATE_ARGUMENTS:
+        if argument not in run_text:
+            raise CIConfigurationError(f"quality job is missing command: {argument}")
+
+
+def _validate_semantic_facet_report_artifact(
+    quality_steps: Sequence[Mapping[str, Any]],
+) -> None:
+    matching_steps: list[Mapping[str, Any]] = []
+    for step in quality_steps:
+        if not str(step.get("uses", "")).startswith("actions/upload-artifact@"):
+            continue
+        values = _mapping(step.get("with"), label="semantic Facet artifact.with")
+        if _SEMANTIC_FACET_REPORT_PATH in str(values.get("path", "")):
+            matching_steps.append(step)
+
+    if len(matching_steps) != 1:
+        raise CIConfigurationError(
+            "quality job must upload exactly one semantic Facet report artifact"
+        )
+    if matching_steps[0].get("if") != "${{ always() }}":
+        raise CIConfigurationError(
+            "semantic Facet report artifact must upload with if: ${{ always() }}"
+        )
+
+
 def _validate_jobs(jobs: Mapping[str, Any]) -> None:
     required_jobs = {
         "quality",
@@ -226,6 +282,7 @@ def _validate_jobs(jobs: Mapping[str, Any]) -> None:
     for command in _REQUIRED_QUALITY_COMMANDS:
         if command not in quality_commands:
             raise CIConfigurationError(f"quality job is missing command: {command}")
+    _validate_semantic_facet_gate(quality_steps)
 
     setup_steps = [
         step
@@ -253,6 +310,7 @@ def _validate_jobs(jobs: Mapping[str, Any]) -> None:
             raise CIConfigurationError("artifacts must use a 14-day retention period")
         if values.get("if-no-files-found") not in {"warn", "error"}:
             raise CIConfigurationError("artifact upload must define if-no-files-found behavior")
+    _validate_semantic_facet_report_artifact(quality_steps)
 
     dependency_review = _mapping(jobs["dependency-review"], label="jobs.dependency-review")
     if dependency_review.get("if") != "${{ github.event_name == 'pull_request' }}":

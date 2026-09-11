@@ -1,0 +1,74 @@
+[
+  {
+    "case_id": "SFC-001",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 4.7960000000020955
+  },
+  {
+    "case_id": "SFC-002",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 4.64100000000326
+  },
+  {
+    "case_id": "SFC-003",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.187999999994645
+  },
+  {
+    "case_id": "SFC-004",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.2339999999967404
+  },
+  {
+    "case_id": "SFC-005",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.937000000005355
+  },
+  {
+    "case_id": "SFC-006",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.60999999998603
+  },
+  {
+    "case_id": "SFC-007",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.7030000000086147
+  },
+  {
+    "case_id": "SFC-008",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.9530000000086147
+  },
+  {
+    "case_id": "SFC-009",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 3.562000000005355
+  },
+  {
+    "case_id": "SFC-010",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.7659999999741558
+  },
+  {
+    "case_id": "SFC-011",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 3.234000000025844
+  },
+  {
+    "case_id": "SFC-012",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.35999999998603
+  }
+]

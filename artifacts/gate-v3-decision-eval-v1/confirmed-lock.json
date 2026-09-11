@@ -1,0 +1,9 @@
+{
+  "status": "user_confirmed",
+  "confirmation_sha256": "e3d48b7451e7fa29d8f1a37bd77ee599d681573219338ff32ab5ad31442d84c4",
+  "review_sha256": "a6f72e13fd53ff57d301e586ddd2d514306afd14fa31d261c671aff8d21e210c",
+  "freeze_sha256": "6b024a8a9ecbdc6fea7e202fc5e66b660983026213ded9c2751baad94a254643",
+  "gate_executed": false,
+  "inference_executed": false,
+  "numeric_report_generated": false
+}

@@ -1,0 +1,1429 @@
+{
+  "status": "completed",
+  "mode": "captured_bge_ranking_replay",
+  "new_model_inference": false,
+  "numeric_resume_ready": false,
+  "input_zip_sha256": "9ba1826c039c153215ba9ec74695b18521ae466d1c746bcff24a7c48a2a85073",
+  "source_experiment": {
+    "head": "2fa68aff35ca77d390754a86c5bbec78b1371d45",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "labels_sha256": "34643166b8321bb32950d1fcadb51fa054300816c4f1c86b8cdc39489cd63ecf",
+  "rules_sha256": "b58a07e34142310032909778eeccb40d945d392f3cc8ea0c54ac21ff0e67ea12",
+  "selector_sha256": "87c1af8e5e3c839e67e71429cfc3c9a71e98a52ddb565c770ccf14aba7be7fc2",
+  "timing_scope": "selection only; one sample per query; excludes inference and IO",
+  "windows": {
+    "20": {
+      "before": {
+        "effective_n": 16,
+        "recall_at_5": 0.7375,
+        "mrr_at_5": 0.96875,
+        "ndcg_at_5": 0.859929016696204
+      },
+      "after": {
+        "effective_n": 16,
+        "recall_at_5": 0.8208333333333333,
+        "mrr_at_5": 0.96875,
+        "ndcg_at_5": 0.8893454510390968
+      },
+      "changed": [
+        "COV-001",
+        "COV-007",
+        "COV-008",
+        "COV-009"
+      ],
+      "regressions": [],
+      "controls": {
+        "case_ids": [
+          "COV-003",
+          "COV-004",
+          "COV-008",
+          "COV-011",
+          "COV-012",
+          "COV-013",
+          "COV-014"
+        ],
+        "before": {
+          "effective_n": 7,
+          "recall_at_5": 0.9285714285714286,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.969593514712996
+        },
+        "after": {
+          "effective_n": 7,
+          "recall_at_5": 0.9285714285714286,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.969593514712996
+        },
+        "changed": [
+          "COV-008"
+        ]
+      },
+      "mean_selection_ms": 0.011162490409333259,
+      "cases": [
+        {
+          "case_id": "COV-001",
+          "query": "我是普通员工，去深圳出差住两晚，按制度每晚的住宿限额是多少？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_010"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.03319996176287532
+        },
+        {
+          "case_id": "COV-002",
+          "query": "杭州的出差酒店，部门负责人每晚最多能报销多少钱？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "outside_authorized_candidate_window"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.015499943401664495
+        },
+        {
+          "case_id": "COV-003",
+          "query": "目的地已经确认属于二类城市，只查普通员工每晚的酒店费用上限。",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "already_present"
+            },
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "already_present"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.011499971151351929
+        },
+        {
+          "case_id": "COV-004",
+          "query": "两名同性普通员工出差，公司是否可以强制他们合住一个标准间？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_012"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_012"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "outside_authorized_candidate_window"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010399962775409222
+        },
+        {
+          "case_id": "COV-005",
+          "query": "我不是部门负责人，是普通员工，去广州出差能按每晚700元报销酒店吗？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.5063414596277047
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.5063414596277047
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_011"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_011"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "outside_authorized_candidate_window"
+            },
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "outside_authorized_candidate_window"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010200019460171461
+        },
+        {
+          "case_id": "COV-006",
+          "query": "负责人去深圳参加展会，酒店超过标准时，除了住宿限额，还需要准备什么审批和材料？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.8,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9172177896475359
+          },
+          "after": {
+            "recall_at_5": 0.8,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9172177896475359
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008100003469735384
+        },
+        {
+          "case_id": "COV-007",
+          "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.3333333333333333,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.541942129480027
+          },
+          "after": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7515939636280409
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010399962775409222
+        },
+        {
+          "case_id": "COV-008",
+          "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.009000010322779417
+        },
+        {
+          "case_id": "COV-009",
+          "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.009000010322779417
+        },
+        {
+          "case_id": "COV-010",
+          "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8838695436828513
+          },
+          "after": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8838695436828513
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_020"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_020"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "outside_authorized_candidate_window"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010499963536858559
+        },
+        {
+          "case_id": "COV-011",
+          "query": "出差当天不足八小时而且会议已经供了一餐，餐费补贴按什么规定算？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008200004231184721
+        },
+        {
+          "case_id": "COV-012",
+          "query": "普通员工出差想买高铁一等座，制度允许的座席和负责人有什么区别？",
+          "control": true,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008300004992634058
+        },
+        {
+          "case_id": "COV-013",
+          "query": "出差坐火车单程要七个小时，能不能改坐经济舱，选航班还有什么原则？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008800008799880743
+        },
+        {
+          "case_id": "COV-014",
+          "query": "交通票据丢失后已经写了遗失说明，这样就一定能报销吗，还要补哪些材料？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008200004231184721
+        },
+        {
+          "case_id": "COV-015",
+          "query": "出差期间一天打车超过200元，与非差旅的公务交通单笔超过200元，补充说明的要求分别是什么？",
+          "control": false,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9737203297462859
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9737203297462859
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008600007276982069
+        },
+        {
+          "case_id": "COV-016",
+          "query": "客户招待费用和超过报销时限的费用，都必须交财务管理部复核吗？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "already_present"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.008700008038431406
+        }
+      ]
+    },
+    "40": {
+      "before": {
+        "effective_n": 16,
+        "recall_at_5": 0.7375,
+        "mrr_at_5": 0.96875,
+        "ndcg_at_5": 0.859929016696204
+      },
+      "after": {
+        "effective_n": 16,
+        "recall_at_5": 0.8885416666666667,
+        "mrr_at_5": 0.96875,
+        "ndcg_at_5": 0.9093253412934029
+      },
+      "changed": [
+        "COV-001",
+        "COV-002",
+        "COV-004",
+        "COV-005",
+        "COV-007",
+        "COV-008",
+        "COV-009",
+        "COV-010"
+      ],
+      "regressions": [],
+      "controls": {
+        "case_ids": [
+          "COV-003",
+          "COV-004",
+          "COV-008",
+          "COV-011",
+          "COV-012",
+          "COV-013",
+          "COV-014"
+        ],
+        "before": {
+          "effective_n": 7,
+          "recall_at_5": 0.9285714285714286,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.969593514712996
+        },
+        "after": {
+          "effective_n": 7,
+          "recall_at_5": 0.9285714285714286,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.969593514712996
+        },
+        "changed": [
+          "COV-004",
+          "COV-008"
+        ]
+      },
+      "mean_selection_ms": 0.01265625178348273,
+      "cases": [
+        {
+          "case_id": "COV-001",
+          "query": "我是普通员工，去深圳出差住两晚，按制度每晚的住宿限额是多少？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_010"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.021099986042827368
+        },
+        {
+          "case_id": "COV-002",
+          "query": "杭州的出差酒店，部门负责人每晚最多能报销多少钱？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_024",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.012199976481497288
+        },
+        {
+          "case_id": "COV-003",
+          "query": "目的地已经确认属于二类城市，只查普通员工每晚的酒店费用上限。",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_007",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "already_present"
+            },
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "already_present"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.012300035450607538
+        },
+        {
+          "case_id": "COV-004",
+          "query": "两名同性普通员工出差，公司是否可以强制他们合住一个标准间？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_012"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_023",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_008",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_012"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_012"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.01190003240481019
+        },
+        {
+          "case_id": "COV-005",
+          "query": "我不是部门负责人，是普通员工，去广州出差能按每晚700元报销酒店吗？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.5063414596277047
+          },
+          "after": {
+            "recall_at_5": 0.75,
+            "mrr_at_5": 0.5,
+            "ndcg_at_5": 0.6056633599640342
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_011"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "TRAVEL_POLICY_001__v1_0__article_007"
+          ],
+          "events": [
+            {
+              "rule_id": "city_category_for_lodging_table",
+              "anchor": "TRAVEL_POLICY_001__v1_0__article_009",
+              "target": "TRAVEL_POLICY_001__v1_0__article_007",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_011"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_011"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.011300027836114168
+        },
+        {
+          "case_id": "COV-006",
+          "query": "负责人去深圳参加展会，酒店超过标准时，除了住宿限额，还需要准备什么审批和材料？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.8,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9172177896475359
+          },
+          "after": {
+            "recall_at_5": 0.8,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9172177896475359
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_010",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "TRAVEL_POLICY_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_005"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010100018698722124
+        },
+        {
+          "case_id": "COV-007",
+          "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.3333333333333333,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.541942129480027
+          },
+          "after": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7515939636280409
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_010",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.011399970389902592
+        },
+        {
+          "case_id": "COV-008",
+          "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_022"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010699965059757233
+        },
+        {
+          "case_id": "COV-009",
+          "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9176601606601069
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_028",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_047",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_026"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.015300000086426735
+        },
+        {
+          "case_id": "COV-010",
+          "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.6666666666666666,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.8838695436828513
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9737203297462859
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_020"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_019",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "supplemented",
+              "evicted": [
+                "TRAVEL_POLICY_001__v1_0__article_020"
+              ]
+            }
+          ],
+          "evicted_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_020"
+          ],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.015099998563528061
+        },
+        {
+          "case_id": "COV-011",
+          "query": "出差当天不足八小时而且会议已经供了一餐，餐费补贴按什么规定算？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_014",
+            "TRAVEL_POLICY_001__v1_0__article_015",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_010"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.013400043826550245
+        },
+        {
+          "case_id": "COV-012",
+          "query": "普通员工出差想买高铁一等座，制度允许的座席和负责人有什么区别？",
+          "control": true,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_008",
+            "TRAVEL_POLICY_001__v1_0__article_003"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.013599987141788006
+        },
+        {
+          "case_id": "COV-013",
+          "query": "出差坐火车单程要七个小时，能不能改坐经济舱，选航班还有什么原则？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_012",
+            "TRAVEL_POLICY_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_003",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "TRAVEL_POLICY_001__v1_0__article_014"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010899966582655907
+        },
+        {
+          "case_id": "COV-014",
+          "query": "交通票据丢失后已经写了遗失说明，这样就一定能报销吗，还要补哪些材料？",
+          "control": true,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 1.0
+          },
+          "baseline_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013"
+          ],
+          "selected_ids": [
+            "TRAVEL_POLICY_001__v1_0__article_018",
+            "TRAVEL_POLICY_001__v1_0__article_016",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_020",
+            "TRAVEL_POLICY_001__v1_0__article_017",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_013"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010699965059757233
+        },
+        {
+          "case_id": "COV-015",
+          "query": "出差期间一天打车超过200元，与非差旅的公务交通单笔超过200元，补充说明的要求分别是什么？",
+          "control": false,
+          "before": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9737203297462859
+          },
+          "after": {
+            "recall_at_5": 1.0,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.9737203297462859
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_009",
+            "TRAVEL_POLICY_001__v1_0__article_013",
+            "TRAVEL_POLICY_001__v1_0__article_005",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_002"
+          ],
+          "events": [],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.010100018698722124
+        },
+        {
+          "case_id": "COV-016",
+          "query": "客户招待费用和超过报销时限的费用，都必须交财务管理部复核吗？",
+          "control": false,
+          "before": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "after": {
+            "recall_at_5": 0.5,
+            "mrr_at_5": 1.0,
+            "ndcg_at_5": 0.7871546029909718
+          },
+          "baseline_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+          ],
+          "selected_ids": [
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_011",
+            "TRAVEL_POLICY_001__v1_0__article_006",
+            "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_021"
+          ],
+          "events": [
+            {
+              "rule_id": "finance_review_for_overdue_expense",
+              "anchor": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_027",
+              "target": "EXPENSE_REIMBURSEMENT_GUIDE_001__v1_0__article_025",
+              "action": "already_present"
+            }
+          ],
+          "evicted_ids": [],
+          "evicted_judgments": [],
+          "regressed_metrics": [],
+          "selection_ms": 0.012400036212056875
+        }
+      ]
+    }
+  }
+}

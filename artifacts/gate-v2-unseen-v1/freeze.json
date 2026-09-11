@@ -1,0 +1,19 @@
+{
+  "status": "frozen_before_authoring",
+  "created_at": "2026-09-09T02:56:56.010542+00:00",
+  "windows": [
+    20,
+    40
+  ],
+  "final_k": 5,
+  "preserve_top_k": 4,
+  "max_supplements": 1,
+  "files": {
+    "scripts/coverage_gate_v2.py": "c61f5255c15a549e106d57a61747bd9e5ce96fd7d2f3363a7446b7fef930f7a4",
+    "scripts/replay_gate_v2.py": "e03f0d991d4ecd50f1188fe9467d74e15d7c3b817a421e9bbeca4fc67ae761a6",
+    "scripts/replay_coverage_windows.py": "87c1af8e5e3c839e67e71429cfc3c9a71e98a52ddb565c770ccf14aba7be7fc2",
+    "scripts/run_retrieval_coverage_ablation.py": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10",
+    "tests/evaluation/retrieval_coverage_rules.json": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb",
+    "artifacts/retrieval-coverage-review-v1/corpus.json": "cd637ccfe2822e4bba9205f12f64066ec7b7b370fa99b7ccf558c5b6e6c1a147"
+  }
+}

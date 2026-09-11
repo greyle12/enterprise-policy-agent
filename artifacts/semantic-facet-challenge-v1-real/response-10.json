@@ -1,0 +1,44 @@
+{
+  "id": "c3f079ef-d65e-467d-a8f8-d2d2add4ee98",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-011\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer JSONL per case. Need analyze query. We need extract facets. Query: \"同事提出了先申请借款再报销和先垫付再报销两种流程。这次外地培训应选其中哪种？\" We need determine user current request info dimensions. They ask which of two processes to choose. That is PROCESS_CHOICE. Binding? Target object? They ask \"这次外地培训\" should choose which of two processes? The candidate processes are specified: 先申请借款再报销 vs 先垫付再报销. Target object is this trip/training reimbursement process. Is it uniquely bound? They ask \"这次外地培训应选其中哪种？\" The options are uniquely stated. The target process for this business trip training maybe uniquely determined in context? We only have query, no external context. But binding refers request dimension and target object have unique original binding. The process choice is between two explicitly listed flows for \"这次外地培训\". Seems BOUND? Need decide. PROCESS_CHOICE dimension appears. Binding BOUND if target object, candidate processes or assertion content can be uniquely determined. Here candidate processes uniquely determined (two named). Target object \"这次外地培训\" is deictic but in original. Should be BOUND? In prior tasks, if query asks \"我应该选择哪种流程?\" with two processes specified, PROCESS_CHOICE BOUND maybe yes. If \"这次外地培训\" references unspecified event, but choice is about it. The target object is clear enough? It says \"这次外地培训\" (this out-of-town training), that's a unique object in current context. Candidate processes are two. So BOUND.\n\nAny PROCEDURE? They ask which process, not how steps. Not PROCEDURE. Any RESPONSIBLE_ROLE? no. MATERIAL? no. DEADLINE? no.\n\nSo predicted_facets: [{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"BOUND\"}]. Need output one line. Ensure JSON no markdown. schema_version \"1.0\", case_id SFC-011. Final."
+      }
+    }
+  ],
+  "created": 1789087131,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 463,
+    "prompt_tokens": 394,
+    "total_tokens": 857,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 422,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 138
+  }
+}

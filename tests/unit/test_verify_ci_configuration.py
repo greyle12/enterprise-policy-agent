@@ -118,6 +118,80 @@ def test_rejects_missing_format_gate_command(tmp_path: Path) -> None:
         validate_ci_configuration(tmp_path)
 
 
+def test_rejects_missing_semantic_request_facet_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "python -X utf8 -m scripts.check_semantic_request_facets",
+        "python -X utf8 -c \"print('semantic Facet gate removed')\"",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_semantic_request_facet_report_output(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "--output artifacts/evaluation/semantic-request-facets-report.json",
+        "--output artifacts/evaluation/other-report.json",
+    )
+
+    with pytest.raises(CIConfigurationError, match="quality job is missing command"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_skipped_semantic_request_facet_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "      - name: Verify confirmed semantic request Facet evidence\n",
+        "      - name: Verify confirmed semantic request Facet evidence\n"
+        "        if: ${{ false }}\n",
+    )
+
+    with pytest.raises(CIConfigurationError, match="default success path"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_nonblocking_semantic_request_facet_gate(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "      - name: Verify confirmed semantic request Facet evidence\n",
+        "      - name: Verify confirmed semantic request Facet evidence\n"
+        "        continue-on-error: true\n",
+    )
+
+    with pytest.raises(CIConfigurationError, match="must fail the quality job"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_missing_semantic_request_facet_report_artifact(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "            artifacts/evaluation/semantic-request-facets-report.json\n",
+        "            artifacts/evaluation/other-report.json\n",
+    )
+
+    with pytest.raises(CIConfigurationError, match="exactly one semantic Facet report artifact"):
+        validate_ci_configuration(tmp_path)
+
+
+def test_rejects_non_always_semantic_request_facet_report_artifact(tmp_path: Path) -> None:
+    workflow, _ = _copy_configuration(tmp_path)
+    _replace_once(
+        workflow,
+        "      - name: Upload test and evaluation evidence\n        if: ${{ always() }}\n",
+        "      - name: Upload test and evaluation evidence\n        if: ${{ success() }}\n",
+    )
+
+    with pytest.raises(CIConfigurationError, match=r"if: \$\{\{ always\(\) \}\}"):
+        validate_ci_configuration(tmp_path)
+
+
 def test_rejects_missing_runtime_observability_gate(tmp_path: Path) -> None:
     workflow, _ = _copy_configuration(tmp_path)
     _replace_once(

@@ -1,0 +1,44 @@
+{
+  "id": "8d06cab0-8453-4c4d-b8e0-517295286d6e",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-010\",\"predicted_facets\":[{\"facet\":\"RESPONSIBLE_ROLE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need extract facets. Query: \"关于会议室预订，不用列材料，也不用讲操作步骤；只告诉我预订由谁审核。\" Chinese. Need identify user's current request dimensions. Explicitly excludes MATERIAL and PROCEDURE. Only asks who reviews/approves reservation. That's RESPONSIBLE_ROLE. Binding? Target object: 会议室预订审核责任主体. Query says \"预订由谁审核\" for meeting room reservation. Unique? It asks who approves meeting room booking. Binding likely BOUND? Need determine binding semantics: BOUND if request dimension and target object have unique original binding; UNBOUND if dimension appeared but target object, candidate process, or assertion cannot be uniquely determined. Here target object is meeting room reservation approval. \"由谁审核\" responsible role. Unique? It's specific to 会议室预订. No multiple processes mentioned. So BOUND. Need output JSON only. case_id SFB-010. schema_version \"1.0\". predicted_facets array [{\"facet\":\"RESPONSIBLE_ROLE\",\"binding\":\"BOUND\"}]. Ensure no extra. \nFinal."
+      }
+    }
+  ],
+  "created": 1789091101,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 277,
+    "prompt_tokens": 390,
+    "total_tokens": 667,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 236,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 134
+  }
+}

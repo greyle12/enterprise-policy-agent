@@ -1,0 +1,507 @@
+{
+  "accepted_case_count": 18,
+  "accepted_facet_instance_count": 17,
+  "allowed_facets": [
+    {
+      "definition": "用户询问如何处理、需要哪些步骤或采用何种办理方式。",
+      "exclusions": [
+        "仅询问是否可行",
+        "仅询问材料、时间或责任人"
+      ],
+      "facet": "PROCEDURE",
+      "positive_cues": [
+        "怎么办",
+        "怎么处理"
+      ]
+    },
+    {
+      "definition": "用户询问需要补充、提交或准备的说明、凭证或材料。",
+      "exclusions": [
+        "不能把财务要做什么自动解释为材料"
+      ],
+      "facet": "MATERIAL",
+      "positive_cues": [
+        "补什么说明",
+        "需要什么材料"
+      ]
+    },
+    {
+      "definition": "用户询问时间点、期限、天数阈值或逾期后何时可以采取某动作。",
+      "exclusions": [
+        "原句只陈述已过去的天数时，不自动生成时间询问"
+      ],
+      "facet": "DEADLINE",
+      "positive_cues": [
+        "多久后",
+        "什么时候"
+      ]
+    },
+    {
+      "definition": "用户询问部门、岗位、人员或审批主体由谁负责。",
+      "exclusions": [
+        "不能补出制度未指定的具体人名或岗位"
+      ],
+      "facet": "RESPONSIBLE_ROLE",
+      "positive_cues": [
+        "哪些人",
+        "由谁审批",
+        "哪个部门"
+      ]
+    },
+    {
+      "definition": "用户在多个可能办理流程之间询问应选择哪一个流程。",
+      "exclusions": [
+        "单纯询问办理步骤归 PROCEDURE；不能替用户选择具体制度流程"
+      ],
+      "facet": "PROCESS_CHOICE",
+      "positive_cues": [
+        "按哪个流程",
+        "走哪条流程"
+      ]
+    }
+  ],
+  "binding_statuses": [
+    {
+      "meaning": "请求维度和目标对象均有可回查的唯一原文绑定。",
+      "status": "BOUND"
+    },
+    {
+      "meaning": "请求维度在原文中出现，但目标对象、候选流程或断言内容不唯一。",
+      "status": "UNBOUND"
+    },
+    {
+      "meaning": "当前样本没有安全可标注的该请求维度，或现有契约没有对应动作表达。",
+      "status": "MISSING"
+    }
+  ],
+  "cases": [
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "九天仅为背景。",
+          "source_spans": [
+            {
+              "end": 25,
+              "start": 18,
+              "text": "需要附哪些文件"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-001",
+      "note": "时间条件；九天仅为背景。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "设备验收已过去九天。归档这次验收记录需要附哪些文件？",
+      "record_line": 1
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "DEADLINE",
+          "rationale": "明确询问归档期限。",
+          "source_spans": [
+            {
+              "end": 19,
+              "start": 6,
+              "text": "最晚应在验收完成后几天归档"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-002",
+      "note": "时间条件；明确询问归档期限。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "设备验收记录最晚应在验收完成后几天归档？",
+      "record_line": 2
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "已知期限不是当前请求。",
+          "source_spans": [
+            {
+              "end": 31,
+              "start": 25,
+              "text": "归档操作步骤"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-003",
+      "note": "时间条件；已知期限不是当前请求。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "设备验收已经结束，归档期限也已告知。我现在只想了解归档操作步骤。",
+      "record_line": 3
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "它有唯一明确先行对象。",
+          "source_spans": [
+            {
+              "end": 22,
+              "start": 12,
+              "text": "它要经过哪些办理环节"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-004",
+      "note": "跨句指代；它有唯一明确先行对象。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "我正在办理办公电脑领用。它要经过哪些办理环节？",
+      "record_line": 4
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCEDURE",
+          "rationale": "两个对象之间指代不唯一。",
+          "source_spans": [
+            {
+              "end": 30,
+              "start": 20,
+              "text": "它要经过哪些办理环节"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-005",
+      "note": "跨句指代；两个对象之间指代不唯一。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "我同时有办公电脑领用和门禁补办两项事情。它要经过哪些办理环节？",
+      "record_line": 5
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "后者唯一指向门禁补办。",
+          "source_spans": [
+            {
+              "end": 29,
+              "start": 20,
+              "text": "后者要提交什么资料"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-006",
+      "note": "跨句指代；后者唯一指向门禁补办。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "我同时有办公电脑领用和门禁补办两项事情。后者要提交什么资料？",
+      "record_line": 6
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE",
+          "rationale": "材料只在他人问句中出现。",
+          "source_spans": [
+            {
+              "end": 33,
+              "start": 22,
+              "text": "访客登记由哪个岗位负责"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-007",
+      "note": "引用说法；材料只在他人问句中出现。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "同事问：“访客登记要带什么材料？”我只想知道访客登记由哪个岗位负责。",
+      "record_line": 7
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "用户明确采纳引用中的请求。",
+          "source_spans": [
+            {
+              "end": 29,
+              "start": 17,
+              "text": "这个问题也是我现在要问的"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-008",
+      "note": "引用说法；用户明确采纳引用中的请求。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "同事问：“访客登记要带什么材料？”这个问题也是我现在要问的。",
+      "record_line": 8
+    },
+    {
+      "accepted_facets": [],
+      "case_id": "SFB-009",
+      "note": "引用说法；只有报告他人问句，无当前信息请求。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "记录原话：“访客登记最晚什么时候完成？”我只是转录这句话，没有向你提出制度问题。",
+      "record_line": 9
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE",
+          "rationale": "排除材料与步骤，仅问审核主体。",
+          "source_spans": [
+            {
+              "end": 33,
+              "start": 27,
+              "text": "预订由谁审核"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-010",
+      "note": "明确排除；排除材料与步骤，仅问审核主体。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "关于会议室预订，不用列材料，也不用讲操作步骤；只告诉我预订由谁审核。",
+      "record_line": 10
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "双重否定后的明确请求为步骤。",
+          "source_spans": [
+            {
+              "end": 26,
+              "start": 20,
+              "text": "只问操作步骤"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-011",
+      "note": "明确排除；双重否定后的明确请求为步骤。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "关于会议室预订，我不是不问操作步骤，我是只问操作步骤。",
+      "record_line": 11
+    },
+    {
+      "accepted_facets": [],
+      "case_id": "SFB-012",
+      "note": "明确排除；所有提及维度均排除，输出空数组。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "关于会议室预订，材料、期限和流程我都不问，也没有其他问题。",
+      "record_line": 12
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "两个候选流程均在原文中给出。",
+          "source_spans": [
+            {
+              "end": 23,
+              "start": 7,
+              "text": "走部门统一申请，还是员工个人申请"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-013",
+      "note": "流程候选；两个候选流程均在原文中给出。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "这次账号开通应走部门统一申请，还是员工个人申请？",
+      "record_line": 13
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "候选内容缺失，禁止补全历史。",
+          "source_spans": [
+            {
+              "end": 23,
+              "start": 7,
+              "text": "走之前说的那条渠道，还是另外那条"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-014",
+      "note": "流程候选；候选内容缺失，禁止补全历史。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "这次账号开通应走之前说的那条渠道，还是另外那条？此前的对话不在这里。",
+      "record_line": 14
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "用户已选流程，当前仅请求步骤。",
+          "source_spans": [
+            {
+              "end": 39,
+              "start": 32,
+              "text": "前者的操作步骤"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-015",
+      "note": "流程候选；用户已选流程，当前仅请求步骤。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "部门统一申请和员工个人申请都能用于账号开通；我已选定前者，请列出前者的操作步骤。",
+      "record_line": 15
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE",
+          "rationale": "职责对象明确。",
+          "source_spans": [
+            {
+              "end": 19,
+              "start": 6,
+              "text": "门禁权限注销由哪个部门负责"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-016",
+      "note": "责任主体；职责对象明确。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "员工离职时，门禁权限注销由哪个部门负责？",
+      "record_line": 16
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "RESPONSIBLE_ROLE",
+          "rationale": "职责对象有两个候选且指代不唯一。",
+          "source_spans": [
+            {
+              "end": 23,
+              "start": 17,
+              "text": "那个归谁负责"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-017",
+      "note": "责任主体；职责对象有两个候选且指代不唯一。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "门禁权限注销和工牌回收是两项工作。那个归谁负责？",
+      "record_line": 17
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE",
+          "rationale": "前一项唯一指向权限注销，同时请求材料。",
+          "source_spans": [
+            {
+              "end": 24,
+              "start": 17,
+              "text": "前一项归谁负责"
+            }
+          ],
+          "status": "EXPRESSED"
+        },
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "前一项唯一指向权限注销，同时请求材料。",
+          "source_spans": [
+            {
+              "end": 33,
+              "start": 25,
+              "text": "需要提交什么材料"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFB-018",
+      "note": "责任主体；前一项唯一指向权限注销，同时请求材料。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "门禁权限注销和工牌回收是两项工作。前一项归谁负责，需要提交什么材料？",
+      "record_line": 18
+    }
+  ],
+  "dataset_version": "semantic-facet-blind-v2-confirmed-1",
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "retrieval_executed": false,
+  "sample_count": 18,
+  "schema_version": "1.0",
+  "source_dataset_version": "semantic-facet-blind-v2-source-1",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "status": "user_confirmed"
+}

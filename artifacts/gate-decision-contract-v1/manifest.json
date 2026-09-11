@@ -1,0 +1,14 @@
+{
+  "status": "pending_user_confirmation",
+  "decision_source_sha256": "c2f27945a907714bd1a16a59620f5f75f7fdbd018733fb4c877f23a5181c51f8",
+  "files": {
+    "artifacts/gate-decision-contract-v1/CONTRACT.md": "c950dc6d9e69ef44e352725dd02643764536963f38cc63015678f34a7995f385",
+    "artifacts/gate-decision-contract-v1/review.json": "fd78adc48fe9d76c0c95f5448670e04d72ced01a7133e431998da8fce9f89a8d",
+    "scripts/coverage_gate_v2.py": "c61f5255c15a549e106d57a61747bd9e5ce96fd7d2f3363a7446b7fef930f7a4",
+    "scripts/experiment_coverage_gate.py": "76d50530444c24b6da5159ddfeb71655e2578fdad35bca7370941365aa0b6252",
+    "tests/evaluation/retrieval_coverage_rules.json": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb"
+  },
+  "binary_pair_count": 19,
+  "not_applicable_count": 1,
+  "new_evaluation_run": false
+}

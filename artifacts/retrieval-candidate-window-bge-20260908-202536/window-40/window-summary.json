@@ -1,0 +1,107 @@
+{
+  "window": 40,
+  "candidate_k_per_channel": 40,
+  "rrf_rank_constant": 60,
+  "rerank_window": 40,
+  "final_k": 5,
+  "query_count": 16,
+  "judgment_count": 36,
+  "channels": {
+    "vector": {
+      "source_channel": "vector",
+      "case_count": 16,
+      "effective_n": 16,
+      "successful_n": 16,
+      "recall_at_5": 0.7145833333333333,
+      "mrr_at_5": 0.8958333333333334,
+      "ndcg_at_5": 0.7655155223344163,
+      "average_duration_ms": 28.116862507886253,
+      "error_count": 0
+    },
+    "bm25": {
+      "source_channel": "bm25",
+      "case_count": 16,
+      "effective_n": 16,
+      "successful_n": 16,
+      "recall_at_5": 0.8177083333333334,
+      "mrr_at_5": 0.921875,
+      "ndcg_at_5": 0.8627886863065003,
+      "average_duration_ms": 3.083118743234081,
+      "error_count": 0
+    },
+    "rrf": {
+      "source_channel": "hybrid",
+      "case_count": 16,
+      "effective_n": 16,
+      "successful_n": 16,
+      "recall_at_5": 0.753125,
+      "mrr_at_5": 1.0,
+      "ndcg_at_5": 0.8787852145738654,
+      "average_duration_ms": 30.537393751728814,
+      "error_count": 0
+    },
+    "reranked": {
+      "source_channel": "reranked",
+      "case_count": 16,
+      "effective_n": 16,
+      "successful_n": 16,
+      "recall_at_5": 0.7375,
+      "mrr_at_5": 0.96875,
+      "ndcg_at_5": 0.859929016696204,
+      "average_duration_ms": 27048.17548751089,
+      "error_count": 0
+    }
+  },
+  "candidate_coverage": {
+    "vector_at_window": {
+      "effective_n": 16,
+      "mean_recall": 1.0,
+      "error_count": 0
+    },
+    "bm25_at_window": {
+      "effective_n": 16,
+      "mean_recall": 0.96875,
+      "error_count": 0
+    },
+    "rrf_before_window_truncation": {
+      "effective_n": 16,
+      "mean_recall": 1.0,
+      "error_count": 0
+    },
+    "rrf_at_window": {
+      "effective_n": 16,
+      "mean_recall": 1.0,
+      "error_count": 0
+    }
+  },
+  "full_source_trace": {
+    "effective_n": 16,
+    "error_count": 0,
+    "average_duration_ms": 29.661812503036344,
+    "scope": "diagnostic-only; excluded from channel duration_ms"
+  },
+  "rerank_regressions": {
+    "effective_n": 16,
+    "recall_regression_count": 2,
+    "recall_regressed_case_ids": [
+      "COV-007",
+      "COV-016"
+    ],
+    "mrr_regression_count": 1,
+    "mrr_regressed_case_ids": [
+      "COV-005"
+    ],
+    "ndcg_regression_count": 3,
+    "ndcg_regressed_case_ids": [
+      "COV-005",
+      "COV-007",
+      "COV-016"
+    ],
+    "any_regression_count": 3,
+    "any_regressed_case_ids": [
+      "COV-005",
+      "COV-007",
+      "COV-016"
+    ]
+  }
+}

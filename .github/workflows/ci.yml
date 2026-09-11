@@ -123,6 +123,16 @@ jobs:
       - name: Run the complete pytest suite
         run: python -m pytest --junitxml=artifacts/test-results/pytest.xml
 
+      - name: Verify confirmed semantic request Facet evidence
+        run: >-
+          python -X utf8 -m scripts.check_semantic_request_facets
+          --records docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl
+          --accepted docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json
+          --confirmation docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json
+          --manifest docs/gate_v3/semantic-request-facets-v1-confirmed/manifest.json
+          --project-root .
+          --output artifacts/evaluation/semantic-request-facets-report.json
+
       - name: Run the offline golden evaluation
         run: python -X utf8 -m scripts.run_golden_evaluation --mode offline
 
@@ -233,6 +243,7 @@ jobs:
           name: quality-evidence-${{ github.run_id }}
           path: |
             artifacts/test-results/pytest.xml
+            artifacts/evaluation/semantic-request-facets-report.json
             artifacts/evaluation/golden-evaluation-report.json
             artifacts/evaluation/golden-evaluation-report.md
             artifacts/evaluation/retrieval-evaluation-report.json

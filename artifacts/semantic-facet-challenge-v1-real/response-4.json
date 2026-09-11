@@ -1,0 +1,44 @@
+{
+  "id": "5a6755b0-a85e-4bc7-9164-b71d3a56e97f",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-005\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need extract facets. Query: \"出差报销时，我遗失了住宿发票。住宿发票遗失后应该怎么办？\" Need facets from allowed. They ask how to handle after losing accommodation invoice. That's PROCEDURE. Also maybe MATERIAL? They lost invoice, need supplement/submit materials? Query asks \"应该怎么办\" broadly, likely procedure. Does it explicitly ask what materials to supplement? It mentions invoice but not asking materials needed. Could infer procedure includes materials maybe but allowed facet MATERIAL if need supplement, submit or prepare explanations/vouchers/materials. The query says lost accommodation invoice; what to do. It may involve material e.g. replacement, explanation. But is it safely identifiable? Need only current request. Main is PROCEDURE. Binding? Request dimension and target object unique original binding. Procedure for handling lost accommodation invoice in reimbursement, target object uniquely \"住宿发票遗失后\". BOUND. Could also MATERIAL? The question doesn't directly ask \"需要提交什么材料\"; it's implicit but not explicit. The instructions say don't infer omitted objects. So probably no MATERIAL. No deadline, role, process choice. Output SFC-005 predicted_facets [{facet:\"PROCEDURE\", binding:\"BOUND\"}]. Ensure JSONL only."
+      }
+    }
+  ],
+  "created": 1789087116,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 300,
+    "prompt_tokens": 387,
+    "total_tokens": 687,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 262,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 259
+  }
+}

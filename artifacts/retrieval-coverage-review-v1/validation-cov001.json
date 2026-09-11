@@ -1,0 +1,189 @@
+{
+  "schema_version": "1.0",
+  "status": "blocked_pending_human_review",
+  "passed": false,
+  "case_count": 16,
+  "blocked_case_count": 16,
+  "issues": [
+    {
+      "case_id": "COV-001",
+      "problems": [
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-002",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-003",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-004",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-005",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-006",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-007",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-008",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-009",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-010",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-011",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-012",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-013",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-014",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-015",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    },
+    {
+      "case_id": "COV-016",
+      "problems": [
+        "answerability unresolved; do not silently exclude this case",
+        "full authorized corpus review declaration required",
+        "human approval required",
+        "positive judgments required; IDs must be unique and authorized",
+        "reviewer required",
+        "valid post-freeze review timestamp required"
+      ]
+    }
+  ],
+  "freeze_sha256": "17c611140a800d703d4c4a472d4e03dcdd54114dc02eec9f4b91bd52995f7474",
+  "review_sha256": "2fb4c84ea4b7773f76d7eff54033d4f6d0dbedcc0f0339502cd54bf91643f11b",
+  "retrieval_executed": false,
+  "numeric_resume_ready": false,
+  "review_identity_and_completeness": "human declarations, not independently certified",
+  "scope": "prospective_targeted_validation_not_independent_test"
+}

@@ -1,0 +1,48 @@
+{
+  "dataset_version": "semantic-facet-blind-v2-confirmed-1",
+  "deliverables": [
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/records.jsonl",
+      "sha256": "e3d27d7184ac37af0d1c2e2963ced12f31e2f11e8cd37b74048bc183076eb7b3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/accepted.json",
+      "sha256": "02903019c5beb4c90718fadbd2ec69c162aaa3149ba2d774db8b05943ac3303a"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/confirmation.json",
+      "sha256": "3132da699f5c793bd99dda697a9ac00694398d493d47e15ecdb591a2fd592a31"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-confirmed/README.md",
+      "sha256": "53a0980139f772dec9605c620d6e257ec16807bae26e8bd55c5b4bc0839bf5a6"
+    }
+  ],
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "retrieval_executed": false,
+  "sample_count": 18,
+  "schema_version": "1.0",
+  "source_dataset_version": "semantic-facet-blind-v2-source-1",
+  "source_files": [
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-draft/questions.jsonl",
+      "sha256": "e29ac7253973de429aaa476a56b7bcf78552cebd144f3bd48c02a847513b697c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-blind-v2-draft/review.json",
+      "sha256": "85f5c9ef52b63a9c884b4575071931a892120fe7bf7f42b2cdcef2ca79134f09"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d"
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-prompt-v1.txt",
+      "sha256": "1e327a051e0f2f0cdd0137930e9931fa665a749bace653977f5adc42edf6af2a"
+    }
+  ],
+  "status": "user_confirmed"
+}

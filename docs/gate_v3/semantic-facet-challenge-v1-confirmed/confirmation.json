@@ -1,0 +1,164 @@
+{
+  "accepted_case_count": 12,
+  "accepted_facet_instance_count": 14,
+  "accepted_mappings": [
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFC-001"
+    },
+    {
+      "accepted_facet_labels": [
+        "MATERIAL",
+        "DEADLINE"
+      ],
+      "binding_by_facet": {
+        "DEADLINE": "BOUND",
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFC-002"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFC-003"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE",
+        "DEADLINE"
+      ],
+      "binding_by_facet": {
+        "DEADLINE": "BOUND",
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFC-004"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFC-005"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "UNBOUND"
+      },
+      "case_id": "SFC-006"
+    },
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFC-007"
+    },
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "UNBOUND"
+      },
+      "case_id": "SFC-008"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "BOUND"
+      },
+      "case_id": "SFC-009"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "UNBOUND"
+      },
+      "case_id": "SFC-010"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "BOUND"
+      },
+      "case_id": "SFC-011"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "UNBOUND"
+      },
+      "case_id": "SFC-012"
+    }
+  ],
+  "case_ids_in_dataset_order": [
+    "SFC-001",
+    "SFC-002",
+    "SFC-003",
+    "SFC-004",
+    "SFC-005",
+    "SFC-006",
+    "SFC-007",
+    "SFC-008",
+    "SFC-009",
+    "SFC-010",
+    "SFC-011",
+    "SFC-012"
+  ],
+  "confirmation_scope": [
+    "six paired targeted challenge groups",
+    "twelve query texts and their proposed Facet labels",
+    "BOUND and UNBOUND bindings with source spans",
+    "targeted challenge scope; not an independent test set"
+  ],
+  "confirmation_source": "current conversation; user reply ‘确认允许’ confirmed the reviewed draft labels and permitted sending the 12 queries to api.deepseek.com",
+  "confirmation_version": "semantic-facet-challenge-confirmation-v1",
+  "confirmed_definition_count": 5,
+  "dataset_version": "semantic-facet-challenge-v1-confirmed-1",
+  "draft_preserved": true,
+  "historical_labels_changed": false,
+  "independent_double_annotation": false,
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "partial_records_remain_partial": true,
+  "pending_case_count": 0,
+  "recorded_at": "2026-09-11T00:36:07.160983+00:00",
+  "records_changed": false,
+  "rejected_case_count": 0,
+  "retrieval_executed": false,
+  "schema_version": "1.0",
+  "scope_boundary": "This is a user-confirmed targeted challenge set designed from previous development errors. It is not independently double-annotated and does not establish an independent test-set score, semantic accuracy, retrieval gain, or production behavior.",
+  "semantic_accuracy": null,
+  "source_dataset_version": "semantic-facet-challenge-v1-source-1",
+  "source_proposal_sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "source_records_sha256": "39a6e84d611f916b4de028df9cce5a144b6ee8f414fb6a180ef77432950672c1",
+  "status": "user_confirmed",
+  "unresolved_outputs_preserved": true
+}

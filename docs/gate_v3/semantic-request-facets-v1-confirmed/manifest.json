@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "dataset_version": "semantic-request-facets-v0.1-confirmed-1",
+  "status": "user_confirmed",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "source_dataset_version": "semantic-dev-v1-confirmed-1",
+  "sample_count": 7,
+  "accepted_case_count": 7,
+  "confirmed_definition_count": 5,
+  "accepted_facet_instance_count": 8,
+  "split": "development",
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "model_inference": false,
+  "retrieval_executed": false,
+  "parser_runtime_integration": false,
+  "current_git": {
+    "head_before_step": "e60c7e6a6f3812efa0c5a3c0065a8ec15d6739fc",
+    "branch": "main",
+    "tracked_changes_before_step": false,
+    "remote_sync_verified": false
+  },
+  "environment": {
+    "python": "Python 3.12.14",
+    "powershell": "7.6.5",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "dependencies": "standard library and existing local semantic contract tests; no model or external API used"
+  },
+  "source_files": [
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/README.md",
+      "sha256": "6598c4b853f462eb5143955cbaafc703f744e9ed1a8122722e7c6addd587e75f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/confirmation.json",
+      "sha256": "1deda6fce920b52d3a187c3124b1f67beb9d83c266198f5840bf9b7ae23572c3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/validation.json",
+      "sha256": "a9da75a84e8eaa28809b1371e8f908927af807c12532604ef595908375329b01"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/manifest.json",
+      "sha256": "a6ca0cdc465d2f7c9412bb9393d4f68954596c6fe85e01d0f3bd51132f66bf0f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/README.md",
+      "sha256": "1c8367693c51929cc357a456871318111f22cd67e7e15c59415cc46c0f1ba3d1"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/manifest.json",
+      "sha256": "c33d3e97df6dd1e1986d67d128cbc01d23023ead408fd5641e05d1c0b1389080"
+    }
+  ],
+  "deliverables": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/README.md",
+      "sha256": "6598c4b853f462eb5143955cbaafc703f744e9ed1a8122722e7c6addd587e75f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/confirmation.json",
+      "sha256": "1deda6fce920b52d3a187c3124b1f67beb9d83c266198f5840bf9b7ae23572c3"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/validation.json",
+      "sha256": "a9da75a84e8eaa28809b1371e8f908927af807c12532604ef595908375329b01"
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/manifest.json",
+      "sha256": "a6ca0cdc465d2f7c9412bb9393d4f68954596c6fe85e01d0f3bd51132f66bf0f"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json",
+      "sha256": "9a08e784406dd5ce18846a85a5be62cf36c6237229bfcaecb01500aa008d013e"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json",
+      "sha256": "4481491489d100ba8ede0674fb026f305eb34dd05d4a8f79161f834d0eb2842c"
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/README.md",
+      "sha256": "28695de113caba618d9be452b2e040ee6dea47da30eb43731e23d4bce4300e75"
+    },
+    {
+      "path": "tests/evaluation/test_semantic_request_facets_confirmed.py",
+      "sha256": "d32ede224f284236f5ea7abde52a236d844f36ef96067a91d7e93037fe82970e"
+    }
+  ],
+  "verification": {
+    "confirmation_mapping_test": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "draft_definition_equality": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "source_record_query_equality": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "span_substrings": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "unresolved_outputs_preserved": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "v1_contract_unchanged": "passed: 32 semantic tests in isolated Git HEAD plus current-step files",
+    "ruff_lint": "passed: isolated Git HEAD plus current-step files",
+    "ruff_format_changed_scope": "passed: two semantic facet test files already formatted",
+    "ruff_format_repository_baseline": "three pre-existing HEAD files remain unformatted; outside current step and unchanged",
+    "ruff_format_repository_baseline_files": [
+      "apply_patch.py",
+      "scripts/evaluate_gate_v3_decisions.py",
+      "scripts/verify_gate_v3_decision_review.py"
+    ],
+    "confirmed_labels_modified": false
+  },
+  "non_goals": [
+    "semantic model accuracy",
+    "retrieval quality improvement",
+    "v1.0 contract migration",
+    "Gate selector change",
+    "production runtime integration"
+  ],
+  "manifest_self_hash_included": false,
+  "generated_at": "2026-09-09T23:52:14.5039986Z"
+}

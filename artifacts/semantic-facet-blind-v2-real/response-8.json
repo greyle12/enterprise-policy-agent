@@ -1,0 +1,44 @@
+{
+  "id": "2b362c32-215a-40d7-b598-b8cb7c4c54b5",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-009\",\"predicted_facets\":[]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze. Query says recording original words: \"访客登记最晚什么时候完成？\" I am just transcribing, not asking system question. Need extract user's current request info dimensions. They explicitly say not asking. Since quoted request not automatically user current request. So likely empty array. Need output case_id exactly, schema_version 1.0, predicted_facets []. Ensure JSONL."
+      }
+    }
+  ],
+  "created": 1789091100,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 114,
+    "prompt_tokens": 392,
+    "total_tokens": 506,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 89,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 136
+  }
+}

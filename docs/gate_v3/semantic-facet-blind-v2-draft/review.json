@@ -1,0 +1,324 @@
+{
+  "dataset_version": "semantic-facet-blind-v2-draft-1",
+  "status": "pending_review",
+  "sample_count": 18,
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "model_inference": false,
+  "source": "AI-authored after inspecting development errors; user review pending",
+  "cases": [
+    {
+      "case_id": "SFB-001",
+      "category": "时间条件",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "九天仅为背景。",
+      "proposed_facets": [
+        {
+          "facet": "MATERIAL",
+          "binding": "BOUND",
+          "span": {
+            "start": 18,
+            "end": 25,
+            "text": "需要附哪些文件"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-002",
+      "category": "时间条件",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "明确询问归档期限。",
+      "proposed_facets": [
+        {
+          "facet": "DEADLINE",
+          "binding": "BOUND",
+          "span": {
+            "start": 6,
+            "end": 19,
+            "text": "最晚应在验收完成后几天归档"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-003",
+      "category": "时间条件",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "已知期限不是当前请求。",
+      "proposed_facets": [
+        {
+          "facet": "PROCEDURE",
+          "binding": "BOUND",
+          "span": {
+            "start": 25,
+            "end": 31,
+            "text": "归档操作步骤"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-004",
+      "category": "跨句指代",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "它有唯一明确先行对象。",
+      "proposed_facets": [
+        {
+          "facet": "PROCEDURE",
+          "binding": "BOUND",
+          "span": {
+            "start": 12,
+            "end": 22,
+            "text": "它要经过哪些办理环节"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-005",
+      "category": "跨句指代",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "两个对象之间指代不唯一。",
+      "proposed_facets": [
+        {
+          "facet": "PROCEDURE",
+          "binding": "UNBOUND",
+          "span": {
+            "start": 20,
+            "end": 30,
+            "text": "它要经过哪些办理环节"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-006",
+      "category": "跨句指代",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "后者唯一指向门禁补办。",
+      "proposed_facets": [
+        {
+          "facet": "MATERIAL",
+          "binding": "BOUND",
+          "span": {
+            "start": 20,
+            "end": 29,
+            "text": "后者要提交什么资料"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-007",
+      "category": "引用说法",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "材料只在他人问句中出现。",
+      "proposed_facets": [
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "binding": "BOUND",
+          "span": {
+            "start": 22,
+            "end": 33,
+            "text": "访客登记由哪个岗位负责"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-008",
+      "category": "引用说法",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "用户明确采纳引用中的请求。",
+      "proposed_facets": [
+        {
+          "facet": "MATERIAL",
+          "binding": "BOUND",
+          "span": {
+            "start": 17,
+            "end": 29,
+            "text": "这个问题也是我现在要问的"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-009",
+      "category": "引用说法",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "只有报告他人问句，无当前信息请求。",
+      "proposed_facets": []
+    },
+    {
+      "case_id": "SFB-010",
+      "category": "明确排除",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "排除材料与步骤，仅问审核主体。",
+      "proposed_facets": [
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "binding": "BOUND",
+          "span": {
+            "start": 27,
+            "end": 33,
+            "text": "预订由谁审核"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-011",
+      "category": "明确排除",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "双重否定后的明确请求为步骤。",
+      "proposed_facets": [
+        {
+          "facet": "PROCEDURE",
+          "binding": "BOUND",
+          "span": {
+            "start": 20,
+            "end": 26,
+            "text": "只问操作步骤"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-012",
+      "category": "明确排除",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "所有提及维度均排除，输出空数组。",
+      "proposed_facets": []
+    },
+    {
+      "case_id": "SFB-013",
+      "category": "流程候选",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "两个候选流程均在原文中给出。",
+      "proposed_facets": [
+        {
+          "facet": "PROCESS_CHOICE",
+          "binding": "BOUND",
+          "span": {
+            "start": 7,
+            "end": 23,
+            "text": "走部门统一申请，还是员工个人申请"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-014",
+      "category": "流程候选",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "候选内容缺失，禁止补全历史。",
+      "proposed_facets": [
+        {
+          "facet": "PROCESS_CHOICE",
+          "binding": "UNBOUND",
+          "span": {
+            "start": 7,
+            "end": 23,
+            "text": "走之前说的那条渠道，还是另外那条"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-015",
+      "category": "流程候选",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "用户已选流程，当前仅请求步骤。",
+      "proposed_facets": [
+        {
+          "facet": "PROCEDURE",
+          "binding": "BOUND",
+          "span": {
+            "start": 32,
+            "end": 39,
+            "text": "前者的操作步骤"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-016",
+      "category": "责任主体",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "职责对象明确。",
+      "proposed_facets": [
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "binding": "BOUND",
+          "span": {
+            "start": 6,
+            "end": 19,
+            "text": "门禁权限注销由哪个部门负责"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-017",
+      "category": "责任主体",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "职责对象有两个候选且指代不唯一。",
+      "proposed_facets": [
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "binding": "UNBOUND",
+          "span": {
+            "start": 17,
+            "end": 23,
+            "text": "那个归谁负责"
+          }
+        }
+      ]
+    },
+    {
+      "case_id": "SFB-018",
+      "category": "责任主体",
+      "review_status": "pending_review",
+      "accepted_facets": null,
+      "rationale": "前一项唯一指向权限注销，同时请求材料。",
+      "proposed_facets": [
+        {
+          "facet": "RESPONSIBLE_ROLE",
+          "binding": "BOUND",
+          "span": {
+            "start": 17,
+            "end": 24,
+            "text": "前一项归谁负责"
+          }
+        },
+        {
+          "facet": "MATERIAL",
+          "binding": "BOUND",
+          "span": {
+            "start": 25,
+            "end": 33,
+            "text": "需要提交什么材料"
+          }
+        }
+      ]
+    }
+  ]
+}

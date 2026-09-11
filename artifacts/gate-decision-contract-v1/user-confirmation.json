@@ -1,0 +1,11 @@
+{
+  "status": "user_confirmed",
+  "confirmation_text": "确认",
+  "date": "2026-09-09",
+  "scope": "CONTRACT.md and all 20 review rows: 11 ALLOW, 8 DENY, 1 NOT_APPLICABLE",
+  "provenance": "AI-assisted source review explicitly confirmed by user; not independent double annotation",
+  "contract_sha256": "c950dc6d9e69ef44e352725dd02643764536963f38cc63015678f34a7995f385",
+  "review_sha256": "fd78adc48fe9d76c0c95f5448670e04d72ced01a7133e431998da8fce9f89a8d",
+  "manifest_sha256": "a5b847bc7c986941fde77142a3d9a0ecee925d644879454ad213f4e4d132d8ae",
+  "implementation_authorized_by_this_record": false
+}

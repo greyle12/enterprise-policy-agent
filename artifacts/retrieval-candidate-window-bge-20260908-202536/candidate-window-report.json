@@ -1,0 +1,1919 @@
+{
+  "schema_version": "1.0",
+  "suite_name": "enterprise_policy_agent_retrieval_candidate_window_diagnostic",
+  "status": "completed",
+  "mode": "bge",
+  "real_model_inference": true,
+  "numeric_resume_ready": false,
+  "label_status": "user_confirmed_ai_assisted_development_set",
+  "independent_test_set": false,
+  "query_count": 16,
+  "judgment_count": 36,
+  "dataset_sha256": "931e03c8bab04155810881956daf1e0d35b512af465ef293b3b9c235ce54dfe7",
+  "corpus_sha256": "5260c50ae8f0d4fddc4bd5ad7d1d325bd53c76487fa13b91e7aefaee7a445737",
+  "frozen_full_chunk_manifest_sha256": "a881d971ed61681c89770d552b833e0ee742acf9c543902217404eef6dcbc338",
+  "source_sha256": "00cc124b1b2d8dd9193655a190bbfaff1c7f775797adac19245a9944083c99ab",
+  "protocol_sha256": "b5ad27f3619aed49ad0031d09530deeb4b974b5557766297987f980d66602be1",
+  "environment_sha256": "d9edf3401a51c91a34899d756ccf5583f324384f222df7bbf479488d8e1a4c3b",
+  "model_lock_sha256": "ac01f4cfb64ebe936eb114e75224eb990ab26ff614f8e2b7306ecbbfb33b38c6",
+  "git": {
+    "head": "2fa68aff35ca77d390754a86c5bbec78b1371d45",
+    "branch": "main",
+    "working_tree_dirty": true
+  },
+  "configuration": {
+    "candidate_windows": [
+      20,
+      40
+    ],
+    "vector_candidate_k": "window",
+    "bm25_candidate_k": "window",
+    "rrf_candidate_k": "window",
+    "rrf_rank_constant": 60,
+    "rrf_union_upper_bound": "2 * window",
+    "rerank_window": "window",
+    "final_k": 5,
+    "full_source_trace_top_k": "authorized_chunk_count",
+    "full_source_trace_latency": "reported separately; excluded from measured channel latency",
+    "embedding_batch_size": 32,
+    "reranker_batch_size": 8,
+    "warmups": 1,
+    "measured_repetitions": 1,
+    "same_inputs_per_window": true,
+    "coverage_rules_frozen_but_not_applied": true,
+    "latency_scope": "query embedding + retrieval/fusion/reranker; no model loading/indexing",
+    "latency_for_resume": false
+  },
+  "windows": {
+    "20": {
+      "window": 20,
+      "candidate_k_per_channel": 20,
+      "rrf_rank_constant": 60,
+      "rerank_window": 20,
+      "final_k": 5,
+      "query_count": 16,
+      "judgment_count": 36,
+      "channels": {
+        "vector": {
+          "source_channel": "vector",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7145833333333333,
+          "mrr_at_5": 0.8958333333333334,
+          "ndcg_at_5": 0.7655155223344163,
+          "average_duration_ms": 27.732131249649683,
+          "error_count": 0
+        },
+        "bm25": {
+          "source_channel": "bm25",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.8177083333333334,
+          "mrr_at_5": 0.921875,
+          "ndcg_at_5": 0.8627886863065003,
+          "average_duration_ms": 2.9858812449674588,
+          "error_count": 0
+        },
+        "rrf": {
+          "source_channel": "hybrid",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.753125,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.8787852145738654,
+          "average_duration_ms": 30.37859375763219,
+          "error_count": 0
+        },
+        "reranked": {
+          "source_channel": "reranked",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204,
+          "average_duration_ms": 14436.122443756176,
+          "error_count": 0
+        }
+      },
+      "candidate_coverage": {
+        "vector_at_window": {
+          "effective_n": 16,
+          "mean_recall": 0.9197916666666667,
+          "error_count": 0
+        },
+        "bm25_at_window": {
+          "effective_n": 16,
+          "mean_recall": 0.9010416666666666,
+          "error_count": 0
+        },
+        "rrf_before_window_truncation": {
+          "effective_n": 16,
+          "mean_recall": 1.0,
+          "error_count": 0
+        },
+        "rrf_at_window": {
+          "effective_n": 16,
+          "mean_recall": 0.9166666666666666,
+          "error_count": 0
+        }
+      },
+      "full_source_trace": {
+        "effective_n": 16,
+        "error_count": 0,
+        "average_duration_ms": 30.460243764537154,
+        "scope": "diagnostic-only; excluded from channel duration_ms"
+      },
+      "rerank_regressions": {
+        "effective_n": 16,
+        "recall_regression_count": 2,
+        "recall_regressed_case_ids": [
+          "COV-007",
+          "COV-016"
+        ],
+        "mrr_regression_count": 1,
+        "mrr_regressed_case_ids": [
+          "COV-005"
+        ],
+        "ndcg_regression_count": 3,
+        "ndcg_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ],
+        "any_regression_count": 3,
+        "any_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ]
+      }
+    },
+    "40": {
+      "window": 40,
+      "candidate_k_per_channel": 40,
+      "rrf_rank_constant": 60,
+      "rerank_window": 40,
+      "final_k": 5,
+      "query_count": 16,
+      "judgment_count": 36,
+      "channels": {
+        "vector": {
+          "source_channel": "vector",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7145833333333333,
+          "mrr_at_5": 0.8958333333333334,
+          "ndcg_at_5": 0.7655155223344163,
+          "average_duration_ms": 28.116862507886253,
+          "error_count": 0
+        },
+        "bm25": {
+          "source_channel": "bm25",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.8177083333333334,
+          "mrr_at_5": 0.921875,
+          "ndcg_at_5": 0.8627886863065003,
+          "average_duration_ms": 3.083118743234081,
+          "error_count": 0
+        },
+        "rrf": {
+          "source_channel": "hybrid",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.753125,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.8787852145738654,
+          "average_duration_ms": 30.537393751728814,
+          "error_count": 0
+        },
+        "reranked": {
+          "source_channel": "reranked",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204,
+          "average_duration_ms": 27048.17548751089,
+          "error_count": 0
+        }
+      },
+      "candidate_coverage": {
+        "vector_at_window": {
+          "effective_n": 16,
+          "mean_recall": 1.0,
+          "error_count": 0
+        },
+        "bm25_at_window": {
+          "effective_n": 16,
+          "mean_recall": 0.96875,
+          "error_count": 0
+        },
+        "rrf_before_window_truncation": {
+          "effective_n": 16,
+          "mean_recall": 1.0,
+          "error_count": 0
+        },
+        "rrf_at_window": {
+          "effective_n": 16,
+          "mean_recall": 1.0,
+          "error_count": 0
+        }
+      },
+      "full_source_trace": {
+        "effective_n": 16,
+        "error_count": 0,
+        "average_duration_ms": 29.661812503036344,
+        "scope": "diagnostic-only; excluded from channel duration_ms"
+      },
+      "rerank_regressions": {
+        "effective_n": 16,
+        "recall_regression_count": 2,
+        "recall_regressed_case_ids": [
+          "COV-007",
+          "COV-016"
+        ],
+        "mrr_regression_count": 1,
+        "mrr_regressed_case_ids": [
+          "COV-005"
+        ],
+        "ndcg_regression_count": 3,
+        "ndcg_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ],
+        "any_regression_count": 3,
+        "any_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ]
+      }
+    }
+  },
+  "comparison": {
+    "baseline_window": 20,
+    "comparison_window": 40,
+    "channels": [
+      {
+        "channel": "vector",
+        "source_channel": "vector",
+        "window_20": {
+          "source_channel": "vector",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7145833333333333,
+          "mrr_at_5": 0.8958333333333334,
+          "ndcg_at_5": 0.7655155223344163,
+          "average_duration_ms": 27.732131249649683,
+          "error_count": 0
+        },
+        "window_40": {
+          "source_channel": "vector",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7145833333333333,
+          "mrr_at_5": 0.8958333333333334,
+          "ndcg_at_5": 0.7655155223344163,
+          "average_duration_ms": 28.116862507886253,
+          "error_count": 0
+        },
+        "delta_40_minus_20": {
+          "recall_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "mrr_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "ndcg_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "average_duration_ms": 0.3847312582365703,
+          "error_count": 0
+        }
+      },
+      {
+        "channel": "bm25",
+        "source_channel": "bm25",
+        "window_20": {
+          "source_channel": "bm25",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.8177083333333334,
+          "mrr_at_5": 0.921875,
+          "ndcg_at_5": 0.8627886863065003,
+          "average_duration_ms": 2.9858812449674588,
+          "error_count": 0
+        },
+        "window_40": {
+          "source_channel": "bm25",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.8177083333333334,
+          "mrr_at_5": 0.921875,
+          "ndcg_at_5": 0.8627886863065003,
+          "average_duration_ms": 3.083118743234081,
+          "error_count": 0
+        },
+        "delta_40_minus_20": {
+          "recall_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "mrr_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "ndcg_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "average_duration_ms": 0.09723749826662242,
+          "error_count": 0
+        }
+      },
+      {
+        "channel": "rrf",
+        "source_channel": "hybrid",
+        "window_20": {
+          "source_channel": "hybrid",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.753125,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.8787852145738654,
+          "average_duration_ms": 30.37859375763219,
+          "error_count": 0
+        },
+        "window_40": {
+          "source_channel": "hybrid",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.753125,
+          "mrr_at_5": 1.0,
+          "ndcg_at_5": 0.8787852145738654,
+          "average_duration_ms": 30.537393751728814,
+          "error_count": 0
+        },
+        "delta_40_minus_20": {
+          "recall_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "mrr_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "ndcg_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "average_duration_ms": 0.1587999940966256,
+          "error_count": 0
+        }
+      },
+      {
+        "channel": "reranked",
+        "source_channel": "reranked",
+        "window_20": {
+          "source_channel": "reranked",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204,
+          "average_duration_ms": 14436.122443756176,
+          "error_count": 0
+        },
+        "window_40": {
+          "source_channel": "reranked",
+          "case_count": 16,
+          "effective_n": 16,
+          "successful_n": 16,
+          "recall_at_5": 0.7375,
+          "mrr_at_5": 0.96875,
+          "ndcg_at_5": 0.859929016696204,
+          "average_duration_ms": 27048.17548751089,
+          "error_count": 0
+        },
+        "delta_40_minus_20": {
+          "recall_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "mrr_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "ndcg_at_5": {
+            "absolute": 0.0,
+            "percentage_points": 0.0
+          },
+          "average_duration_ms": 12612.053043754713,
+          "error_count": 0
+        }
+      }
+    ],
+    "case_changes": [
+      {
+        "case_id": "COV-001",
+        "query": "我是普通员工，去深圳出差住两晚，按制度每晚的住宿限额是多少？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.010499963536858559,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 1.3645999715663493,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 3.4262000117450953,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12810.72559999302,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-002",
+        "query": "杭州的出差酒店，部门负责人每晚最多能报销多少钱？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.7020999910309911,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.6985999643802643,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.6562999915331602,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12618.468200031202,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-003",
+        "query": "目的地已经确认属于二类城市，只查普通员工每晚的酒店费用上限。",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.22260000696405768,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -1.037999929394573,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -4.392499977257103,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12421.384400047828,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-004",
+        "query": "两名同性普通员工出差，公司是否可以强制他们合住一个标准间？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.11930003529414535,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.6017000414431095,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -3.104900009930134,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 11782.120499992743,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-005",
+        "query": "我不是部门负责人，是普通员工，去广州出差能按每晚700元报销酒店吗？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.5224000196903944,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.6739000091329217,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.9707999997772276,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12547.57029999746,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.25,
+          "mrr_at_5_delta": -0.5,
+          "ndcg_at_5_delta": -0.09272644540177177,
+          "recall_regressed": false,
+          "mrr_regressed": true,
+          "ndcg_regressed": true,
+          "any_regression": true
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.25,
+          "mrr_at_5_delta": -0.5,
+          "ndcg_at_5_delta": -0.09272644540177177,
+          "recall_regressed": false,
+          "mrr_regressed": true,
+          "ndcg_regressed": true,
+          "any_regression": true
+        }
+      },
+      {
+        "case_id": "COV-006",
+        "query": "负责人去深圳参加展会，酒店超过标准时，除了住宿限额，还需要准备什么审批和材料？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -1.3033999712206423,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.014700053725391626,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 3.1975999590940773,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12699.889899988193,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.030152346621931225,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.030152346621931225,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-007",
+        "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -2.3287999792955816,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.0646000262349844,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.3890999942086637,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 13409.911199996714,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": -0.3333333333333333,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": -0.11613045631714869,
+          "recall_regressed": true,
+          "mrr_regressed": false,
+          "ndcg_regressed": true,
+          "any_regression": true
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": -0.3333333333333333,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": -0.11613045631714869,
+          "recall_regressed": true,
+          "mrr_regressed": false,
+          "ndcg_regressed": true,
+          "any_regression": true
+        }
+      },
+      {
+        "case_id": "COV-008",
+        "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 3.6558000138029456,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.2655999851413071,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -2.5446999352425337,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12885.13749995036,
+            "final_ranking_changed": true
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-009",
+        "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 5.523000028915703,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.6490000523626804,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.8111000061035156,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12691.97919999715,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-010",
+        "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 1.8522999598644674,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.3250999725423753,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 3.802300023380667,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12844.233799958602,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-011",
+        "query": "出差当天不足八小时而且会议已经供了一餐，餐费补贴按什么规定算？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -3.628100035712123,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.18540001474320889,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -1.5264000394381583,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 11262.904100003652,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-012",
+        "query": "普通员工出差想买高铁一等座，制度允许的座席和负责人有什么区别？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -2.669100009370595,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.1672000507824123,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -3.79879999672994,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 11638.641600031406,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-013",
+        "query": "出差坐火车单程要七个小时，能不能改坐经济舱，选航班还有什么原则？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 8.437099982984364,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.24369999300688505,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 5.921599979046732,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12784.967400017194,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-014",
+        "query": "交通票据丢失后已经写了遗失说明，这样就一定能报销吗，还要补哪些材料？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -4.197699949145317,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.14449999434873462,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.845499977003783,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 13534.39950000029,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.0,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.0,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-015",
+        "query": "出差期间一天打车超过200元，与非差旅的公务交通单笔超过200元，补充说明的要求分别是什么？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -1.5496999840252101,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -0.48160000005736947,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": -3.4023000625893474,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 13620.701800042298,
+            "final_ranking_changed": false
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": 0.33333333333333337,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.08985078606343455,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": 0.33333333333333337,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": 0.08985078606343455,
+          "recall_regressed": false,
+          "mrr_regressed": false,
+          "ndcg_regressed": false,
+          "any_regression": false
+        }
+      },
+      {
+        "case_id": "COV-016",
+        "query": "客户招待费用和超过报销时限的费用，都必须交财务管理部复核吗？",
+        "channels": {
+          "vector": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 2.636800054460764,
+            "final_ranking_changed": false
+          },
+          "bm25": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 0.5516000092029572,
+            "final_ranking_changed": false
+          },
+          "rrf": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 4.603099951054901,
+            "final_ranking_changed": false
+          },
+          "reranked": {
+            "recall_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "mrr_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "ndcg_at_5": {
+              "absolute": 0.0,
+              "percentage_points": 0.0
+            },
+            "duration_ms": 12239.813700027298,
+            "final_ranking_changed": true
+          }
+        },
+        "rerank_regression_window_20": {
+          "recall_at_5_delta": -0.5,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": -0.21284539700902816,
+          "recall_regressed": true,
+          "mrr_regressed": false,
+          "ndcg_regressed": true,
+          "any_regression": true
+        },
+        "rerank_regression_window_40": {
+          "recall_at_5_delta": -0.5,
+          "mrr_at_5_delta": 0.0,
+          "ndcg_at_5_delta": -0.21284539700902816,
+          "recall_regressed": true,
+          "mrr_regressed": false,
+          "ndcg_regressed": true,
+          "any_regression": true
+        }
+      }
+    ],
+    "rerank_regressions": {
+      "window_20": {
+        "effective_n": 16,
+        "recall_regression_count": 2,
+        "recall_regressed_case_ids": [
+          "COV-007",
+          "COV-016"
+        ],
+        "mrr_regression_count": 1,
+        "mrr_regressed_case_ids": [
+          "COV-005"
+        ],
+        "ndcg_regression_count": 3,
+        "ndcg_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ],
+        "any_regression_count": 3,
+        "any_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ]
+      },
+      "window_40": {
+        "effective_n": 16,
+        "recall_regression_count": 2,
+        "recall_regressed_case_ids": [
+          "COV-007",
+          "COV-016"
+        ],
+        "mrr_regression_count": 1,
+        "mrr_regressed_case_ids": [
+          "COV-005"
+        ],
+        "ndcg_regression_count": 3,
+        "ndcg_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ],
+        "any_regression_count": 3,
+        "any_regressed_case_ids": [
+          "COV-005",
+          "COV-007",
+          "COV-016"
+        ]
+      }
+    }
+  },
+  "artifacts": {
+    "reports": {
+      "20": "window-20/retrieval-evaluation-report.json",
+      "40": "window-40/retrieval-evaluation-report.json"
+    },
+    "candidate_traces": {
+      "20": "window-20/candidate-traces.json",
+      "40": "window-40/candidate-traces.json"
+    },
+    "candidate_diagnostics": {
+      "20": "window-20/candidate-diagnostics.json",
+      "40": "window-40/candidate-diagnostics.json"
+    },
+    "full_source_traces": {
+      "20": "window-20/full-source-traces.json",
+      "40": "window-40/full-source-traces.json"
+    }
+  },
+  "latency_claim": null,
+  "runtime_backend_changed": false,
+  "sqlite_data_migrated": false,
+  "langgraph_checkpoint_backend_changed": false
+}

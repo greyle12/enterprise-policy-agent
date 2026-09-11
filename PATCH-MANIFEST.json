@@ -1,42 +1,25 @@
 {
-  "local_base_head": "c4b76cc5201f246f055c71adad033e9928e5666e",
-  "github_main_at_audit": "2a033a5804347b50ebc2023d51fb57b3a856fb76",
-  "code_files": [
-    "scripts/run_retrieval_coverage_ablation.py",
-    "tests/evaluation/test_retrieval_coverage_ablation.py",
-    "tests/evaluation/retrieval_coverage_rules.json",
-    "docs/retrieval_coverage_ablation.md"
-  ],
+  "scope": "candidate-stage ranking diagnostics and frozen 20/40 window ablation; no runtime switch, data migration, model cache or generated reports",
   "files": [
     {
-      "path": "scripts/run_retrieval_coverage_ablation.py",
+      "path": "scripts/run_retrieval_coverage_candidate_window_eval.py",
       "before_sha256_lf": null,
-      "after_sha256_lf": "912049a1e8cececde2ff61bd6afe32729833d31308971a7da6eee1dfc44ebc10"
+      "after_sha256_lf": "3f2e43da6d641f7974ffb90c9a35e135cabf506e4d9cb0bfb2f2e6dcfd8557a2"
     },
     {
-      "path": "tests/evaluation/test_retrieval_coverage_ablation.py",
+      "path": "tests/evaluation/test_retrieval_coverage_candidate_window_eval.py",
       "before_sha256_lf": null,
-      "after_sha256_lf": "f9da693ff327ca77f982525901b47827d2e00bc774ee7164bf427b4091ab0f3a"
+      "after_sha256_lf": "fafa4fbc72cedd73d45e7f1f8ef8e8e4d4f6f8646ae9a1d5eb8d79bc1578ac37"
     },
     {
-      "path": "tests/evaluation/retrieval_coverage_rules.json",
+      "path": "docs/retrieval_coverage_candidate_window_evaluation.md",
       "before_sha256_lf": null,
-      "after_sha256_lf": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb"
+      "after_sha256_lf": "03c013fc8d9d6a301b32dcefd212c5b3c8b511a128a1b82541390b4a33169f5f"
     },
     {
-      "path": "docs/retrieval_coverage_ablation.md",
+      "path": "RUN-CANDIDATE-WINDOW-EVAL.md",
       "before_sha256_lf": null,
-      "after_sha256_lf": "e2058e3edd4561152c99f474e37b3556418da5d67eb9d15890461914e39a21b7"
-    },
-    {
-      "path": "artifacts/retrieval-coverage-20260908/coverage-report.json",
-      "before_sha256_lf": null,
-      "after_sha256_lf": "c3afdd31608cdf740a9efba8d4d59c9f1737d7efab4b11b10cea65911cb791b5"
-    },
-    {
-      "path": "artifacts/retrieval-coverage-20260908/coverage-report.md",
-      "before_sha256_lf": null,
-      "after_sha256_lf": "1557c90c9c4a8c684d743aa452d58f387161bb75f3566e36babed29c1c672e83"
+      "after_sha256_lf": "7cd8c0b1a128007c095db15fde6203201e60033643cc50446d0e2bb8d2de6219"
     }
   ]
 }

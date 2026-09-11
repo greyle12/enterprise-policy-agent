@@ -1,0 +1,404 @@
+{
+  "accepted_case_count": 12,
+  "accepted_facet_instance_count": 14,
+  "allowed_facets": [
+    {
+      "definition": "用户询问如何处理、需要哪些步骤或采用何种办理方式。",
+      "exclusions": [
+        "仅询问是否可行",
+        "仅询问材料、时间或责任人"
+      ],
+      "facet": "PROCEDURE",
+      "positive_cues": [
+        "怎么办",
+        "怎么处理"
+      ]
+    },
+    {
+      "definition": "用户询问需要补充、提交或准备的说明、凭证或材料。",
+      "exclusions": [
+        "不能把财务要做什么自动解释为材料"
+      ],
+      "facet": "MATERIAL",
+      "positive_cues": [
+        "补什么说明",
+        "需要什么材料"
+      ]
+    },
+    {
+      "definition": "用户询问时间点、期限、天数阈值或逾期后何时可以采取某动作。",
+      "exclusions": [
+        "原句只陈述已过去的天数时，不自动生成时间询问"
+      ],
+      "facet": "DEADLINE",
+      "positive_cues": [
+        "多久后",
+        "什么时候"
+      ]
+    },
+    {
+      "definition": "用户询问部门、岗位、人员或审批主体由谁负责。",
+      "exclusions": [
+        "不能补出制度未指定的具体人名或岗位"
+      ],
+      "facet": "RESPONSIBLE_ROLE",
+      "positive_cues": [
+        "哪些人",
+        "由谁审批",
+        "哪个部门"
+      ]
+    },
+    {
+      "definition": "用户在多个可能办理流程之间询问应选择哪一个流程。",
+      "exclusions": [
+        "单纯询问办理步骤归 PROCEDURE；不能替用户选择具体制度流程"
+      ],
+      "facet": "PROCESS_CHOICE",
+      "positive_cues": [
+        "按哪个流程",
+        "走哪条流程"
+      ]
+    }
+  ],
+  "binding_statuses": [
+    {
+      "meaning": "请求维度和目标对象均有可回查的唯一原文绑定。",
+      "status": "BOUND"
+    },
+    {
+      "meaning": "请求维度在原文中出现，但目标对象、候选流程或断言内容不唯一。",
+      "status": "UNBOUND"
+    },
+    {
+      "meaning": "当前样本没有安全可标注的该请求维度，或现有契约没有对应动作表达。",
+      "status": "MISSING"
+    }
+  ],
+  "cases": [
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "二十天是背景；当前请求只问凭证。",
+          "source_spans": [
+            {
+              "end": 25,
+              "start": 15,
+              "text": "报销需要准备哪些凭证"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-001",
+      "note": "时间条件/时间询问；二十天是背景；当前请求只问凭证。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "这笔采购费用已经发生二十天了。报销需要准备哪些凭证？",
+      "record_line": 1
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "新增明确截止期限询问，费用报销对象明确。",
+          "source_spans": [
+            {
+              "end": 16,
+              "start": 8,
+              "text": "需要准备哪些凭证"
+            }
+          ],
+          "status": "EXPRESSED"
+        },
+        {
+          "binding": "BOUND",
+          "facet": "DEADLINE",
+          "rationale": "新增明确截止期限询问，费用报销对象明确。",
+          "source_spans": [
+            {
+              "end": 29,
+              "start": 17,
+              "text": "最迟应在发生后多少天提交"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-002",
+      "note": "时间条件/时间询问；新增明确截止期限询问，费用报销对象明确。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "这笔采购费用报销需要准备哪些凭证，最迟应在发生后多少天提交？",
+      "record_line": 2
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "一周是已发生事实；请求办理步骤。",
+          "source_spans": [
+            {
+              "end": 27,
+              "start": 19,
+              "text": "应按哪些步骤办理"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-003",
+      "note": "时间条件/时间询问；一周是已发生事实；请求办理步骤。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "差旅结束已经一周了。请说明这次差旅报销应按哪些步骤办理。",
+      "record_line": 3
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "步骤请求保留，新增明确时间阈值询问。",
+          "source_spans": [
+            {
+              "end": 17,
+              "start": 9,
+              "text": "应按哪些步骤办理"
+            }
+          ],
+          "status": "EXPRESSED"
+        },
+        {
+          "binding": "BOUND",
+          "facet": "DEADLINE",
+          "rationale": "步骤请求保留，新增明确时间阈值询问。",
+          "source_spans": [
+            {
+              "end": 32,
+              "start": 20,
+              "text": "最迟应在返程后多少天提交"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-004",
+      "note": "时间条件/时间询问；步骤请求保留，新增明确时间阈值询问。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "请说明这次差旅报销应按哪些步骤办理，以及最迟应在返程后多少天提交。",
+      "record_line": 4
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE",
+          "rationale": "处理对象明确为住宿发票遗失。",
+          "source_spans": [
+            {
+              "end": 27,
+              "start": 15,
+              "text": "住宿发票遗失后应该怎么办"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-005",
+      "note": "明确对象/省略对象；处理对象明确为住宿发票遗失。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "出差报销时，我遗失了住宿发票。住宿发票遗失后应该怎么办？",
+      "record_line": 5
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCEDURE",
+          "rationale": "两件事均未说明，不能推断这个指向哪件事。",
+          "source_spans": [
+            {
+              "end": 26,
+              "start": 19,
+              "text": "这个应该怎么办"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-006",
+      "note": "明确对象/省略对象；两件事均未说明，不能推断这个指向哪件事。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "出差报销时，我遇到了两件尚未说明的事。这个应该怎么办？",
+      "record_line": 6
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL",
+          "rationale": "材料请求对象明确为差旅报销。",
+          "source_spans": [
+            {
+              "end": 22,
+              "start": 10,
+              "text": "差旅报销需要提交哪些材料"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-007",
+      "note": "明确对象/省略对象；材料请求对象明确为差旅报销。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "我正在准备差旅报销。差旅报销需要提交哪些材料？",
+      "record_line": 7
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "MATERIAL",
+          "rationale": "材料需求明确，申请对象未指定。",
+          "source_spans": [
+            {
+              "end": 30,
+              "start": 20,
+              "text": "那个需要提交哪些材料"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-008",
+      "note": "明确对象/省略对象；材料需求明确，申请对象未指定。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "我正在准备两项申请，具体是哪两项还没说。那个需要提交哪些材料？",
+      "record_line": 8
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "两个候选流程均在原文明确，绑定不等于知道正确答案。",
+          "source_spans": [
+            {
+              "end": 32,
+              "start": 10,
+              "text": "应选择员工垫付报销流程，还是公司直接付款流程"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-009",
+      "note": "明确候选流程/模糊指代；两个候选流程均在原文明确，绑定不等于知道正确答案。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "针对这笔培训费用，我应选择员工垫付报销流程，还是公司直接付款流程？",
+      "record_line": 9
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "两条候选流程未在单条上下文内说明。",
+          "source_spans": [
+            {
+              "end": 30,
+              "start": 10,
+              "text": "应选择之前提过的那个流程，还是另一个流程"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-010",
+      "note": "明确候选流程/模糊指代；两条候选流程未在单条上下文内说明。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "针对这笔培训费用，我应选择之前提过的那个流程，还是另一个流程？",
+      "record_line": 10
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "用户询问选择，前句两个候选流程明确可回指。",
+          "source_spans": [
+            {
+              "end": 37,
+              "start": 31,
+              "text": "应选其中哪种"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-011",
+      "note": "明确候选流程/模糊指代；用户询问选择，前句两个候选流程明确可回指。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "同事提出了先申请借款再报销和先垫付再报销两种流程。这次外地培训应选其中哪种？",
+      "record_line": 11
+    },
+    {
+      "accepted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCESS_CHOICE",
+          "rationale": "流程数量已知但内容未知，不能凭同事提过建立唯一绑定。",
+          "source_spans": [
+            {
+              "end": 32,
+              "start": 26,
+              "text": "应选其中哪种"
+            }
+          ],
+          "status": "EXPRESSED"
+        }
+      ],
+      "case_id": "SFC-012",
+      "note": "明确候选流程/模糊指代；流程数量已知但内容未知，不能凭同事提过建立唯一绑定。",
+      "preserved_unresolved_output_types": [
+        "request_facet"
+      ],
+      "query": "同事提出了两种流程，但没有说明具体内容。这次外地培训应选其中哪种？",
+      "record_line": 12
+    }
+  ],
+  "dataset_version": "semantic-facet-challenge-v1-confirmed-1",
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "retrieval_executed": false,
+  "sample_count": 12,
+  "schema_version": "1.0",
+  "source_dataset_version": "semantic-facet-challenge-v1-source-1",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "status": "user_confirmed"
+}

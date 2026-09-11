@@ -1,0 +1,44 @@
+{
+  "id": "f3b885f4-1164-40fe-9ceb-64dc5c76cf46",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-007\",\"predicted_facets\":[{\"facet\":\"RESPONSIBLE_ROLE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need extract user's current request information dimensions. Input Chinese: 同事问：“访客登记要带什么材料？”我只想知道访客登记由哪个岗位负责。\n\nWe need identify facets from user's current request, not quoted colleague. User says only wants to know which position responsible for visitor registration. That is RESPONSIBLE_ROLE. Target object 访客登记 responsible role. Binding? Query: \"我只想知道访客登记由哪个岗位负责\" unique target object visitor registration, asking responsible role. BOUND likely. The quoted \"要带什么材料\" is colleague's question, not user current; also explicitly only wants responsible role. Exclude MATERIAL. So predicted_facets [{facet: RESPONSIBLE_ROLE, binding: BOUND}]. Need output JSONL with schema_version 1.0, case_id原样, predicted_facets. No markdown. Ensure JSON UTF-8. final only."
+      }
+    }
+  ],
+  "created": 1789091097,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 243,
+    "prompt_tokens": 391,
+    "total_tokens": 634,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 202,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 135
+  }
+}

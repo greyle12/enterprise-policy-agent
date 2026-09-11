@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "facet_contract_version": "semantic-request-facets-v0.1-draft-1",
+  "status": "proposal_pending_confirmation",
+  "source_dataset_version": "semantic-dev-v1-confirmed-1",
+  "sample_count": 7,
+  "confirmed_facet_count": 0,
+  "split": "development",
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "model_inference": false,
+  "retrieval_executed": false,
+  "parser_runtime_integration": false,
+  "current_git": {
+    "head": "4f5993f44f60e2e197c379891bd3e9e144e83be8",
+    "branch": "main",
+    "tracked_changes_before_step": false,
+    "remote_sync_verified": false
+  },
+  "environment": {
+    "python": "Python 3.12.14",
+    "powershell": "7.6.5",
+    "os": "Microsoft Windows NT 10.0.26200.0",
+    "dependencies": "standard library and existing local semantic contract only"
+  },
+  "allowed_facets": [
+    "PROCEDURE",
+    "MATERIAL",
+    "DEADLINE",
+    "RESPONSIBLE_ROLE",
+    "PROCESS_CHOICE"
+  ],
+  "binding_statuses": [
+    "BOUND",
+    "UNBOUND",
+    "MISSING"
+  ],
+  "source_files": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c",
+      "bytes": 8884
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0",
+      "bytes": 10752
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/manifest.json",
+      "sha256": "a6ca0cdc465d2f7c9412bb9393d4f68954596c6fe85e01d0f3bd51132f66bf0f",
+      "bytes": 2884
+    }
+  ],
+  "deliverables": [
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d",
+      "bytes": 11869
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/README.md",
+      "sha256": "1c8367693c51929cc357a456871318111f22cd67e7e15c59415cc46c0f1ba3d1",
+      "bytes": 4951
+    },
+    {
+      "path": "tests/evaluation/test_semantic_request_facets.py",
+      "sha256": "ff9b8e2ef4f9f314364c5ccf2197f0fda94bd13209291ef02ab761b391fc6eda",
+      "bytes": 5136
+    }
+  ],
+  "dataset_hash_policy": "facets.json is the proposed facet dataset; its exact SHA-256 is recorded in deliverables. Existing confirmed records are referenced by their exact SHA-256 and are not modified.",
+  "verification": {
+    "mapping_test": "passed: 5 tests",
+    "source_record_query_equality": "passed in test",
+    "span_substrings": "passed in test",
+    "v1_contract_unchanged": "passed in test",
+    "confirmed_labels_modified": false
+  },
+  "non_goals": [
+    "semantic model accuracy",
+    "retrieval quality improvement",
+    "v1.0 contract migration",
+    "Gate selector change",
+    "production runtime integration"
+  ],
+  "manifest_self_hash_included": false,
+  "generated_at": "2026-09-09T12:44:21.9748330Z"
+}

@@ -49,6 +49,16 @@ def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
 
     assert "artifacts/test-results/pytest.xml" in workflow
     assert "python -m ruff format --check ." in workflow
+    assert "scripts.check_semantic_request_facets" in workflow
+    assert "--records docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl" in workflow
+    assert "--accepted docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json" in workflow
+    assert (
+        "--confirmation docs/gate_v3/semantic-request-facets-v1-confirmed/confirmation.json"
+        in workflow
+    )
+    assert "--manifest docs/gate_v3/semantic-request-facets-v1-confirmed/manifest.json" in workflow
+    assert "--output artifacts/evaluation/semantic-request-facets-report.json" in workflow
+    assert "semantic-request-facets-report.json" in workflow
     assert "golden-evaluation-report.json" in workflow
     assert "agent-performance-report.json" in workflow
     assert "scripts.run_performance_benchmark --warmups 1 --iterations 5" in workflow

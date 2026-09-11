@@ -1,0 +1,6 @@
+{
+  "draft_sha256": "d69e847fe9f12c5a83738940c516901ffccf2e6afe74210c45a22230ddf41b9d",
+  "gate_freeze_sha256": "1c4effaeb4d0dd12c88100a12045327fa8d2fc45db6b847add8f5d0dc2c74a58",
+  "inference_run": false,
+  "gate_run_on_challenge": false
+}

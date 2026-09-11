@@ -1,0 +1,44 @@
+{
+  "id": "19d02c4c-0bdb-45e5-a411-be283edfa6e3",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-004\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need parse. Need extract facets. Query: \"我正在办理办公电脑领用。它要经过哪些办理环节？\" User asks what processing steps. Facet PROCEDURE. Binding: target object office computer requisition? \"它\" refers to 办公电脑领用, unique. BOUND likely. Output JSONL one line: {\"schema_version\":\"1.0\",\"case_id\":\"SFB-004\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]} Ensure JSON only."
+      }
+    }
+  ],
+  "created": 1789091091,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 154,
+    "prompt_tokens": 384,
+    "total_tokens": 538,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 116,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 256
+  }
+}

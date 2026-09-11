@@ -1,0 +1,44 @@
+{
+  "id": "ec985561-7fdc-4f4b-83c0-8b85f484ea95",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-009\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need extract facets from allowed. Query: \"针对这笔培训费用，我应选择员工垫付报销流程，还是公司直接付款流程？\" It's asking choose between multiple workflows: employee reimbursement vs company direct payment. That's PROCESS_CHOICE. Binding? Target object \"这笔培训费用\" maybe unique? The query includes two candidate processes explicitly. It asks which to choose. binding BOUND? We need determine if request dimension and target object have unique original binding. The dimension PROCESS_CHOICE is about selecting among multiple processes. The candidate processes are explicitly named：员工垫付报销流程 or 公司直接付款流程. Target object: \"这笔培训费用\". Is target object uniquely determined? It refers to \"这笔培训费用\" within case; likely unique in query context? There is no other candidate. Binding maybe BOUND because both options and target explicit? But \"这笔\" depends on context maybe but in original query it's a specific expense. The instruction says cannot infer omitted objects. Here object \"这笔培训费用\" is explicit, albeit deictic. It is a unique target in query. Candidate processes are explicit. So BOUND.\n\nAny PROCEDURE? It asks which process to choose, not how to handle or steps. PROCESS_CHOICE only. MATERIAL? No. DEADLINE no. RESPONSIBLE_ROLE no. Output JSONL. Ensure only fields schema_version, case_id, predicted_facets. facet and binding only. Use UTF-8. No markdown. \nNeed consider if PROCESS_CHOICE binding should be UNBOUND because \"这笔培训费用\" cannot uniquely determine? The binding criterion: request dimension and target object have unique original binding; UNBOUND if dimension appears but target object, candidate process, or assertion content cannot be uniquely determined. Here candidate processes are uniquely determined (two explicit). Target object \"这笔培训费用\" is reference, not fully specified, but in original query \"这笔\" means this expense. Is target object uniquely determined? It's the expense referred to; no ambiguity within query. But if no antecedent, could be unbound? The task says analyze original text only, not supplement omitted context. \"这笔培训费用\" itself is a target object but it relies on external referent. Hmm binding: \"BOUND 表示请求维度及目标对象有唯一原文绑定；UNBOUND 表示维度已出现，但目标对象、候选流程或断言内容不能唯一确定。不能推断省略对象。\" We need decide. The target object is \"这笔培训费用\"; even if deictic, it is present in原文. Candidate processes explicit. I'd lean BOUND.\n\nLet's produce:\n{\"schema_version\":\"1.0\",\"case_id\":\"SFC-009\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"BOUND\"}]}\nEnsure valid JSONL single line."
+      }
+    }
+  ],
+  "created": 1789087126,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 643,
+    "prompt_tokens": 390,
+    "total_tokens": 1033,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 602,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 134
+  }
+}

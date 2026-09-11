@@ -1,0 +1,216 @@
+{
+  "dataset_version": "semantic-dev-v1-confirmed-1",
+  "status": "user_confirmed",
+  "annotation_origin": "AI_authored_draft_individually_accepted_by_current_user",
+  "sample_count": 7,
+  "confirmed_semantic_label_count": 7,
+  "independent_test_set": false,
+  "numeric_resume_ready": false,
+  "recorded_at": "2026-09-09T12:32:04.9977431Z",
+  "review_time_note": "Exact per-message timestamps are unavailable; reviewed_at is null. recorded_at is the persistence time, not the acceptance time.",
+  "cases": [
+    {
+      "case_id": "COV-007",
+      "record_line": 1,
+      "query": "一般费用发生四十五天后才报销，需要补什么说明，部门和财务分别要做什么？",
+      "category": "fallback_case",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 1,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "保留一般费用与四十五天条件；分别标出说明、部门、财务对象。不能仅凭“财务要做什么”直接标成财务复核。",
+      "review_question": "是否同意将具体动作保留为契约缺口，而不等同于 VERIFY_ASSERTION？",
+      "source_locator": {
+        "file": "artifacts/gate-v31-experiment-v1/report.json",
+        "selector": "source_replay.cases[20|40][case_id=COV-007]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/cov/20 (and /40), case_id=COV-007"
+      },
+      "historical_result_kind": "captured_candidate_replay",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 4,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "材料与分工询问不等同于核实；财务要做什么不直接等同于财务复核。"
+      }
+    },
+    {
+      "case_id": "COV-008",
+      "record_line": 2,
+      "query": "只查普通费用发生多久后，财务可以原则上拒绝受理报销，不需要审批流程。",
+      "category": "corrected_error_control",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 2,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "“不需要审批流程”拟标为范围排除；主要请求仍是拒绝受理的时间条件。历史已修复误补，保留作控制样本。",
+      "review_question": "是否确认排除的是回答中的审批流程，而非声称制度免审批？",
+      "source_locator": {
+        "file": "artifacts/gate-v31-experiment-v1/report.json",
+        "selector": "source_replay.cases[20|40][case_id=COV-008]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/cov/20 (and /40), case_id=COV-008"
+      },
+      "historical_result_kind": "captured_candidate_replay",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 1,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "排除本次回答的审批流程，不推断制度免审批；时间阈值请求保留 contract_gap。"
+      }
+    },
+    {
+      "case_id": "COV-009",
+      "record_line": 3,
+      "query": "费用已经发生一百天，还能直接走普通报销吗，制度对这种超时怎么处理？",
+      "category": "remaining_retrieval_regression",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 3,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "将可否普通报销拟标为核实可行性；“这种超时”拟指向费用已发生一百天。询问怎么处理并不自动证明需要哪个审批条款。",
+      "review_question": "是否接受可行性问句标为 VERIFY_ASSERTION，并将处理流程动作保留为缺口？",
+      "source_locator": {
+        "file": "artifacts/gate-v31-experiment-v1/report.json",
+        "selector": "source_replay.cases[20|40][case_id=COV-009]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/cov/20 (and /40), case_id=COV-009"
+      },
+      "historical_result_kind": "captured_candidate_replay",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 2,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "可行性问句接受为 VERIFY_ASSERTION；这种超时绑定一百天事件，开放式流程询问保留 contract_gap。"
+      }
+    },
+    {
+      "case_id": "COV-010",
+      "record_line": 4,
+      "query": "因特殊原因赶不上差旅报销期限，应在什么时候向哪些人说明，普通费用的超时报销又由谁审批？",
+      "category": "fallback_case",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 4,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "差旅说明与普通费用审批属于两个不同对象，不把一个条件扩展到全部问题。窗口20没有提案；窗口40存在回退。",
+      "review_question": "是否同意拆分差旅说明与普通费用审批两个作用域，不补齐原文未指定的具体审批人？",
+      "source_locator": {
+        "file": "artifacts/gate-v31-experiment-v1/report.json",
+        "selector": "source_replay.cases[20|40][case_id=COV-010]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/cov/20 (and /40), case_id=COV-010"
+      },
+      "historical_result_kind": "captured_candidate_replay",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 5,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "差旅与普通费用分开作用域；不补充具体人员，时间及人员询问保留 contract_gap。"
+      }
+    },
+    {
+      "case_id": "V3U-004",
+      "record_line": 5,
+      "query": "普通费用拖了四十天，这个现在怎么办？",
+      "category": "ambiguity_control",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 5,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "“这个”拟指向费用拖了四十天的事件，但具体办理目标仍不唯一；不把历史门控 UNRESOLVED 自动变成所有语义字段均未知。",
+      "review_question": "是否接受事件级指代绑定，同时保留具体办理对象缺失？",
+      "source_locator": {
+        "file": "artifacts/gate-v3-decision-eval-v1/review.json",
+        "selector": "cases[case_id=V3U-004]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/ambiguity, case_id=V3U-004"
+      },
+      "historical_result_kind": "confirmed_gate_label_only",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 6,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "这个绑定拖延事件；不补时间起算点，具体办理动作仍未知。"
+      }
+    },
+    {
+      "case_id": "V3U-006",
+      "record_line": 6,
+      "query": "普通费用拖了四十天，那个要求还要吗？",
+      "category": "ambiguity_control",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 6,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "拟标为核实某要求是否仍适用，但“那个要求”没有唯一先行对象，不绑定为审批或复核。",
+      "review_question": "是否接受 VERIFY_ASSERTION 的拟标注，并将要求对象明确留空？",
+      "source_locator": {
+        "file": "artifacts/gate-v3-decision-eval-v1/review.json",
+        "selector": "cases[case_id=V3U-006]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/ambiguity, case_id=V3U-006"
+      },
+      "historical_result_kind": "confirmed_gate_label_only",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 7,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "接受核实是否仍适用的动作；那个要求的对象保持未知，不补审批、复核或材料要求。"
+      }
+    },
+    {
+      "case_id": "V3U-009",
+      "record_line": 7,
+      "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+      "category": "ambiguity_control",
+      "review_status": "user_confirmed",
+      "reviewer": "current_conversation_user",
+      "reviewed_at": null,
+      "accepted_semantic_label": {
+        "file": "records.jsonl",
+        "record_line": 7,
+        "file_sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c"
+      },
+      "draft_rationale": "“部门和财务都说过了”是转述，内容和“过了”的含义不明确；不能直接解释为已批准或已复核。",
+      "review_question": "是否确认保留转述节点，但不补出通过审批的断言或唯一流程？",
+      "source_locator": {
+        "file": "artifacts/gate-v3-decision-eval-v1/review.json",
+        "selector": "cases[case_id=V3U-009]",
+        "excerpt": "../semantic-dev-v1/source-excerpts.json#/ambiguity, case_id=V3U-009"
+      },
+      "historical_result_kind": "confirmed_gate_label_only",
+      "historical_labels_are_semantic_gold": false,
+      "acceptance": {
+        "review_sequence": 3,
+        "user_response_verbatim": "接受",
+        "decision": "accept_original_draft",
+        "clarification": "交晚五十天不改写成费用发生五十天；说过了保留转述歧义，不解释为批准，流程动作与对象缺失保留。"
+      }
+    }
+  ]
+}

@@ -1,0 +1,4266 @@
+{
+  "schema_version": "1.0",
+  "phase": 38,
+  "step": 3,
+  "substep": 2,
+  "status": "completed",
+  "numeric_resume_ready": true,
+  "evaluation_type": "decision_layer_four_value",
+  "model_inference": false,
+  "retrieval_execution": false,
+  "runtime_selector_changed": false,
+  "label_provenance": {
+    "confirmed_contract_v1": "AI-assisted source review explicitly confirmed by user; not independent double annotation",
+    "unresolved_v1": "AI-authored source-checked review explicitly confirmed by user; not independent double annotation"
+  },
+  "definitions": {
+    "overall_accuracy": "exact decision match over every row, including NOT_APPLICABLE and errors in the denominator",
+    "known_decision_accuracy": "exact match among rows whose expected value is not UNRESOLVED",
+    "four_value_output_coverage": "rows producing one of the four legal values rather than an execution error",
+    "known_decision_coverage": "rows producing a determinate ALLOW, DENY, or NOT_APPLICABLE value; UNRESOLVED is excluded",
+    "unresolved_recall": "expected UNRESOLVED rows that actually return UNRESOLVED",
+    "unresolved_precision": "actual UNRESOLVED rows whose expected value is UNRESOLVED",
+    "error_policy": "exceptions are retained as ERROR and count as incorrect; no silent fallback"
+  },
+  "suites": {
+    "confirmed_contract_v1": {
+      "metrics": {
+        "n": 20,
+        "expected_counts": {
+          "ALLOW": 11,
+          "DENY": 8,
+          "UNRESOLVED": 0,
+          "NOT_APPLICABLE": 1
+        },
+        "actual_counts": {
+          "ALLOW": 11,
+          "DENY": 8,
+          "UNRESOLVED": 0,
+          "NOT_APPLICABLE": 1,
+          "ERROR": 0
+        },
+        "confusion_matrix": {
+          "ALLOW": {
+            "ALLOW": 11,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "DENY": {
+            "ALLOW": 0,
+            "DENY": 8,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "UNRESOLVED": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "NOT_APPLICABLE": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 1,
+            "ERROR": 0
+          }
+        },
+        "errors": 0,
+        "exact_matches": 20,
+        "overall_accuracy": 1.0,
+        "known_expected_n": 20,
+        "known_decision_accuracy": 1.0,
+        "four_value_output_coverage": 1.0,
+        "known_decision_coverage": 1.0,
+        "unresolved_expected_n": 0,
+        "unresolved_recall": null,
+        "unresolved_precision": null,
+        "known_to_unresolved": 0,
+        "unresolved_to_known": 0
+      },
+      "rows": [
+        {
+          "case_id": "CHG-001",
+          "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 5,
+              "end": 7,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+            "clauses": [
+              {
+                "text": "不是不需要审批流程",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "这笔普通费用拖了四十天",
+                "start": 10,
+                "end": 21
+              },
+              {
+                "text": "请说清部门和财务各要做什么",
+                "start": 22,
+                "end": 35
+              }
+            ],
+            "requests": [
+              {
+                "topic": "approval",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 0,
+                "span": {
+                  "start": 5,
+                  "end": 7,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 5,
+                    "end": 7,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "不是不需要审批流程"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-002",
+          "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+          "evidence_spans": [
+            {
+              "start": 20,
+              "end": 22,
+              "text": "酒店"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+            "clauses": [
+              {
+                "text": "我不问同住安排",
+                "start": 0,
+                "end": 7
+              },
+              {
+                "text": "只想知道普通员工去南京住酒店每晚限额",
+                "start": 8,
+                "end": 26
+              }
+            ],
+            "requests": [
+              {
+                "topic": "room_sharing",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 0,
+                "span": {
+                  "start": 3,
+                  "end": 5,
+                  "text": "同住"
+                },
+                "source_spans": [
+                  {
+                    "start": 3,
+                    "end": 5,
+                    "text": "同住"
+                  }
+                ],
+                "referent": "room_sharing_arrangement",
+                "evidence": "我不问同住安排"
+              },
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 20,
+                  "end": 22,
+                  "text": "酒店"
+                },
+                "source_spans": [
+                  {
+                    "start": 20,
+                    "end": 22,
+                    "text": "酒店"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "只想知道普通员工去南京住酒店每晚限额"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city",
+                "value": "南京",
+                "status": "GIVEN",
+                "clause_index": 1,
+                "span": {
+                  "start": 17,
+                  "end": 19,
+                  "text": "南京"
+                },
+                "evidence": "只想知道普通员工去南京住酒店每晚限额"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-003",
+          "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 4,
+              "end": 6,
+              "text": "审批"
+            },
+            {
+              "start": 4,
+              "end": 6,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+            "clauses": [
+              {
+                "text": "不要展开审批流程",
+                "start": 0,
+                "end": 8
+              },
+              {
+                "text": "只告诉我普通费用拖到多少天后可能被拒收",
+                "start": 9,
+                "end": 28
+              }
+            ],
+            "requests": [
+              {
+                "topic": "approval",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 0,
+                "span": {
+                  "start": 4,
+                  "end": 6,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 4,
+                    "end": 6,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "不要展开审批流程"
+              },
+              {
+                "topic": "finance_review",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 0,
+                "span": {
+                  "start": 4,
+                  "end": 6,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 4,
+                    "end": 6,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "不要展开审批流程"
+              },
+              {
+                "topic": "expense_deadline",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 26,
+                  "end": 28,
+                  "text": "拒收"
+                },
+                "source_spans": [
+                  {
+                    "start": 26,
+                    "end": 28,
+                    "text": "拒收"
+                  }
+                ],
+                "referent": "expense_submission",
+                "evidence": "只告诉我普通费用拖到多少天后可能被拒收"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-004",
+          "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+          "evidence_spans": [
+            {
+              "start": 18,
+              "end": 20,
+              "text": "住宿"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+            "clauses": [
+              {
+                "text": "苏州到底算不算一类城市",
+                "start": 0,
+                "end": 11
+              },
+              {
+                "text": "普通员工每晚住宿标准对应多少钱",
+                "start": 12,
+                "end": 27
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 18,
+                  "end": 20,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 18,
+                    "end": 20,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "普通员工每晚住宿标准对应多少钱"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": null,
+                "status": "QUESTIONED",
+                "clause_index": 0,
+                "span": {
+                  "start": 4,
+                  "end": 7,
+                  "text": "算不算"
+                },
+                "evidence": "苏州到底算不算一类城市"
+              },
+              {
+                "key": "destination_city",
+                "value": "苏州",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 2,
+                  "text": "苏州"
+                },
+                "evidence": "苏州到底算不算一类城市"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-006",
+          "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+          "evidence_spans": [
+            {
+              "start": 0,
+              "end": 12,
+              "text": "已确认目的地属于三类城市"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+            "clauses": [
+              {
+                "text": "已确认目的地属于三类城市",
+                "start": 0,
+                "end": 12
+              },
+              {
+                "text": "部门负责人住一晚酒店的上限是多少",
+                "start": 13,
+                "end": 29
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 21,
+                  "end": 23,
+                  "text": "酒店"
+                },
+                "source_spans": [
+                  {
+                    "start": 21,
+                    "end": 23,
+                    "text": "酒店"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "部门负责人住一晚酒店的上限是多少"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": "三类城市",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 12,
+                  "text": "已确认目的地属于三类城市"
+                },
+                "evidence": "已确认目的地属于三类城市"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-007",
+          "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+          "evidence_spans": [
+            {
+              "start": 16,
+              "end": 18,
+              "text": "住宿"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+            "clauses": [
+              {
+                "text": "普通员工到青岛出差",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "每晚能报多少住宿费",
+                "start": 10,
+                "end": 19
+              },
+              {
+                "text": "两名同性同事还必须合住吗",
+                "start": 20,
+                "end": 32
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 16,
+                  "end": 18,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 16,
+                    "end": 18,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "每晚能报多少住宿费"
+              },
+              {
+                "topic": "room_sharing",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 2,
+                "span": {
+                  "start": 29,
+                  "end": 31,
+                  "text": "合住"
+                },
+                "source_spans": [
+                  {
+                    "start": 29,
+                    "end": 31,
+                    "text": "合住"
+                  }
+                ],
+                "referent": "room_sharing_arrangement",
+                "evidence": "两名同性同事还必须合住吗"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city",
+                "value": "青岛",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 5,
+                  "end": 7,
+                  "text": "青岛"
+                },
+                "evidence": "普通员工到青岛出差"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-008",
+          "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 33,
+              "end": 37,
+              "text": "财务复核"
+            },
+            {
+              "start": 30,
+              "end": 32,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+            "clauses": [
+              {
+                "text": "普通费用拖到一百天会不会被拒收",
+                "start": 0,
+                "end": 15
+              },
+              {
+                "text": "如果属于特殊情况继续办",
+                "start": 16,
+                "end": 27
+              },
+              {
+                "text": "部门审批和财务复核分别有什么要求",
+                "start": 28,
+                "end": 44
+              }
+            ],
+            "requests": [
+              {
+                "topic": "approval",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 2,
+                "span": {
+                  "start": 30,
+                  "end": 32,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 30,
+                    "end": 32,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "部门审批和财务复核分别有什么要求"
+              },
+              {
+                "topic": "finance_review",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 2,
+                "span": {
+                  "start": 33,
+                  "end": 37,
+                  "text": "财务复核"
+                },
+                "source_spans": [
+                  {
+                    "start": 33,
+                    "end": 37,
+                    "text": "财务复核"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "部门审批和财务复核分别有什么要求"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-009",
+          "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+          "evidence_spans": [
+            {
+              "start": 11,
+              "end": 19,
+              "text": "已确定的二类城市"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+            "clauses": [
+              {
+                "text": "普通员工与部门负责人在已确定的二类城市出差",
+                "start": 0,
+                "end": 21
+              },
+              {
+                "text": "各自每晚住宿上限是多少",
+                "start": 22,
+                "end": 33
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 26,
+                  "end": 28,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 26,
+                    "end": 28,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "各自每晚住宿上限是多少"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": "二类城市",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 11,
+                  "end": 19,
+                  "text": "已确定的二类城市"
+                },
+                "evidence": "普通员工与部门负责人在已确定的二类城市出差"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-010",
+          "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 20,
+              "end": 25,
+              "text": "经过哪些人"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+            "clauses": [
+              {
+                "text": "一笔普通费用放了五十天才想起来报",
+                "start": 0,
+                "end": 16
+              },
+              {
+                "text": "现在要经过哪些人才能继续往下办",
+                "start": 17,
+                "end": 32
+              }
+            ],
+            "requests": [
+              {
+                "topic": "approval",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 20,
+                  "end": 25,
+                  "text": "经过哪些人"
+                },
+                "source_spans": [
+                  {
+                    "start": 20,
+                    "end": 25,
+                    "text": "经过哪些人"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "现在要经过哪些人才能继续往下办"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-011",
+          "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 24,
+              "end": 27,
+              "text": "直接报"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+            "clauses": [
+              {
+                "text": "普通费用过了四十天才交",
+                "start": 0,
+                "end": 11
+              },
+              {
+                "text": "我写好原因之后是不是就能直接报了",
+                "start": 12,
+                "end": 28
+              }
+            ],
+            "requests": [
+              {
+                "topic": "reason_statement",
+                "act": "ASK_EXEMPTION",
+                "clause_index": 1,
+                "span": {
+                  "start": 13,
+                  "end": 17,
+                  "text": "写好原因"
+                },
+                "source_spans": [
+                  {
+                    "start": 13,
+                    "end": 17,
+                    "text": "写好原因"
+                  }
+                ],
+                "referent": "overdue_reason",
+                "evidence": "我写好原因之后是不是就能直接报了"
+              },
+              {
+                "topic": "finance_review",
+                "act": "ASK_EXEMPTION",
+                "clause_index": 1,
+                "span": {
+                  "start": 24,
+                  "end": 27,
+                  "text": "直接报"
+                },
+                "source_spans": [
+                  {
+                    "start": 24,
+                    "end": 27,
+                    "text": "直接报"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "我写好原因之后是不是就能直接报了"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-012",
+          "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 26,
+              "end": 33,
+              "text": "其他环节先不讲"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+            "clauses": [
+              {
+                "text": "普通费用晚交了四十天",
+                "start": 0,
+                "end": 10
+              },
+              {
+                "text": "我只想知道要不要写明迟交原因",
+                "start": 11,
+                "end": 25
+              },
+              {
+                "text": "其他环节先不讲",
+                "start": 26,
+                "end": 33
+              }
+            ],
+            "requests": [
+              {
+                "topic": "reason_statement",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 21,
+                  "end": 25,
+                  "text": "迟交原因"
+                },
+                "source_spans": [
+                  {
+                    "start": 21,
+                    "end": 25,
+                    "text": "迟交原因"
+                  }
+                ],
+                "referent": "overdue_reason",
+                "evidence": "我只想知道要不要写明迟交原因"
+              },
+              {
+                "topic": "finance_review",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 2,
+                "span": {
+                  "start": 26,
+                  "end": 33,
+                  "text": "其他环节先不讲"
+                },
+                "source_spans": [
+                  {
+                    "start": 26,
+                    "end": 33,
+                    "text": "其他环节先不讲"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "其他环节先不讲"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-001",
+          "query": "目的地的类别已经核实，是二类。出差人是普通员工。请只给每晚住宿金额上限。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+          "evidence_spans": [
+            {
+              "start": 0,
+              "end": 14,
+              "text": "目的地的类别已经核实，是二类"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "目的地的类别已经核实，是二类。出差人是普通员工。请只给每晚住宿金额上限。",
+            "clauses": [
+              {
+                "text": "目的地的类别已经核实",
+                "start": 0,
+                "end": 10
+              },
+              {
+                "text": "是二类",
+                "start": 11,
+                "end": 14
+              },
+              {
+                "text": "出差人是普通员工",
+                "start": 15,
+                "end": 23
+              },
+              {
+                "text": "请只给每晚住宿金额上限",
+                "start": 24,
+                "end": 35
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 3,
+                "span": {
+                  "start": 29,
+                  "end": 31,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 29,
+                    "end": 31,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "请只给每晚住宿金额上限"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": "二类城市",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 14,
+                  "text": "目的地的类别已经核实，是二类"
+                },
+                "evidence": "目的地的类别已经核实，是二类"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-002",
+          "query": "此次目的地是厦门，但类别还没查。出差人是部门负责人。每晚住宿费用最高多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+          "evidence_spans": [
+            {
+              "start": 28,
+              "end": 30,
+              "text": "住宿"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "此次目的地是厦门，但类别还没查。出差人是部门负责人。每晚住宿费用最高多少？",
+            "clauses": [
+              {
+                "text": "此次目的地是厦门",
+                "start": 0,
+                "end": 8
+              },
+              {
+                "text": "类别还没查",
+                "start": 10,
+                "end": 15
+              },
+              {
+                "text": "出差人是部门负责人",
+                "start": 16,
+                "end": 25
+              },
+              {
+                "text": "每晚住宿费用最高多少",
+                "start": 26,
+                "end": 36
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 3,
+                "span": {
+                  "start": 28,
+                  "end": 30,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 28,
+                    "end": 30,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "每晚住宿费用最高多少"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city",
+                "value": "厦门",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 6,
+                  "end": 8,
+                  "text": "厦门"
+                },
+                "evidence": "此次目的地是厦门"
+              },
+              {
+                "key": "destination_city_category",
+                "value": null,
+                "status": "UNKNOWN",
+                "clause_index": 1,
+                "span": {
+                  "start": 10,
+                  "end": 15,
+                  "text": "类别还没查"
+                },
+                "evidence": "类别还没查"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-003",
+          "query": "普通费用交晚了五十天，部门负责人已经批过。这是否意味着不用再交财务复核？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 31,
+              "end": 35,
+              "text": "财务复核"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通费用交晚了五十天，部门负责人已经批过。这是否意味着不用再交财务复核？",
+            "clauses": [
+              {
+                "text": "普通费用交晚了五十天",
+                "start": 0,
+                "end": 10
+              },
+              {
+                "text": "部门负责人已经批过",
+                "start": 11,
+                "end": 20
+              },
+              {
+                "text": "这是否意味着不用再交财务复核",
+                "start": 21,
+                "end": 35
+              }
+            ],
+            "requests": [
+              {
+                "topic": "finance_review",
+                "act": "ASK_EXEMPTION",
+                "clause_index": 2,
+                "span": {
+                  "start": 31,
+                  "end": 35,
+                  "text": "财务复核"
+                },
+                "source_spans": [
+                  {
+                    "start": 31,
+                    "end": 35,
+                    "text": "财务复核"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "这是否意味着不用再交财务复核"
+              },
+              {
+                "topic": "finance_review",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 2,
+                "span": {
+                  "start": 31,
+                  "end": 33,
+                  "text": "财务"
+                },
+                "source_spans": [
+                  {
+                    "start": 31,
+                    "end": 33,
+                    "text": "财务"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "这是否意味着不用再交财务复核"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-004",
+          "query": "这里说的是两名同性普通员工合住标准间。这种安排能由公司强制执行吗？只回答是否强制。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "ONLY_ROOM_SHARING_REQUESTED",
+          "evidence_spans": [],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "这里说的是两名同性普通员工合住标准间。这种安排能由公司强制执行吗？只回答是否强制。",
+            "clauses": [
+              {
+                "text": "这里说的是两名同性普通员工合住标准间",
+                "start": 0,
+                "end": 18
+              },
+              {
+                "text": "这种安排能由公司强制执行吗",
+                "start": 19,
+                "end": 32
+              },
+              {
+                "text": "只回答是否强制",
+                "start": 33,
+                "end": 40
+              }
+            ],
+            "requests": [
+              {
+                "topic": "room_sharing",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 0,
+                "span": {
+                  "start": 13,
+                  "end": 15,
+                  "text": "合住"
+                },
+                "source_spans": [
+                  {
+                    "start": 13,
+                    "end": 15,
+                    "text": "合住"
+                  }
+                ],
+                "referent": "room_sharing_arrangement",
+                "evidence": "这里说的是两名同性普通员工合住标准间"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-005",
+          "query": "普通员工，宁波，一晚。酒店最多报多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+          "evidence_spans": [
+            {
+              "start": 11,
+              "end": 13,
+              "text": "酒店"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通员工，宁波，一晚。酒店最多报多少？",
+            "clauses": [
+              {
+                "text": "普通员工",
+                "start": 0,
+                "end": 4
+              },
+              {
+                "text": "宁波",
+                "start": 5,
+                "end": 7
+              },
+              {
+                "text": "一晚",
+                "start": 8,
+                "end": 10
+              },
+              {
+                "text": "酒店最多报多少",
+                "start": 11,
+                "end": 18
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 3,
+                "span": {
+                  "start": 11,
+                  "end": 13,
+                  "text": "酒店"
+                },
+                "source_spans": [
+                  {
+                    "start": 11,
+                    "end": 13,
+                    "text": "酒店"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "酒店最多报多少"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city",
+                "value": "宁波",
+                "status": "GIVEN",
+                "clause_index": 1,
+                "span": {
+                  "start": 5,
+                  "end": 7,
+                  "text": "宁波"
+                },
+                "evidence": "宁波"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-006",
+          "query": "普通费用，四十二天后交。只问原因说明：要写吗？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 14,
+              "end": 18,
+              "text": "原因说明"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "普通费用，四十二天后交。只问原因说明：要写吗？",
+            "clauses": [
+              {
+                "text": "普通费用",
+                "start": 0,
+                "end": 4
+              },
+              {
+                "text": "四十二天后交",
+                "start": 5,
+                "end": 11
+              },
+              {
+                "text": "只问原因说明",
+                "start": 12,
+                "end": 18
+              },
+              {
+                "text": "要写吗",
+                "start": 19,
+                "end": 22
+              }
+            ],
+            "requests": [
+              {
+                "topic": "reason_statement",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 2,
+                "span": {
+                  "start": 14,
+                  "end": 18,
+                  "text": "原因说明"
+                },
+                "source_spans": [
+                  {
+                    "start": 14,
+                    "end": 18,
+                    "text": "原因说明"
+                  }
+                ],
+                "referent": "overdue_reason",
+                "evidence": "只问原因说明"
+              },
+              {
+                "topic": "finance_review",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 2,
+                "span": {
+                  "start": 14,
+                  "end": 18,
+                  "text": "原因说明"
+                },
+                "source_spans": [
+                  {
+                    "start": 14,
+                    "end": 18,
+                    "text": "原因说明"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "只问原因说明"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-007",
+          "query": "不是要免掉财务复核，也不想略过部门审批。普通费用迟交六十天，完整要求是什么？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "ALLOW",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "ALLOW",
+          "exact_match": true,
+          "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+          "evidence_spans": [
+            {
+              "start": 5,
+              "end": 9,
+              "text": "财务复核"
+            },
+            {
+              "start": 17,
+              "end": 19,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "不是要免掉财务复核，也不想略过部门审批。普通费用迟交六十天，完整要求是什么？",
+            "clauses": [
+              {
+                "text": "不是要免掉财务复核",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "也不想略过部门审批",
+                "start": 10,
+                "end": 19
+              },
+              {
+                "text": "普通费用迟交六十天",
+                "start": 20,
+                "end": 29
+              },
+              {
+                "text": "完整要求是什么",
+                "start": 30,
+                "end": 37
+              }
+            ],
+            "requests": [
+              {
+                "topic": "finance_review",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 0,
+                "span": {
+                  "start": 5,
+                  "end": 9,
+                  "text": "财务复核"
+                },
+                "source_spans": [
+                  {
+                    "start": 5,
+                    "end": 9,
+                    "text": "财务复核"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "不是要免掉财务复核"
+              },
+              {
+                "topic": "approval",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 1,
+                "span": {
+                  "start": 17,
+                  "end": 19,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 17,
+                    "end": 19,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "也不想略过部门审批"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V2U-008",
+          "query": "不是问报销能否通过，也不是问由谁审批；只问费用超过多少天可能不予受理。",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "DENY",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "DENY",
+          "exact_match": true,
+          "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+          "evidence_spans": [
+            {
+              "start": 16,
+              "end": 18,
+              "text": "审批"
+            },
+            {
+              "start": 16,
+              "end": 18,
+              "text": "审批"
+            }
+          ],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "不是问报销能否通过，也不是问由谁审批；只问费用超过多少天可能不予受理。",
+            "clauses": [
+              {
+                "text": "不是问报销能否通过",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "也不是问由谁审批",
+                "start": 10,
+                "end": 18
+              },
+              {
+                "text": "只问费用超过多少天可能不予受理",
+                "start": 19,
+                "end": 34
+              }
+            ],
+            "requests": [
+              {
+                "topic": "approval",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 1,
+                "span": {
+                  "start": 16,
+                  "end": 18,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 16,
+                    "end": 18,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "approval_requirement",
+                "evidence": "也不是问由谁审批"
+              },
+              {
+                "topic": "finance_review",
+                "act": "EXCLUDE_TOPIC",
+                "clause_index": 1,
+                "span": {
+                  "start": 16,
+                  "end": 18,
+                  "text": "审批"
+                },
+                "source_spans": [
+                  {
+                    "start": 16,
+                    "end": 18,
+                    "text": "审批"
+                  }
+                ],
+                "referent": "finance_review_requirement",
+                "evidence": "也不是问由谁审批"
+              },
+              {
+                "topic": "expense_deadline",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 2,
+                "span": {
+                  "start": 30,
+                  "end": 34,
+                  "text": "不予受理"
+                },
+                "source_spans": [
+                  {
+                    "start": 30,
+                    "end": 34,
+                    "text": "不予受理"
+                  }
+                ],
+                "referent": "expense_submission",
+                "evidence": "只问费用超过多少天可能不予受理"
+              }
+            ],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "CHG-005",
+          "query": "一类城市包括哪些地方？请只列出制度里的城市名单。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "NOT_APPLICABLE",
+          "suite": "confirmed_contract_v1",
+          "status": "ok",
+          "actual_decision": "NOT_APPLICABLE",
+          "exact_match": true,
+          "reason_code": "TARGET_IS_PRIMARY_QUERY_EVIDENCE",
+          "evidence_spans": [],
+          "unresolved_reasons": [],
+          "intent": {
+            "query": "一类城市包括哪些地方？请只列出制度里的城市名单。",
+            "clauses": [
+              {
+                "text": "一类城市包括哪些地方",
+                "start": 0,
+                "end": 10
+              },
+              {
+                "text": "请只列出制度里的城市名单",
+                "start": 11,
+                "end": 23
+              }
+            ],
+            "requests": [
+              {
+                "topic": "city_category",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 4,
+                  "text": "一类城市"
+                },
+                "source_spans": [
+                  {
+                    "start": 0,
+                    "end": 4,
+                    "text": "一类城市"
+                  }
+                ],
+                "referent": "destination_city_category",
+                "evidence": "一类城市包括哪些地方"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": null,
+                "status": "QUESTIONED",
+                "clause_index": 0,
+                "span": {
+                  "start": 6,
+                  "end": 10,
+                  "text": "哪些地方"
+                },
+                "evidence": "一类城市包括哪些地方"
+              }
+            ],
+            "ambiguities": []
+          }
+        }
+      ]
+    },
+    "unresolved_v1": {
+      "metrics": {
+        "n": 9,
+        "expected_counts": {
+          "ALLOW": 0,
+          "DENY": 0,
+          "UNRESOLVED": 9,
+          "NOT_APPLICABLE": 0
+        },
+        "actual_counts": {
+          "ALLOW": 0,
+          "DENY": 0,
+          "UNRESOLVED": 9,
+          "NOT_APPLICABLE": 0,
+          "ERROR": 0
+        },
+        "confusion_matrix": {
+          "ALLOW": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "DENY": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "UNRESOLVED": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 9,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          },
+          "NOT_APPLICABLE": {
+            "ALLOW": 0,
+            "DENY": 0,
+            "UNRESOLVED": 0,
+            "NOT_APPLICABLE": 0,
+            "ERROR": 0
+          }
+        },
+        "errors": 0,
+        "exact_matches": 9,
+        "overall_accuracy": 1.0,
+        "known_expected_n": 0,
+        "known_decision_accuracy": null,
+        "four_value_output_coverage": 1.0,
+        "known_decision_coverage": 0.0,
+        "unresolved_expected_n": 9,
+        "unresolved_recall": 1.0,
+        "unresolved_precision": 1.0,
+        "known_to_unresolved": 0,
+        "unresolved_to_known": 0
+      },
+      "rows": [
+        {
+          "case_id": "V3U-001",
+          "query": "这个怎么处理？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "intent": {
+            "query": "这个怎么处理？",
+            "clauses": [
+              {
+                "text": "这个怎么处理",
+                "start": 0,
+                "end": 6
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": [
+              {
+                "kind": "unbound_reference",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 2,
+                  "text": "这个"
+                },
+                "reason": "指代没有可唯一绑定的前文主题"
+              }
+            ]
+          }
+        },
+        {
+          "case_id": "V3U-002",
+          "query": "这个怎么判断？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_CITY_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的城市分类或住宿金额需求"
+          ],
+          "intent": {
+            "query": "这个怎么判断？",
+            "clauses": [
+              {
+                "text": "这个怎么判断",
+                "start": 0,
+                "end": 6
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": [
+              {
+                "kind": "unbound_reference",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 2,
+                  "text": "这个"
+                },
+                "reason": "指代没有可唯一绑定的前文主题"
+              }
+            ]
+          }
+        },
+        {
+          "case_id": "V3U-003",
+          "query": "目的地类别已经确定，是二类；但系统里又显示类别未确定。普通员工每晚住宿上限是多少？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "CONFLICTING_CONDITION",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "城市类别同时被陈述为已知和未知"
+          ],
+          "intent": {
+            "query": "目的地类别已经确定，是二类；但系统里又显示类别未确定。普通员工每晚住宿上限是多少？",
+            "clauses": [
+              {
+                "text": "目的地类别已经确定",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "是二类",
+                "start": 10,
+                "end": 13
+              },
+              {
+                "text": "系统里又显示类别未确定",
+                "start": 15,
+                "end": 26
+              },
+              {
+                "text": "普通员工每晚住宿上限是多少",
+                "start": 27,
+                "end": 40
+              }
+            ],
+            "requests": [
+              {
+                "topic": "lodging_amount",
+                "act": "ASK_REQUIREMENT",
+                "clause_index": 3,
+                "span": {
+                  "start": 33,
+                  "end": 35,
+                  "text": "住宿"
+                },
+                "source_spans": [
+                  {
+                    "start": 33,
+                    "end": 35,
+                    "text": "住宿"
+                  }
+                ],
+                "referent": "lodging_expense",
+                "evidence": "普通员工每晚住宿上限是多少"
+              }
+            ],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": null,
+                "status": "CONFLICTED",
+                "clause_index": 2,
+                "span": {
+                  "start": 21,
+                  "end": 26,
+                  "text": "类别未确定"
+                },
+                "evidence": "查询同时给出已知和未知城市类别"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V3U-004",
+          "query": "普通费用拖了四十天，这个现在怎么办？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "intent": {
+            "query": "普通费用拖了四十天，这个现在怎么办？",
+            "clauses": [
+              {
+                "text": "普通费用拖了四十天",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "这个现在怎么办",
+                "start": 10,
+                "end": 17
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": [
+              {
+                "kind": "unbound_reference",
+                "clause_index": 1,
+                "span": {
+                  "start": 10,
+                  "end": 12,
+                  "text": "这个"
+                },
+                "reason": "指代没有可唯一绑定的前文主题"
+              }
+            ]
+          }
+        },
+        {
+          "case_id": "V3U-005",
+          "query": "普通费用拖了四十天，要不要处理？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "intent": {
+            "query": "普通费用拖了四十天，要不要处理？",
+            "clauses": [
+              {
+                "text": "普通费用拖了四十天",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "要不要处理",
+                "start": 10,
+                "end": 15
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V3U-006",
+          "query": "普通费用拖了四十天，那个要求还要吗？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "intent": {
+            "query": "普通费用拖了四十天，那个要求还要吗？",
+            "clauses": [
+              {
+                "text": "普通费用拖了四十天",
+                "start": 0,
+                "end": 9
+              },
+              {
+                "text": "那个要求还要吗",
+                "start": 10,
+                "end": 17
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V3U-007",
+          "query": "城市类别还没查。请先看看。",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_CITY_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的城市分类或住宿金额需求"
+          ],
+          "intent": {
+            "query": "城市类别还没查。请先看看。",
+            "clauses": [
+              {
+                "text": "城市类别还没查",
+                "start": 0,
+                "end": 7
+              },
+              {
+                "text": "请先看看",
+                "start": 8,
+                "end": 12
+              }
+            ],
+            "requests": [],
+            "conditions": [
+              {
+                "key": "destination_city_category",
+                "value": null,
+                "status": "UNKNOWN",
+                "clause_index": 0,
+                "span": {
+                  "start": 0,
+                  "end": 7,
+                  "text": "城市类别还没查"
+                },
+                "evidence": "城市类别还没查"
+              }
+            ],
+            "ambiguities": []
+          }
+        },
+        {
+          "case_id": "V3U-008",
+          "query": "目的地是南京，这个怎么判断？",
+          "rule_id": "city_category_for_lodging_table",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_CITY_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的城市分类或住宿金额需求"
+          ],
+          "intent": {
+            "query": "目的地是南京，这个怎么判断？",
+            "clauses": [
+              {
+                "text": "目的地是南京",
+                "start": 0,
+                "end": 6
+              },
+              {
+                "text": "这个怎么判断",
+                "start": 7,
+                "end": 13
+              }
+            ],
+            "requests": [],
+            "conditions": [
+              {
+                "key": "destination_city",
+                "value": "南京",
+                "status": "GIVEN",
+                "clause_index": 0,
+                "span": {
+                  "start": 4,
+                  "end": 6,
+                  "text": "南京"
+                },
+                "evidence": "目的地是南京"
+              }
+            ],
+            "ambiguities": [
+              {
+                "kind": "unbound_reference",
+                "clause_index": 1,
+                "span": {
+                  "start": 7,
+                  "end": 9,
+                  "text": "这个"
+                },
+                "reason": "指代没有可唯一绑定的前文主题"
+              }
+            ]
+          }
+        },
+        {
+          "case_id": "V3U-009",
+          "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+          "rule_id": "finance_review_for_overdue_expense",
+          "expected_decision": "UNRESOLVED",
+          "suite": "unresolved_v1",
+          "status": "ok",
+          "actual_decision": "UNRESOLVED",
+          "exact_match": true,
+          "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+          "evidence_spans": [],
+          "unresolved_reasons": [
+            "没有可确认的审批或财务复核需求"
+          ],
+          "intent": {
+            "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+            "clauses": [
+              {
+                "text": "普通费用交晚了五十天",
+                "start": 0,
+                "end": 10
+              },
+              {
+                "text": "部门和财务都说过了",
+                "start": 11,
+                "end": 20
+              },
+              {
+                "text": "按哪个流程",
+                "start": 21,
+                "end": 26
+              }
+            ],
+            "requests": [],
+            "conditions": [],
+            "ambiguities": []
+          }
+        }
+      ]
+    }
+  },
+  "combined": {
+    "metrics": {
+      "n": 29,
+      "expected_counts": {
+        "ALLOW": 11,
+        "DENY": 8,
+        "UNRESOLVED": 9,
+        "NOT_APPLICABLE": 1
+      },
+      "actual_counts": {
+        "ALLOW": 11,
+        "DENY": 8,
+        "UNRESOLVED": 9,
+        "NOT_APPLICABLE": 1,
+        "ERROR": 0
+      },
+      "confusion_matrix": {
+        "ALLOW": {
+          "ALLOW": 11,
+          "DENY": 0,
+          "UNRESOLVED": 0,
+          "NOT_APPLICABLE": 0,
+          "ERROR": 0
+        },
+        "DENY": {
+          "ALLOW": 0,
+          "DENY": 8,
+          "UNRESOLVED": 0,
+          "NOT_APPLICABLE": 0,
+          "ERROR": 0
+        },
+        "UNRESOLVED": {
+          "ALLOW": 0,
+          "DENY": 0,
+          "UNRESOLVED": 9,
+          "NOT_APPLICABLE": 0,
+          "ERROR": 0
+        },
+        "NOT_APPLICABLE": {
+          "ALLOW": 0,
+          "DENY": 0,
+          "UNRESOLVED": 0,
+          "NOT_APPLICABLE": 1,
+          "ERROR": 0
+        }
+      },
+      "errors": 0,
+      "exact_matches": 29,
+      "overall_accuracy": 1.0,
+      "known_expected_n": 20,
+      "known_decision_accuracy": 1.0,
+      "four_value_output_coverage": 1.0,
+      "known_decision_coverage": 0.6896551724137931,
+      "unresolved_expected_n": 9,
+      "unresolved_recall": 1.0,
+      "unresolved_precision": 1.0,
+      "known_to_unresolved": 0,
+      "unresolved_to_known": 0
+    },
+    "rows": [
+      {
+        "case_id": "CHG-001",
+        "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 5,
+            "end": 7,
+            "text": "审批"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "不是不需要审批流程：这笔普通费用拖了四十天，请说清部门和财务各要做什么。",
+          "clauses": [
+            {
+              "text": "不是不需要审批流程",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "这笔普通费用拖了四十天",
+              "start": 10,
+              "end": 21
+            },
+            {
+              "text": "请说清部门和财务各要做什么",
+              "start": 22,
+              "end": 35
+            }
+          ],
+          "requests": [
+            {
+              "topic": "approval",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 0,
+              "span": {
+                "start": 5,
+                "end": 7,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 5,
+                  "end": 7,
+                  "text": "审批"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "不是不需要审批流程"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-002",
+        "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+        "evidence_spans": [
+          {
+            "start": 20,
+            "end": 22,
+            "text": "酒店"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "我不问同住安排，只想知道普通员工去南京住酒店每晚限额。",
+          "clauses": [
+            {
+              "text": "我不问同住安排",
+              "start": 0,
+              "end": 7
+            },
+            {
+              "text": "只想知道普通员工去南京住酒店每晚限额",
+              "start": 8,
+              "end": 26
+            }
+          ],
+          "requests": [
+            {
+              "topic": "room_sharing",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 0,
+              "span": {
+                "start": 3,
+                "end": 5,
+                "text": "同住"
+              },
+              "source_spans": [
+                {
+                  "start": 3,
+                  "end": 5,
+                  "text": "同住"
+                }
+              ],
+              "referent": "room_sharing_arrangement",
+              "evidence": "我不问同住安排"
+            },
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 20,
+                "end": 22,
+                "text": "酒店"
+              },
+              "source_spans": [
+                {
+                  "start": 20,
+                  "end": 22,
+                  "text": "酒店"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "只想知道普通员工去南京住酒店每晚限额"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city",
+              "value": "南京",
+              "status": "GIVEN",
+              "clause_index": 1,
+              "span": {
+                "start": 17,
+                "end": 19,
+                "text": "南京"
+              },
+              "evidence": "只想知道普通员工去南京住酒店每晚限额"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-003",
+        "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+        "evidence_spans": [
+          {
+            "start": 4,
+            "end": 6,
+            "text": "审批"
+          },
+          {
+            "start": 4,
+            "end": 6,
+            "text": "审批"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "不要展开审批流程，只告诉我普通费用拖到多少天后可能被拒收。",
+          "clauses": [
+            {
+              "text": "不要展开审批流程",
+              "start": 0,
+              "end": 8
+            },
+            {
+              "text": "只告诉我普通费用拖到多少天后可能被拒收",
+              "start": 9,
+              "end": 28
+            }
+          ],
+          "requests": [
+            {
+              "topic": "approval",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 0,
+              "span": {
+                "start": 4,
+                "end": 6,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 4,
+                  "end": 6,
+                  "text": "审批"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "不要展开审批流程"
+            },
+            {
+              "topic": "finance_review",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 0,
+              "span": {
+                "start": 4,
+                "end": 6,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 4,
+                  "end": 6,
+                  "text": "审批"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "不要展开审批流程"
+            },
+            {
+              "topic": "expense_deadline",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 26,
+                "end": 28,
+                "text": "拒收"
+              },
+              "source_spans": [
+                {
+                  "start": 26,
+                  "end": 28,
+                  "text": "拒收"
+                }
+              ],
+              "referent": "expense_submission",
+              "evidence": "只告诉我普通费用拖到多少天后可能被拒收"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-004",
+        "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+        "evidence_spans": [
+          {
+            "start": 18,
+            "end": 20,
+            "text": "住宿"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "苏州到底算不算一类城市？普通员工每晚住宿标准对应多少钱？",
+          "clauses": [
+            {
+              "text": "苏州到底算不算一类城市",
+              "start": 0,
+              "end": 11
+            },
+            {
+              "text": "普通员工每晚住宿标准对应多少钱",
+              "start": 12,
+              "end": 27
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 18,
+                "end": 20,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 18,
+                  "end": 20,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "普通员工每晚住宿标准对应多少钱"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": null,
+              "status": "QUESTIONED",
+              "clause_index": 0,
+              "span": {
+                "start": 4,
+                "end": 7,
+                "text": "算不算"
+              },
+              "evidence": "苏州到底算不算一类城市"
+            },
+            {
+              "key": "destination_city",
+              "value": "苏州",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 2,
+                "text": "苏州"
+              },
+              "evidence": "苏州到底算不算一类城市"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-006",
+        "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+        "evidence_spans": [
+          {
+            "start": 0,
+            "end": 12,
+            "text": "已确认目的地属于三类城市"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "已确认目的地属于三类城市，部门负责人住一晚酒店的上限是多少？",
+          "clauses": [
+            {
+              "text": "已确认目的地属于三类城市",
+              "start": 0,
+              "end": 12
+            },
+            {
+              "text": "部门负责人住一晚酒店的上限是多少",
+              "start": 13,
+              "end": 29
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 21,
+                "end": 23,
+                "text": "酒店"
+              },
+              "source_spans": [
+                {
+                  "start": 21,
+                  "end": 23,
+                  "text": "酒店"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "部门负责人住一晚酒店的上限是多少"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": "三类城市",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 12,
+                "text": "已确认目的地属于三类城市"
+              },
+              "evidence": "已确认目的地属于三类城市"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-007",
+        "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+        "evidence_spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": "住宿"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通员工到青岛出差，每晚能报多少住宿费？两名同性同事还必须合住吗？",
+          "clauses": [
+            {
+              "text": "普通员工到青岛出差",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "每晚能报多少住宿费",
+              "start": 10,
+              "end": 19
+            },
+            {
+              "text": "两名同性同事还必须合住吗",
+              "start": 20,
+              "end": 32
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 16,
+                "end": 18,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 16,
+                  "end": 18,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "每晚能报多少住宿费"
+            },
+            {
+              "topic": "room_sharing",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 2,
+              "span": {
+                "start": 29,
+                "end": 31,
+                "text": "合住"
+              },
+              "source_spans": [
+                {
+                  "start": 29,
+                  "end": 31,
+                  "text": "合住"
+                }
+              ],
+              "referent": "room_sharing_arrangement",
+              "evidence": "两名同性同事还必须合住吗"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city",
+              "value": "青岛",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 5,
+                "end": 7,
+                "text": "青岛"
+              },
+              "evidence": "普通员工到青岛出差"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-008",
+        "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 33,
+            "end": 37,
+            "text": "财务复核"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "text": "审批"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通费用拖到一百天会不会被拒收？如果属于特殊情况继续办，部门审批和财务复核分别有什么要求？",
+          "clauses": [
+            {
+              "text": "普通费用拖到一百天会不会被拒收",
+              "start": 0,
+              "end": 15
+            },
+            {
+              "text": "如果属于特殊情况继续办",
+              "start": 16,
+              "end": 27
+            },
+            {
+              "text": "部门审批和财务复核分别有什么要求",
+              "start": 28,
+              "end": 44
+            }
+          ],
+          "requests": [
+            {
+              "topic": "approval",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 2,
+              "span": {
+                "start": 30,
+                "end": 32,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 30,
+                  "end": 32,
+                  "text": "审批"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "部门审批和财务复核分别有什么要求"
+            },
+            {
+              "topic": "finance_review",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 2,
+              "span": {
+                "start": 33,
+                "end": 37,
+                "text": "财务复核"
+              },
+              "source_spans": [
+                {
+                  "start": 33,
+                  "end": 37,
+                  "text": "财务复核"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "部门审批和财务复核分别有什么要求"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-009",
+        "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+        "evidence_spans": [
+          {
+            "start": 11,
+            "end": 19,
+            "text": "已确定的二类城市"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通员工与部门负责人在已确定的二类城市出差，各自每晚住宿上限是多少？",
+          "clauses": [
+            {
+              "text": "普通员工与部门负责人在已确定的二类城市出差",
+              "start": 0,
+              "end": 21
+            },
+            {
+              "text": "各自每晚住宿上限是多少",
+              "start": 22,
+              "end": 33
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 26,
+                "end": 28,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 26,
+                  "end": 28,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "各自每晚住宿上限是多少"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": "二类城市",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 11,
+                "end": 19,
+                "text": "已确定的二类城市"
+              },
+              "evidence": "普通员工与部门负责人在已确定的二类城市出差"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-010",
+        "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 20,
+            "end": 25,
+            "text": "经过哪些人"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "一笔普通费用放了五十天才想起来报，现在要经过哪些人才能继续往下办？",
+          "clauses": [
+            {
+              "text": "一笔普通费用放了五十天才想起来报",
+              "start": 0,
+              "end": 16
+            },
+            {
+              "text": "现在要经过哪些人才能继续往下办",
+              "start": 17,
+              "end": 32
+            }
+          ],
+          "requests": [
+            {
+              "topic": "approval",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 20,
+                "end": 25,
+                "text": "经过哪些人"
+              },
+              "source_spans": [
+                {
+                  "start": 20,
+                  "end": 25,
+                  "text": "经过哪些人"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "现在要经过哪些人才能继续往下办"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-011",
+        "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 24,
+            "end": 27,
+            "text": "直接报"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通费用过了四十天才交，我写好原因之后是不是就能直接报了？",
+          "clauses": [
+            {
+              "text": "普通费用过了四十天才交",
+              "start": 0,
+              "end": 11
+            },
+            {
+              "text": "我写好原因之后是不是就能直接报了",
+              "start": 12,
+              "end": 28
+            }
+          ],
+          "requests": [
+            {
+              "topic": "reason_statement",
+              "act": "ASK_EXEMPTION",
+              "clause_index": 1,
+              "span": {
+                "start": 13,
+                "end": 17,
+                "text": "写好原因"
+              },
+              "source_spans": [
+                {
+                  "start": 13,
+                  "end": 17,
+                  "text": "写好原因"
+                }
+              ],
+              "referent": "overdue_reason",
+              "evidence": "我写好原因之后是不是就能直接报了"
+            },
+            {
+              "topic": "finance_review",
+              "act": "ASK_EXEMPTION",
+              "clause_index": 1,
+              "span": {
+                "start": 24,
+                "end": 27,
+                "text": "直接报"
+              },
+              "source_spans": [
+                {
+                  "start": 24,
+                  "end": 27,
+                  "text": "直接报"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "我写好原因之后是不是就能直接报了"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-012",
+        "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+        "evidence_spans": [
+          {
+            "start": 26,
+            "end": 33,
+            "text": "其他环节先不讲"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通费用晚交了四十天，我只想知道要不要写明迟交原因，其他环节先不讲。",
+          "clauses": [
+            {
+              "text": "普通费用晚交了四十天",
+              "start": 0,
+              "end": 10
+            },
+            {
+              "text": "我只想知道要不要写明迟交原因",
+              "start": 11,
+              "end": 25
+            },
+            {
+              "text": "其他环节先不讲",
+              "start": 26,
+              "end": 33
+            }
+          ],
+          "requests": [
+            {
+              "topic": "reason_statement",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 21,
+                "end": 25,
+                "text": "迟交原因"
+              },
+              "source_spans": [
+                {
+                  "start": 21,
+                  "end": 25,
+                  "text": "迟交原因"
+                }
+              ],
+              "referent": "overdue_reason",
+              "evidence": "我只想知道要不要写明迟交原因"
+            },
+            {
+              "topic": "finance_review",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 2,
+              "span": {
+                "start": 26,
+                "end": 33,
+                "text": "其他环节先不讲"
+              },
+              "source_spans": [
+                {
+                  "start": 26,
+                  "end": 33,
+                  "text": "其他环节先不讲"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "其他环节先不讲"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-001",
+        "query": "目的地的类别已经核实，是二类。出差人是普通员工。请只给每晚住宿金额上限。",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "CITY_CATEGORY_ALREADY_GIVEN",
+        "evidence_spans": [
+          {
+            "start": 0,
+            "end": 14,
+            "text": "目的地的类别已经核实，是二类"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "目的地的类别已经核实，是二类。出差人是普通员工。请只给每晚住宿金额上限。",
+          "clauses": [
+            {
+              "text": "目的地的类别已经核实",
+              "start": 0,
+              "end": 10
+            },
+            {
+              "text": "是二类",
+              "start": 11,
+              "end": 14
+            },
+            {
+              "text": "出差人是普通员工",
+              "start": 15,
+              "end": 23
+            },
+            {
+              "text": "请只给每晚住宿金额上限",
+              "start": 24,
+              "end": 35
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 3,
+              "span": {
+                "start": 29,
+                "end": 31,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 29,
+                  "end": 31,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "请只给每晚住宿金额上限"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": "二类城市",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 14,
+                "text": "目的地的类别已经核实，是二类"
+              },
+              "evidence": "目的地的类别已经核实，是二类"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-002",
+        "query": "此次目的地是厦门，但类别还没查。出差人是部门负责人。每晚住宿费用最高多少？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+        "evidence_spans": [
+          {
+            "start": 28,
+            "end": 30,
+            "text": "住宿"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "此次目的地是厦门，但类别还没查。出差人是部门负责人。每晚住宿费用最高多少？",
+          "clauses": [
+            {
+              "text": "此次目的地是厦门",
+              "start": 0,
+              "end": 8
+            },
+            {
+              "text": "类别还没查",
+              "start": 10,
+              "end": 15
+            },
+            {
+              "text": "出差人是部门负责人",
+              "start": 16,
+              "end": 25
+            },
+            {
+              "text": "每晚住宿费用最高多少",
+              "start": 26,
+              "end": 36
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 3,
+              "span": {
+                "start": 28,
+                "end": 30,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 28,
+                  "end": 30,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "每晚住宿费用最高多少"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city",
+              "value": "厦门",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 6,
+                "end": 8,
+                "text": "厦门"
+              },
+              "evidence": "此次目的地是厦门"
+            },
+            {
+              "key": "destination_city_category",
+              "value": null,
+              "status": "UNKNOWN",
+              "clause_index": 1,
+              "span": {
+                "start": 10,
+                "end": 15,
+                "text": "类别还没查"
+              },
+              "evidence": "类别还没查"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-003",
+        "query": "普通费用交晚了五十天，部门负责人已经批过。这是否意味着不用再交财务复核？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 31,
+            "end": 35,
+            "text": "财务复核"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通费用交晚了五十天，部门负责人已经批过。这是否意味着不用再交财务复核？",
+          "clauses": [
+            {
+              "text": "普通费用交晚了五十天",
+              "start": 0,
+              "end": 10
+            },
+            {
+              "text": "部门负责人已经批过",
+              "start": 11,
+              "end": 20
+            },
+            {
+              "text": "这是否意味着不用再交财务复核",
+              "start": 21,
+              "end": 35
+            }
+          ],
+          "requests": [
+            {
+              "topic": "finance_review",
+              "act": "ASK_EXEMPTION",
+              "clause_index": 2,
+              "span": {
+                "start": 31,
+                "end": 35,
+                "text": "财务复核"
+              },
+              "source_spans": [
+                {
+                  "start": 31,
+                  "end": 35,
+                  "text": "财务复核"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "这是否意味着不用再交财务复核"
+            },
+            {
+              "topic": "finance_review",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 2,
+              "span": {
+                "start": 31,
+                "end": 33,
+                "text": "财务"
+              },
+              "source_spans": [
+                {
+                  "start": 31,
+                  "end": 33,
+                  "text": "财务"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "这是否意味着不用再交财务复核"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-004",
+        "query": "这里说的是两名同性普通员工合住标准间。这种安排能由公司强制执行吗？只回答是否强制。",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "ONLY_ROOM_SHARING_REQUESTED",
+        "evidence_spans": [],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "这里说的是两名同性普通员工合住标准间。这种安排能由公司强制执行吗？只回答是否强制。",
+          "clauses": [
+            {
+              "text": "这里说的是两名同性普通员工合住标准间",
+              "start": 0,
+              "end": 18
+            },
+            {
+              "text": "这种安排能由公司强制执行吗",
+              "start": 19,
+              "end": 32
+            },
+            {
+              "text": "只回答是否强制",
+              "start": 33,
+              "end": 40
+            }
+          ],
+          "requests": [
+            {
+              "topic": "room_sharing",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 0,
+              "span": {
+                "start": 13,
+                "end": 15,
+                "text": "合住"
+              },
+              "source_spans": [
+                {
+                  "start": 13,
+                  "end": 15,
+                  "text": "合住"
+                }
+              ],
+              "referent": "room_sharing_arrangement",
+              "evidence": "这里说的是两名同性普通员工合住标准间"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-005",
+        "query": "普通员工，宁波，一晚。酒店最多报多少？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "LODGING_AMOUNT_NEEDS_CITY_CATEGORY",
+        "evidence_spans": [
+          {
+            "start": 11,
+            "end": 13,
+            "text": "酒店"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通员工，宁波，一晚。酒店最多报多少？",
+          "clauses": [
+            {
+              "text": "普通员工",
+              "start": 0,
+              "end": 4
+            },
+            {
+              "text": "宁波",
+              "start": 5,
+              "end": 7
+            },
+            {
+              "text": "一晚",
+              "start": 8,
+              "end": 10
+            },
+            {
+              "text": "酒店最多报多少",
+              "start": 11,
+              "end": 18
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 3,
+              "span": {
+                "start": 11,
+                "end": 13,
+                "text": "酒店"
+              },
+              "source_spans": [
+                {
+                  "start": 11,
+                  "end": 13,
+                  "text": "酒店"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "酒店最多报多少"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city",
+              "value": "宁波",
+              "status": "GIVEN",
+              "clause_index": 1,
+              "span": {
+                "start": 5,
+                "end": 7,
+                "text": "宁波"
+              },
+              "evidence": "宁波"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-006",
+        "query": "普通费用，四十二天后交。只问原因说明：要写吗？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+        "evidence_spans": [
+          {
+            "start": 14,
+            "end": 18,
+            "text": "原因说明"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "普通费用，四十二天后交。只问原因说明：要写吗？",
+          "clauses": [
+            {
+              "text": "普通费用",
+              "start": 0,
+              "end": 4
+            },
+            {
+              "text": "四十二天后交",
+              "start": 5,
+              "end": 11
+            },
+            {
+              "text": "只问原因说明",
+              "start": 12,
+              "end": 18
+            },
+            {
+              "text": "要写吗",
+              "start": 19,
+              "end": 22
+            }
+          ],
+          "requests": [
+            {
+              "topic": "reason_statement",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 2,
+              "span": {
+                "start": 14,
+                "end": 18,
+                "text": "原因说明"
+              },
+              "source_spans": [
+                {
+                  "start": 14,
+                  "end": 18,
+                  "text": "原因说明"
+                }
+              ],
+              "referent": "overdue_reason",
+              "evidence": "只问原因说明"
+            },
+            {
+              "topic": "finance_review",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 2,
+              "span": {
+                "start": 14,
+                "end": 18,
+                "text": "原因说明"
+              },
+              "source_spans": [
+                {
+                  "start": 14,
+                  "end": 18,
+                  "text": "原因说明"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "只问原因说明"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-007",
+        "query": "不是要免掉财务复核，也不想略过部门审批。普通费用迟交六十天，完整要求是什么？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "ALLOW",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "ALLOW",
+        "exact_match": true,
+        "reason_code": "APPROVAL_OR_EXEMPTION_REQUIREMENT",
+        "evidence_spans": [
+          {
+            "start": 5,
+            "end": 9,
+            "text": "财务复核"
+          },
+          {
+            "start": 17,
+            "end": 19,
+            "text": "审批"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "不是要免掉财务复核，也不想略过部门审批。普通费用迟交六十天，完整要求是什么？",
+          "clauses": [
+            {
+              "text": "不是要免掉财务复核",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "也不想略过部门审批",
+              "start": 10,
+              "end": 19
+            },
+            {
+              "text": "普通费用迟交六十天",
+              "start": 20,
+              "end": 29
+            },
+            {
+              "text": "完整要求是什么",
+              "start": 30,
+              "end": 37
+            }
+          ],
+          "requests": [
+            {
+              "topic": "finance_review",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 0,
+              "span": {
+                "start": 5,
+                "end": 9,
+                "text": "财务复核"
+              },
+              "source_spans": [
+                {
+                  "start": 5,
+                  "end": 9,
+                  "text": "财务复核"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "不是要免掉财务复核"
+            },
+            {
+              "topic": "approval",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 1,
+              "span": {
+                "start": 17,
+                "end": 19,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 17,
+                  "end": 19,
+                  "text": "审批"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "也不想略过部门审批"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V2U-008",
+        "query": "不是问报销能否通过，也不是问由谁审批；只问费用超过多少天可能不予受理。",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "DENY",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "DENY",
+        "exact_match": true,
+        "reason_code": "FINANCE_REVIEW_EXPLICITLY_EXCLUDED",
+        "evidence_spans": [
+          {
+            "start": 16,
+            "end": 18,
+            "text": "审批"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "text": "审批"
+          }
+        ],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "不是问报销能否通过，也不是问由谁审批；只问费用超过多少天可能不予受理。",
+          "clauses": [
+            {
+              "text": "不是问报销能否通过",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "也不是问由谁审批",
+              "start": 10,
+              "end": 18
+            },
+            {
+              "text": "只问费用超过多少天可能不予受理",
+              "start": 19,
+              "end": 34
+            }
+          ],
+          "requests": [
+            {
+              "topic": "approval",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 1,
+              "span": {
+                "start": 16,
+                "end": 18,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 16,
+                  "end": 18,
+                  "text": "审批"
+                }
+              ],
+              "referent": "approval_requirement",
+              "evidence": "也不是问由谁审批"
+            },
+            {
+              "topic": "finance_review",
+              "act": "EXCLUDE_TOPIC",
+              "clause_index": 1,
+              "span": {
+                "start": 16,
+                "end": 18,
+                "text": "审批"
+              },
+              "source_spans": [
+                {
+                  "start": 16,
+                  "end": 18,
+                  "text": "审批"
+                }
+              ],
+              "referent": "finance_review_requirement",
+              "evidence": "也不是问由谁审批"
+            },
+            {
+              "topic": "expense_deadline",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 2,
+              "span": {
+                "start": 30,
+                "end": 34,
+                "text": "不予受理"
+              },
+              "source_spans": [
+                {
+                  "start": 30,
+                  "end": 34,
+                  "text": "不予受理"
+                }
+              ],
+              "referent": "expense_submission",
+              "evidence": "只问费用超过多少天可能不予受理"
+            }
+          ],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "CHG-005",
+        "query": "一类城市包括哪些地方？请只列出制度里的城市名单。",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "NOT_APPLICABLE",
+        "suite": "confirmed_contract_v1",
+        "status": "ok",
+        "actual_decision": "NOT_APPLICABLE",
+        "exact_match": true,
+        "reason_code": "TARGET_IS_PRIMARY_QUERY_EVIDENCE",
+        "evidence_spans": [],
+        "unresolved_reasons": [],
+        "intent": {
+          "query": "一类城市包括哪些地方？请只列出制度里的城市名单。",
+          "clauses": [
+            {
+              "text": "一类城市包括哪些地方",
+              "start": 0,
+              "end": 10
+            },
+            {
+              "text": "请只列出制度里的城市名单",
+              "start": 11,
+              "end": 23
+            }
+          ],
+          "requests": [
+            {
+              "topic": "city_category",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 4,
+                "text": "一类城市"
+              },
+              "source_spans": [
+                {
+                  "start": 0,
+                  "end": 4,
+                  "text": "一类城市"
+                }
+              ],
+              "referent": "destination_city_category",
+              "evidence": "一类城市包括哪些地方"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": null,
+              "status": "QUESTIONED",
+              "clause_index": 0,
+              "span": {
+                "start": 6,
+                "end": 10,
+                "text": "哪些地方"
+              },
+              "evidence": "一类城市包括哪些地方"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V3U-001",
+        "query": "这个怎么处理？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的审批或财务复核需求"
+        ],
+        "intent": {
+          "query": "这个怎么处理？",
+          "clauses": [
+            {
+              "text": "这个怎么处理",
+              "start": 0,
+              "end": 6
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": [
+            {
+              "kind": "unbound_reference",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 2,
+                "text": "这个"
+              },
+              "reason": "指代没有可唯一绑定的前文主题"
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "V3U-002",
+        "query": "这个怎么判断？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_CITY_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的城市分类或住宿金额需求"
+        ],
+        "intent": {
+          "query": "这个怎么判断？",
+          "clauses": [
+            {
+              "text": "这个怎么判断",
+              "start": 0,
+              "end": 6
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": [
+            {
+              "kind": "unbound_reference",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 2,
+                "text": "这个"
+              },
+              "reason": "指代没有可唯一绑定的前文主题"
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "V3U-003",
+        "query": "目的地类别已经确定，是二类；但系统里又显示类别未确定。普通员工每晚住宿上限是多少？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "CONFLICTING_CONDITION",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "城市类别同时被陈述为已知和未知"
+        ],
+        "intent": {
+          "query": "目的地类别已经确定，是二类；但系统里又显示类别未确定。普通员工每晚住宿上限是多少？",
+          "clauses": [
+            {
+              "text": "目的地类别已经确定",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "是二类",
+              "start": 10,
+              "end": 13
+            },
+            {
+              "text": "系统里又显示类别未确定",
+              "start": 15,
+              "end": 26
+            },
+            {
+              "text": "普通员工每晚住宿上限是多少",
+              "start": 27,
+              "end": 40
+            }
+          ],
+          "requests": [
+            {
+              "topic": "lodging_amount",
+              "act": "ASK_REQUIREMENT",
+              "clause_index": 3,
+              "span": {
+                "start": 33,
+                "end": 35,
+                "text": "住宿"
+              },
+              "source_spans": [
+                {
+                  "start": 33,
+                  "end": 35,
+                  "text": "住宿"
+                }
+              ],
+              "referent": "lodging_expense",
+              "evidence": "普通员工每晚住宿上限是多少"
+            }
+          ],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": null,
+              "status": "CONFLICTED",
+              "clause_index": 2,
+              "span": {
+                "start": 21,
+                "end": 26,
+                "text": "类别未确定"
+              },
+              "evidence": "查询同时给出已知和未知城市类别"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V3U-004",
+        "query": "普通费用拖了四十天，这个现在怎么办？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的审批或财务复核需求"
+        ],
+        "intent": {
+          "query": "普通费用拖了四十天，这个现在怎么办？",
+          "clauses": [
+            {
+              "text": "普通费用拖了四十天",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "这个现在怎么办",
+              "start": 10,
+              "end": 17
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": [
+            {
+              "kind": "unbound_reference",
+              "clause_index": 1,
+              "span": {
+                "start": 10,
+                "end": 12,
+                "text": "这个"
+              },
+              "reason": "指代没有可唯一绑定的前文主题"
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "V3U-005",
+        "query": "普通费用拖了四十天，要不要处理？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的审批或财务复核需求"
+        ],
+        "intent": {
+          "query": "普通费用拖了四十天，要不要处理？",
+          "clauses": [
+            {
+              "text": "普通费用拖了四十天",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "要不要处理",
+              "start": 10,
+              "end": 15
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V3U-006",
+        "query": "普通费用拖了四十天，那个要求还要吗？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的审批或财务复核需求"
+        ],
+        "intent": {
+          "query": "普通费用拖了四十天，那个要求还要吗？",
+          "clauses": [
+            {
+              "text": "普通费用拖了四十天",
+              "start": 0,
+              "end": 9
+            },
+            {
+              "text": "那个要求还要吗",
+              "start": 10,
+              "end": 17
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V3U-007",
+        "query": "城市类别还没查。请先看看。",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_CITY_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的城市分类或住宿金额需求"
+        ],
+        "intent": {
+          "query": "城市类别还没查。请先看看。",
+          "clauses": [
+            {
+              "text": "城市类别还没查",
+              "start": 0,
+              "end": 7
+            },
+            {
+              "text": "请先看看",
+              "start": 8,
+              "end": 12
+            }
+          ],
+          "requests": [],
+          "conditions": [
+            {
+              "key": "destination_city_category",
+              "value": null,
+              "status": "UNKNOWN",
+              "clause_index": 0,
+              "span": {
+                "start": 0,
+                "end": 7,
+                "text": "城市类别还没查"
+              },
+              "evidence": "城市类别还没查"
+            }
+          ],
+          "ambiguities": []
+        }
+      },
+      {
+        "case_id": "V3U-008",
+        "query": "目的地是南京，这个怎么判断？",
+        "rule_id": "city_category_for_lodging_table",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_CITY_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的城市分类或住宿金额需求"
+        ],
+        "intent": {
+          "query": "目的地是南京，这个怎么判断？",
+          "clauses": [
+            {
+              "text": "目的地是南京",
+              "start": 0,
+              "end": 6
+            },
+            {
+              "text": "这个怎么判断",
+              "start": 7,
+              "end": 13
+            }
+          ],
+          "requests": [],
+          "conditions": [
+            {
+              "key": "destination_city",
+              "value": "南京",
+              "status": "GIVEN",
+              "clause_index": 0,
+              "span": {
+                "start": 4,
+                "end": 6,
+                "text": "南京"
+              },
+              "evidence": "目的地是南京"
+            }
+          ],
+          "ambiguities": [
+            {
+              "kind": "unbound_reference",
+              "clause_index": 1,
+              "span": {
+                "start": 7,
+                "end": 9,
+                "text": "这个"
+              },
+              "reason": "指代没有可唯一绑定的前文主题"
+            }
+          ]
+        }
+      },
+      {
+        "case_id": "V3U-009",
+        "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+        "rule_id": "finance_review_for_overdue_expense",
+        "expected_decision": "UNRESOLVED",
+        "suite": "unresolved_v1",
+        "status": "ok",
+        "actual_decision": "UNRESOLVED",
+        "exact_match": true,
+        "reason_code": "INSUFFICIENT_FINANCE_INTENT",
+        "evidence_spans": [],
+        "unresolved_reasons": [
+          "没有可确认的审批或财务复核需求"
+        ],
+        "intent": {
+          "query": "普通费用交晚了五十天，部门和财务都说过了，按哪个流程？",
+          "clauses": [
+            {
+              "text": "普通费用交晚了五十天",
+              "start": 0,
+              "end": 10
+            },
+            {
+              "text": "部门和财务都说过了",
+              "start": 11,
+              "end": 20
+            },
+            {
+              "text": "按哪个流程",
+              "start": 21,
+              "end": 26
+            }
+          ],
+          "requests": [],
+          "conditions": [],
+          "ambiguities": []
+        }
+      }
+    ]
+  },
+  "sources": {
+    "contract_review": "artifacts/gate-decision-contract-v1/review.json",
+    "contract_sha256": "fd78adc48fe9d76c0c95f5448670e04d72ced01a7133e431998da8fce9f89a8d",
+    "unresolved_review": "artifacts/gate-v3-decision-eval-v1/review.json",
+    "unresolved_review_sha256": "a6f72e13fd53ff57d301e586ddd2d514306afd14fa31d261c671aff8d21e210c",
+    "unresolved_confirmation_sha256": "e3d48b7451e7fa29d8f1a37bd77ee599d681573219338ff32ab5ad31442d84c4",
+    "unresolved_freeze_sha256": "6b024a8a9ecbdc6fea7e202fc5e66b660983026213ded9c2751baad94a254643",
+    "parser_sha256": "d26607c2e06047c08fac399bf2abfa0317ca728cee6554ba9b70dfab2f9c3792",
+    "freeze_record": {
+      "status": "pending_user_confirmation",
+      "created_at": "2026-09-09T12:00:00Z",
+      "phase": 38,
+      "step": 3,
+      "substep": 2,
+      "decision_values": [
+        "ALLOW",
+        "DENY",
+        "UNRESOLVED",
+        "NOT_APPLICABLE"
+      ],
+      "case_count": 9,
+      "scoring_executed": false,
+      "model_inference_executed": false,
+      "frozen_files": {
+        "scripts/gate_v3_intent.py": "d26607c2e06047c08fac399bf2abfa0317ca728cee6554ba9b70dfab2f9c3792",
+        "scripts/coverage_gate_v2.py": "c61f5255c15a549e106d57a61747bd9e5ce96fd7d2f3363a7446b7fef930f7a4",
+        "scripts/experiment_coverage_gate.py": "76d50530444c24b6da5159ddfeb71655e2578fdad35bca7370941365aa0b6252",
+        "artifacts/gate-decision-contract-v1/CONTRACT.md": "c950dc6d9e69ef44e352725dd02643764536963f38cc63015678f34a7995f385",
+        "artifacts/gate-decision-contract-v1/review.json": "fd78adc48fe9d76c0c95f5448670e04d72ced01a7133e431998da8fce9f89a8d",
+        "artifacts/gate-decision-contract-v1/user-confirmation.json": "c1e2b082e1124b22fa8164ccb8759b3a8b60a5a212a17f2b5a0a56ecb671a22e",
+        "artifacts/gate-decision-contract-v1/confirmed-lock.json": "f55cfe465492a5bc4adc6991d85264aeccca1d98e15aa9d14017c0997840d9f6",
+        "tests/evaluation/retrieval_coverage_rules.json": "0897138099ec6a7280090ebfc68ce817b8e53e96109b8ef392cb5e167d8d2efb"
+      }
+    }
+  },
+  "environment": {
+    "python": "3.12.14"
+  },
+  "generated_at": "2026-09-09T06:39:35.720764+00:00"
+}

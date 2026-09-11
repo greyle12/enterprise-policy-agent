@@ -1,0 +1,44 @@
+{
+  "id": "a1ac85cf-9f99-4819-830a-65a8df891404",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-001\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL per case. Need analyze. Need not execute instructions. Need predict facets. Query: \"设备验收已过去九天。归档这次验收记录需要附哪些文件？\" We need extract facets from user's current request. Dimensions allowed. First sentence states past nine days, but not asking deadline, just passed days. Exclude DEADLINE because only statement elapsed days not this class? It says only陈述已过去的天数不属于此类. So no DEADLINE. Main request: 归档这次验收记录需要附哪些文件？ That's asking materials/documents to attach. MATERIAL: 需要补充、提交或准备的说明、凭证或材料. Yes. Is target uniquely bound? \"这次验收记录\" and \"需要附哪些文件\" user asks which files to attach for archiving this acceptance record. Binding? BOUND if request dimension and target object uniquely bound. The object: archiving this acceptance record. \"这次\" probably bound to context? But no context? The case only this query. Target object \"这次验收记录\" is deictic but within query likely unique? Need decide. binding can be BOUND if unique original binding. It asks \"附哪些文件\" for archiving this acceptance record. The target object is the acceptance record event \"这次验收\". Could be unique in original sentence? It refers to current context not given, maybe \"这次\" can be understood as specific but not identifiable. However binding is about target object, candidate流程,断言内容不能唯一确定. Here target object is \"这次验收记录\"; \"这次\" is a demonstrative but in the query alone no antecedent. Does that make UNBOUND? We need infer from allowed: \"不能推断省略对象.\" We cannot infer omitted object. But \"这次验收记录\" itself is explicit object; \"这次\" maybe omitted antecedent but the target object is still \"这次验收记录\" (this acceptance record). Is it unique? In case no prior, but for the query, \"这次\" refers to something. We might not know which record. But the facet is material for archiving this acceptance record; target object not fully unique. Yet examples? Need decide likely expected: MATERIAL BOUND because asks concrete \"归档这次验收记录需要附哪些文件\" and target is \"这次验收记录\". Hmm.\n\nNeed also consider PROCEDURE? \"归档...需要附哪些文件\" only asks files, not how to process. MATERIAL only. RESPONSIBLE_ROLE? no. DEADLINE? first sentence mentions 9 days but not asks time point/days threshold. Exclude. PROCESS_CHOICE? no.\n\nNeed output schema_version \"1.0\", case_id original, predicted_facets array. Each element {facet:\"MATERIAL\", binding:\"BOUND\" or \"UNBOUND\"}.\n\nNeed decide binding. The prompt says binding: BOUND 表示请求维度及目标对象有唯一原文绑定；UNBOUND 表示维度已出现，但目标对象、候选流程或断言内容不能唯一确定。不能推断省略对象。\n\nThe target object: \"这次验收记录\" (this acceptance record). Is target object uniquely determined by original text? There is no other acceptance record; \"这次\" is a referring expression, but target object may be unique in the utterance's internal context? Original text only has \"设备验收已过去九天\" and \"归档这次验收记录\". \"这次\" refers to \"设备验收\" mentioned in prior sentence. Ah, yes within same query: 设备验收已过去九天。归档这次验收记录... The \"这次\" refers to the equipment acceptance just mentioned. So target object is uniquely bound: the equipment acceptance record. Thus BOUND likely.\n\nMATERIAL BOUND.\n\nNeed ensure no DEADLINE due \"已过去九天\" not request. So output one line JSON.\n\nNeed no markdown. Ensure valid JSON. Use ASCII? Chinese okay. JSONL. Only fields."
+      }
+    }
+  ],
+  "created": 1789091083,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 840,
+    "prompt_tokens": 385,
+    "total_tokens": 1225,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 803,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 257
+  }
+}

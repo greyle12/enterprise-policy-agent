@@ -1,0 +1,116 @@
+{
+  "accepted_facet_instance_count": 17,
+  "case_count": 18,
+  "code_head": "170190ec3f1819386afd2fa439f8c54ce1f43d5e",
+  "dataset_version": "semantic-facet-blind-v2-confirmed-1",
+  "model_inference": false,
+  "reports": [
+    {
+      "fixture_id": "complete",
+      "metrics": {
+        "binding": {
+          "accuracy": 1.0,
+          "evaluated_count": 17,
+          "match_count": 17,
+          "mismatch_count": 0
+        },
+        "case_exact_match": {
+          "matched_count": 18,
+          "rate": 1.0,
+          "total_case_count": 18
+        },
+        "facet_label": {
+          "expected_count": 17,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "predicted_count": 17,
+          "recall": 1.0,
+          "true_positive": 17
+        },
+        "prediction_coverage": {
+          "predicted_case_count": 18,
+          "rate": 1.0,
+          "total_case_count": 18
+        }
+      },
+      "missing_prediction_case_ids": [],
+      "prediction_sha256": "e4ac0e5b87785efcf3f21f6dd7a8e6d6f8fd0b435a4c3e02fce4f020a2b576ff"
+    },
+    {
+      "fixture_id": "extra-facet",
+      "metrics": {
+        "binding": {
+          "accuracy": 1.0,
+          "evaluated_count": 17,
+          "match_count": 17,
+          "mismatch_count": 0
+        },
+        "case_exact_match": {
+          "matched_count": 17,
+          "rate": 0.9444444444444444,
+          "total_case_count": 18
+        },
+        "facet_label": {
+          "expected_count": 17,
+          "f1": 0.9714285714285714,
+          "false_negative": 0,
+          "false_positive": 1,
+          "precision": 0.9444444444444444,
+          "predicted_count": 18,
+          "recall": 1.0,
+          "true_positive": 17
+        },
+        "prediction_coverage": {
+          "predicted_case_count": 18,
+          "rate": 1.0,
+          "total_case_count": 18
+        }
+      },
+      "missing_prediction_case_ids": [],
+      "prediction_sha256": "98ca380a1ec216629185bfe490b32d050a343e85550decad7900bb5759e1209d"
+    },
+    {
+      "fixture_id": "missing-prediction",
+      "metrics": {
+        "binding": {
+          "accuracy": 1.0,
+          "evaluated_count": 17,
+          "match_count": 17,
+          "mismatch_count": 0
+        },
+        "case_exact_match": {
+          "matched_count": 17,
+          "rate": 0.9444444444444444,
+          "total_case_count": 18
+        },
+        "facet_label": {
+          "expected_count": 17,
+          "f1": 1.0,
+          "false_negative": 0,
+          "false_positive": 0,
+          "precision": 1.0,
+          "predicted_count": 17,
+          "recall": 1.0,
+          "true_positive": 17
+        },
+        "prediction_coverage": {
+          "predicted_case_count": 17,
+          "rate": 0.9444444444444444,
+          "total_case_count": 18
+        }
+      },
+      "missing_prediction_case_ids": [
+        "SFB-012"
+      ],
+      "prediction_sha256": "f61584ca3991df9bbe10ea92f1d373ae1ee41e22b07e1ec562cfe59417640b19"
+    }
+  ],
+  "schema_version": "1.0",
+  "scope": "evaluator_boundary_fixtures",
+  "script_sha256": "828acc7be66d93bf02aabb826b1740ca6d370ea1d598dcdae92d606bf4a9ec30",
+  "source_proposal_sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d",
+  "source_records_sha256": "e3d27d7184ac37af0d1c2e2963ced12f31e2f11e8cd37b74048bc183076eb7b3",
+  "status": "passed"
+}

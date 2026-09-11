@@ -1,0 +1,44 @@
+{
+  "id": "f00419c5-2e83-4fae-9707-f0b7ffbf8537",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFC-012\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"UNBOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer analyze query. Need output JSONL. We need determine facets. Query: \"同事提出了两种流程，但没有说明具体内容。这次外地培训应选其中哪种？\" Means colleague proposed two processes but didn't specify contents. Which of the two should be chosen for this out-of-town training? User asks choosing between multiple processes. Facet PROCESS_CHOICE. Binding? There are two processes but target/candidate processes cannot be uniquely determined because no details. The query says two processes not specified. Also \"这次外地培训\" maybe target object? But process candidates not unique. Binding UNBOUND for PROCESS_CHOICE? Rules: BOUND unique original binding; UNBOUND dimension appears but target object, candidate process or assertion cannot be uniquely determined. Here candidate processes not unique. So PROCESS_CHOICE UNBOUND.\n\nAny other facets? PROCEDURE? It asks which process to choose, not steps. Could be process choice. RESPONSIBLE_ROLE? No. MATERIAL? No. DEADLINE? No. Need output only JSONL with schema_version, case_id, predicted_facets. So one element.\n\nNeed ensure JSON. \n{\"schema_version\":\"1.0\",\"case_id\":\"SFC-012\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"UNBOUND\"}]}"
+      }
+    }
+  ],
+  "created": 1789087134,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 320,
+    "prompt_tokens": 388,
+    "total_tokens": 708,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 278,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 260
+  }
+}
