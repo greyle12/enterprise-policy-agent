@@ -1,0 +1,44 @@
+{
+  "id": "f358221b-aa84-4c8f-a572-c342c38d10b9",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-011\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer extract facets from query. Need output JSONL only. We need analyze Chinese query. case_id SFB-011. Query: \"关于会议室预订，我不是不问操作步骤，我是只问操作步骤。\" Need identify user current request info dimensions. It's a bit tricky. \"我不是不问操作步骤，我是只问操作步骤。\" Means \"Regarding meeting room booking, I am not not asking operation steps, I am only asking operation steps.\" Double negative: 我不是不问 = I am not not asking? Actually \"我不是不问操作步骤\" means \"It's not that I'm not asking about operation steps\" = I am asking about operation steps. Then \"我是只问操作步骤\" = I am only asking operation steps. So user asks PROCEDURE. Binding? Target object: 会议室预订 operation steps. Unique original binding? Yes, PROCEDURE about 会议室预订. binding BOUND likely. Only facet PROCEDURE. Need output JSONL {\"schema_version\":\"1.0\",\"case_id\":\"SFB-011\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}. Ensure no other fields. Final only."
+      }
+    }
+  ],
+  "created": 1789091104,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 278,
+    "prompt_tokens": 385,
+    "total_tokens": 663,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 240,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 257
+  }
+}

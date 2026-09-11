@@ -1,0 +1,44 @@
+{
+  "id": "01f30058-e581-4676-a035-b2b7b693ed00",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-014\",\"predicted_facets\":[{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"UNBOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need analyze query. Need determine facets. Query: \"这次账号开通应走之前说的那条渠道，还是另外那条？此前的对话不在这里。\" Translation: For this account activation, should we go through the channel mentioned before, or the other one? The previous conversation is not here. User asks choosing between multiple办理流程/channels? \"账号开通\" process, \"应走...渠道，还是另外那条\" choose which channel. Facet PROCESS_CHOICE: asking between multiple办理流程 which one. Binding: target object/candidate processes cannot be uniquely determined because previous conversation not here, \"之前说的那条渠道\" and \"另外那条\" not identifiable. So PROCESS_CHOICE, binding UNBOUND. Any PROCEDURE? It's asking which channel, not general steps. PROCESS_CHOICE only. RESPONSIBLE_ROLE? no. DEADLINE no. MATERIAL no. Output one line JSON with schema_version \"1.0\", case_id exactly, predicted_facets array [{\"facet\":\"PROCESS_CHOICE\",\"binding\":\"UNBOUND\"}]. Ensure UTF-8 JSONL, no markdown."
+      }
+    }
+  ],
+  "created": 1789091109,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 282,
+    "prompt_tokens": 390,
+    "total_tokens": 672,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 240,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 134
+  }
+}

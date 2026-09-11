@@ -1,0 +1,44 @@
+{
+  "id": "3f7dec5d-6cf7-4c0f-8a9a-887c50f8d503",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-018\",\"predicted_facets\":[{\"facet\":\"RESPONSIBLE_ROLE\",\"binding\":\"BOUND\"},{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "我们需要回答 user 的任务。需要分析输入 query，提取 facets。必须输出 JSONL，每行包含 schema_version, case_id, predicted_facets。需要遵守 prompt。我们只需要分析原文，不回答制度问题。\n\n给定 case_id SFB-018 query: \"门禁权限注销和工牌回收是两项工作。前一项归谁负责，需要提交什么材料？\"\n\n需要提取用户当前请求信息维度。允许 facets: PROCEDURE, MATERIAL, DEADLINE, RESPONSIBLE_ROLE, PROCESS_CHOICE. binding BOUND/UNBOUND.\n\n分析 query。用户说门禁权限注销和工牌回收是两项工作。前一项归谁负责，需要提交什么材料？\n\n前一项指门禁权限注销。问题1：归谁负责 -> RESPONSIBLE_ROLE，目标对象是门禁权限注销。唯一绑定？原文明确“前一项”指门禁权限注销，因为前面两项工作，前一项就是门禁权限注销。所以 RESPONSIBLE_ROLE binding BOUND? 维度请求部门/岗位/职责分工，目标对象门禁权限注销明确。可以 BOUND。\n\n问题2：需要提交什么材料 -> MATERIAL，目标对象也是前一项，即门禁权限注销需要提交什么材料。绑定明确？ MATERIAL 维度出现，目标对象门禁权限注销。BOUND。\n\n是否 PROCEDURE? \"需要提交什么材料\" 不算 procedure? 材料明确。没有问步骤。没有 DEADLINE。PROCESS_CHOICE? 没有在多个流程之间选择，只是两项工作分开，前一项负责和材料。不是。\n\n是否可能 RESPONSIBLE_ROLE 和 MATERIAL 都具有唯一绑定？是的。输出两个 facet.\n\n需要确保 JSONL 只有一行，原样 case_id。schema_version \"1.0\"。predicted_facets 数组。每个元素仅 facet 和 binding。不要其他字段。\n\n那么输出：\n{\"schema_version\":\"1.0\",\"case_id\":\"SFB-018\",\"predicted_facets\":[{\"facet\":\"RESPONSIBLE_ROLE\",\"binding\":\"BOUND\"},{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}\n\n注意顺序无所谓。确保 UTF-8 JSON。不要 markdown。最后只输出这个。"
+      }
+    }
+  ],
+  "created": 1789091118,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 524,
+    "prompt_tokens": 393,
+    "total_tokens": 917,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 471,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 137
+  }
+}

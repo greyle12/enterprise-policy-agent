@@ -1,0 +1,44 @@
+{
+  "id": "ddef5f65-56d1-47fb-b04f-3a741f95adf6",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-015\",\"predicted_facets\":[{\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer only JSONL. Need parse case. Need identify facets from query. Query Chinese: \"部门统一申请和员工个人申请都能用于账号开通；我已选定前者，请列出前者的操作步骤。\" Translation: Both department unified application and employee individual application can be used for account opening; I have chosen the former, please list operational steps of the former. Need facets per allowed.\n\nWe need output for case_id SFB-015, schema_version 1.0, predicted_facets array with elements facet and binding.\n\nAnalyze user current request: asks list operational steps of the former. This is PROCEDURE. Target object: former = department unified application. It is uniquely bound because \"我已选定前者\" refers to first option \"部门统一申请\". So PROCEDURE, BOUND likely. Any PROCESS_CHOICE? They mention both options and chosen former, but current request not asking which to choose; they've already selected. So no PROCESS_CHOICE. Maybe RESPONSIBLE_ROLE? No. MATERIAL? No. DEADLINE? No.\n\nNeed binding: BOUND? The facet PROCEDURE target object department unified application uniquely determined? The query says former refers to \"部门统一申请\". Yes. So BOUND.\n\nOutput JSONL one line. Ensure no markdown. Need valid JSON. Use exact case_id. schema_version string \"1.0\". predicted_facets array. Element {\"facet\":\"PROCEDURE\",\"binding\":\"BOUND\"}. Is binding values BOUND/UNBOUND? yes.\n\nNeed maybe facet labels exactly uppercase. Final only JSONL."
+      }
+    }
+  ],
+  "created": 1789091111,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 364,
+    "prompt_tokens": 393,
+    "total_tokens": 757,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 326,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 256
+    },
+    "prompt_cache_hit_tokens": 256,
+    "prompt_cache_miss_tokens": 137
+  }
+}

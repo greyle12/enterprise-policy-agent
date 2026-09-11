@@ -1,0 +1,214 @@
+{
+  "accepted_case_count": 18,
+  "accepted_facet_instance_count": 17,
+  "accepted_mappings": [
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFB-001"
+    },
+    {
+      "accepted_facet_labels": [
+        "DEADLINE"
+      ],
+      "binding_by_facet": {
+        "DEADLINE": "BOUND"
+      },
+      "case_id": "SFB-002"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFB-003"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFB-004"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "UNBOUND"
+      },
+      "case_id": "SFB-005"
+    },
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFB-006"
+    },
+    {
+      "accepted_facet_labels": [
+        "RESPONSIBLE_ROLE"
+      ],
+      "binding_by_facet": {
+        "RESPONSIBLE_ROLE": "BOUND"
+      },
+      "case_id": "SFB-007"
+    },
+    {
+      "accepted_facet_labels": [
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND"
+      },
+      "case_id": "SFB-008"
+    },
+    {
+      "accepted_facet_labels": [],
+      "binding_by_facet": {},
+      "case_id": "SFB-009"
+    },
+    {
+      "accepted_facet_labels": [
+        "RESPONSIBLE_ROLE"
+      ],
+      "binding_by_facet": {
+        "RESPONSIBLE_ROLE": "BOUND"
+      },
+      "case_id": "SFB-010"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFB-011"
+    },
+    {
+      "accepted_facet_labels": [],
+      "binding_by_facet": {},
+      "case_id": "SFB-012"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "BOUND"
+      },
+      "case_id": "SFB-013"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCESS_CHOICE"
+      ],
+      "binding_by_facet": {
+        "PROCESS_CHOICE": "UNBOUND"
+      },
+      "case_id": "SFB-014"
+    },
+    {
+      "accepted_facet_labels": [
+        "PROCEDURE"
+      ],
+      "binding_by_facet": {
+        "PROCEDURE": "BOUND"
+      },
+      "case_id": "SFB-015"
+    },
+    {
+      "accepted_facet_labels": [
+        "RESPONSIBLE_ROLE"
+      ],
+      "binding_by_facet": {
+        "RESPONSIBLE_ROLE": "BOUND"
+      },
+      "case_id": "SFB-016"
+    },
+    {
+      "accepted_facet_labels": [
+        "RESPONSIBLE_ROLE"
+      ],
+      "binding_by_facet": {
+        "RESPONSIBLE_ROLE": "UNBOUND"
+      },
+      "case_id": "SFB-017"
+    },
+    {
+      "accepted_facet_labels": [
+        "RESPONSIBLE_ROLE",
+        "MATERIAL"
+      ],
+      "binding_by_facet": {
+        "MATERIAL": "BOUND",
+        "RESPONSIBLE_ROLE": "BOUND"
+      },
+      "case_id": "SFB-018"
+    }
+  ],
+  "case_ids_in_dataset_order": [
+    "SFB-001",
+    "SFB-002",
+    "SFB-003",
+    "SFB-004",
+    "SFB-005",
+    "SFB-006",
+    "SFB-007",
+    "SFB-008",
+    "SFB-009",
+    "SFB-010",
+    "SFB-011",
+    "SFB-012",
+    "SFB-013",
+    "SFB-014",
+    "SFB-015",
+    "SFB-016",
+    "SFB-017",
+    "SFB-018"
+  ],
+  "confirmation_scope": [
+    "eighteen query texts and their proposed Facet labels",
+    "BOUND and UNBOUND bindings with source spans",
+    "two confirmed empty Facet outputs",
+    "targeted blind-review scope; independent test-set status remains false"
+  ],
+  "confirmation_source": "current conversation; user reply ‘接受，并允许执行上述冻结与验收步骤’ confirmed the reviewed 18 labels",
+  "confirmation_version": "semantic-facet-blind-confirmation-v1",
+  "confirmed_definition_count": 5,
+  "dataset_version": "semantic-facet-blind-v2-confirmed-1",
+  "draft_preserved": true,
+  "historical_labels_changed": false,
+  "independent_double_annotation": false,
+  "independent_test_set": false,
+  "model_inference": false,
+  "numeric_resume_ready": false,
+  "parser_runtime_integration": false,
+  "partial_records_remain_partial": true,
+  "pending_case_count": 0,
+  "recorded_at": "2026-09-11T01:20:35.957498+00:00",
+  "records_changed": false,
+  "rejected_case_count": 0,
+  "retrieval_executed": false,
+  "schema_version": "1.0",
+  "scope_boundary": "This is a user-confirmed targeted blind-review candidate set authored after inspecting previous development errors. It is not independently double-annotated and does not establish a model score or production behavior.",
+  "semantic_accuracy": null,
+  "source_dataset_version": "semantic-facet-blind-v2-source-1",
+  "source_proposal_sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d",
+  "source_proposal_version": "semantic-request-facets-v0.1-draft-1",
+  "source_records_sha256": "e3d27d7184ac37af0d1c2e2963ced12f31e2f11e8cd37b74048bc183076eb7b3",
+  "status": "user_confirmed",
+  "unresolved_outputs_preserved": true
+}

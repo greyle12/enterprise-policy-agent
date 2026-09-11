@@ -1,0 +1,18 @@
+{"case_id": "SFB-001", "predicted_facets": [{"binding": "BOUND", "facet": "MATERIAL"}], "schema_version": "1.0"}
+{"case_id": "SFB-002", "predicted_facets": [{"binding": "BOUND", "facet": "DEADLINE"}], "schema_version": "1.0"}
+{"case_id": "SFB-003", "predicted_facets": [{"binding": "BOUND", "facet": "PROCEDURE"}], "schema_version": "1.0"}
+{"case_id": "SFB-004", "predicted_facets": [{"binding": "BOUND", "facet": "PROCEDURE"}], "schema_version": "1.0"}
+{"case_id": "SFB-005", "predicted_facets": [{"binding": "UNBOUND", "facet": "PROCEDURE"}], "schema_version": "1.0"}
+{"case_id": "SFB-006", "predicted_facets": [{"binding": "BOUND", "facet": "MATERIAL"}], "schema_version": "1.0"}
+{"case_id": "SFB-007", "predicted_facets": [{"binding": "BOUND", "facet": "RESPONSIBLE_ROLE"}], "schema_version": "1.0"}
+{"case_id": "SFB-008", "predicted_facets": [{"binding": "BOUND", "facet": "MATERIAL"}], "schema_version": "1.0"}
+{"case_id": "SFB-009", "predicted_facets": [{"binding": "BOUND", "facet": "DEADLINE"}], "schema_version": "1.0"}
+{"case_id": "SFB-010", "predicted_facets": [{"binding": "BOUND", "facet": "RESPONSIBLE_ROLE"}], "schema_version": "1.0"}
+{"case_id": "SFB-011", "predicted_facets": [{"binding": "BOUND", "facet": "PROCEDURE"}], "schema_version": "1.0"}
+{"case_id": "SFB-012", "predicted_facets": [], "schema_version": "1.0"}
+{"case_id": "SFB-013", "predicted_facets": [{"binding": "BOUND", "facet": "PROCESS_CHOICE"}], "schema_version": "1.0"}
+{"case_id": "SFB-014", "predicted_facets": [{"binding": "UNBOUND", "facet": "PROCESS_CHOICE"}], "schema_version": "1.0"}
+{"case_id": "SFB-015", "predicted_facets": [{"binding": "BOUND", "facet": "PROCEDURE"}], "schema_version": "1.0"}
+{"case_id": "SFB-016", "predicted_facets": [{"binding": "BOUND", "facet": "RESPONSIBLE_ROLE"}], "schema_version": "1.0"}
+{"case_id": "SFB-017", "predicted_facets": [{"binding": "UNBOUND", "facet": "RESPONSIBLE_ROLE"}], "schema_version": "1.0"}
+{"case_id": "SFB-018", "predicted_facets": [{"binding": "BOUND", "facet": "RESPONSIBLE_ROLE"}, {"binding": "BOUND", "facet": "MATERIAL"}], "schema_version": "1.0"}

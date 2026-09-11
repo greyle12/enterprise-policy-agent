@@ -1,0 +1,106 @@
+{
+  "status": "passed",
+  "scope": "draft_structure_and_duplicate_screening",
+  "dataset_version": "semantic-facet-blind-v2-draft-1",
+  "sample_count": 18,
+  "facet_instance_count": 17,
+  "empty_facet_cases": [
+    "SFB-009",
+    "SFB-012"
+  ],
+  "corpus_scope": "All query fields in docs/gate_v3 JSON/JSONL excluding this draft; no completeness claim outside this directory",
+  "sources": [
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c",
+      "query_count": 7
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/review.json",
+      "sha256": "32bca1e1ca02f7e83dc319a44f8d371632b1ab0f22b6145a7822122918d1101b",
+      "query_count": 7
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1/source-excerpts.json",
+      "sha256": "a2132c72288dc52f75730209444a2e27c6486d73be9951c2d40a7a9aef14986e",
+      "query_count": 11
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/records.jsonl",
+      "sha256": "682842dea07d9083c7afcf9ebfd4b8b03a3a47115b990474b613e98f84984b3c",
+      "query_count": 7
+    },
+    {
+      "path": "docs/gate_v3/semantic-dev-v1-confirmed/review.json",
+      "sha256": "ce7ab9d40e3f0db47c704dc74da5f9cea2eac66168f48cedf0cfe4984d0939b0",
+      "query_count": 7
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/accepted.json",
+      "sha256": "9221b5eadd62a01b865c94d4c5f75febb0c906ea1e04b459af788d897b313811",
+      "query_count": 12
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-confirmed/records.jsonl",
+      "sha256": "39a6e84d611f916b4de028df9cce5a144b6ee8f414fb6a180ef77432950672c1",
+      "query_count": 12
+    },
+    {
+      "path": "docs/gate_v3/semantic-facet-challenge-v1-draft/cases.json",
+      "sha256": "b6e7f91c276ed4c9168da35c48384193b4f14b8014e7256400479b121eeefc49",
+      "query_count": 12
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1/facets.json",
+      "sha256": "a10b400586759ce9ccb43f55cec083d18c035712a2b904dbd5724d84c71c691d",
+      "query_count": 7
+    },
+    {
+      "path": "docs/gate_v3/semantic-request-facets-v1-confirmed/accepted.json",
+      "sha256": "9a08e784406dd5ce18846a85a5be62cf36c6237229bfcaecb01500aa008d013e",
+      "query_count": 7
+    }
+  ],
+  "corpus_query_count": 89,
+  "exact_matches": [],
+  "near_matches": [
+    {
+      "case_id": "SFB-005",
+      "other_case_id": "SFB-004",
+      "other_query": "我正在办理办公电脑领用。它要经过哪些办理环节？",
+      "source": "current-draft",
+      "similarity": 0.68
+    },
+    {
+      "case_id": "SFB-006",
+      "other_case_id": "SFB-005",
+      "other_query": "我同时有办公电脑领用和门禁补办两项事情。它要经过哪些办理环节？",
+      "source": "current-draft",
+      "similarity": 0.7017543859649122
+    },
+    {
+      "case_id": "SFB-018",
+      "other_case_id": "SFB-017",
+      "other_query": "门禁权限注销和工牌回收是两项工作。那个归谁负责？",
+      "source": "current-draft",
+      "similarity": 0.7547169811320755
+    }
+  ],
+  "near_threshold": 0.65,
+  "near_method": "NFKC, remove punctuation/whitespace, SequenceMatcher; review hints only, not semantic deduplication",
+  "hashes": {
+    "docs/gate_v3/semantic-facet-blind-v2-draft/questions.jsonl": "e29ac7253973de429aaa476a56b7bcf78552cebd144f3bd48c02a847513b697c",
+    "docs/gate_v3/semantic-facet-blind-v2-draft/review.json": "85f5c9ef52b63a9c884b4575071931a892120fe7bf7f42b2cdcef2ca79134f09",
+    "docs/gate_v3/semantic-facet-prompt-v1.txt": "1e327a051e0f2f0cdd0137930e9931fa665a749bace653977f5adc42edf6af2a",
+    "D:/Ai_agent_program/demo1/scripts/check_semantic_facet_blind_draft.py": "5d79df64fddd2c170c11121600ee4c095fd6fca7198a796e884d5fba187cad85"
+  },
+  "code_head": "170190ec3f1819386afd2fa439f8c54ce1f43d5e",
+  "python": "3.12.14",
+  "dependencies": "standard-library-only",
+  "model_id": null,
+  "model_revision": null,
+  "model_inference": false,
+  "semantic_accuracy": null,
+  "independent_test_set": false,
+  "numeric_resume_ready": false
+}

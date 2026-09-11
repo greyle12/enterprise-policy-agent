@@ -1,0 +1,44 @@
+{
+  "id": "e346c0cf-759f-41bb-9366-8a1622f026dd",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-012\",\"predicted_facets\":[]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer per instructions. Need analyze each query, output JSONL only. We have one case. Need determine facets from query. Query: \"关于会议室预订，材料、期限和流程我都不问，也没有其他问题。\" Translation: Regarding meeting room reservation, I am not asking about materials, deadlines, and procedures, and no other questions. It explicitly excludes MATERIAL, DEADLINE, PROCEDURE. No other facets. So predicted_facets empty array. binding none. Need output schema_version 1.0, case_id original, predicted_facets [].\n\nNeed ensure JSONL one line. No markdown."
+      }
+    }
+  ],
+  "created": 1789091105,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 153,
+    "prompt_tokens": 387,
+    "total_tokens": 540,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 128,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 259
+  }
+}

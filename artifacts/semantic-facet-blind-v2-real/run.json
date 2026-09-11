@@ -1,0 +1,110 @@
+[
+  {
+    "case_id": "SFB-001",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 8.171000000002095
+  },
+  {
+    "case_id": "SFB-002",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.2349999999860302
+  },
+  {
+    "case_id": "SFB-003",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.75
+  },
+  {
+    "case_id": "SFB-004",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.1560000000172295
+  },
+  {
+    "case_id": "SFB-005",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 3.5309999999881256
+  },
+  {
+    "case_id": "SFB-006",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.75
+  },
+  {
+    "case_id": "SFB-007",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.3280000000086147
+  },
+  {
+    "case_id": "SFB-008",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.5469999999913853
+  },
+  {
+    "case_id": "SFB-009",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.1719999999913853
+  },
+  {
+    "case_id": "SFB-010",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.812000000005355
+  },
+  {
+    "case_id": "SFB-011",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.187999999994645
+  },
+  {
+    "case_id": "SFB-012",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.437000000005355
+  },
+  {
+    "case_id": "SFB-013",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.735000000015134
+  },
+  {
+    "case_id": "SFB-014",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.375
+  },
+  {
+    "case_id": "SFB-015",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 2.235000000015134
+  },
+  {
+    "case_id": "SFB-016",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 1.702999999979511
+  },
+  {
+    "case_id": "SFB-017",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 3.5
+  },
+  {
+    "case_id": "SFB-018",
+    "status": "passed",
+    "returned_model": "deepseek-flash",
+    "seconds": 3.4690000000118744
+  }
+]

@@ -1,0 +1,44 @@
+{
+  "id": "73b79acc-9c7e-485d-ac8f-023180d45bfa",
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+        "content": "{\"schema_version\":\"1.0\",\"case_id\":\"SFB-008\",\"predicted_facets\":[{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]}",
+        "refusal": null,
+        "role": "assistant",
+        "annotations": null,
+        "audio": null,
+        "function_call": null,
+        "tool_calls": null,
+        "reasoning_content": "We need answer JSONL only. Need analyze query. Need extract facets current request. Query: 同事问：“访客登记要带什么材料？”这个问题也是我现在要问的。 Means colleague asks: \"What materials to bring for visitor registration?\" This question is also what I want to ask now. So user current request is about materials needed for visitor registration. Facet MATERIAL. Binding? Target object: 访客登记 (visitor registration) and material to bring. Is unique? The query includes quoted question and says this is also my question. So user requests MATERIAL for visitor registration. Binding BOUND? Need determine if dimension and target object have unique original binding. Yes, facet MATERIAL with target 访客登记要带什么材料. No other ambiguous流程. So predicted_facets [{\"facet\":\"MATERIAL\",\"binding\":\"BOUND\"}]. Ensure no PROCEDURE? It asks what materials to bring, not how process. So only MATERIAL. Output JSONL. Need include schema_version \"1.0\", case_id original. JSON only."
+      }
+    }
+  ],
+  "created": 1789091099,
+  "model": "deepseek-flash",
+  "object": "chat.completion",
+  "moderation": null,
+  "service_tier": null,
+  "system_fingerprint": "aeb56401ca74e127821c4f9126dcb669",
+  "usage": {
+    "completion_tokens": 253,
+    "prompt_tokens": 388,
+    "total_tokens": 641,
+    "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 216,
+      "rejected_prediction_tokens": null
+    },
+    "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cache_write_tokens": null,
+      "cached_tokens": 128
+    },
+    "prompt_cache_hit_tokens": 128,
+    "prompt_cache_miss_tokens": 260
+  }
+}

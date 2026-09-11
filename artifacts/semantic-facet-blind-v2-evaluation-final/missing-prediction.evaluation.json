@@ -1,0 +1,530 @@
+{
+  "cases": [
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-001",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 1,
+      "true_positive_facets": [
+        "MATERIAL"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-002",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "DEADLINE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "DEADLINE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 2,
+      "true_positive_facets": [
+        "DEADLINE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-003",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 3,
+      "true_positive_facets": [
+        "PROCEDURE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-004",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 4,
+      "true_positive_facets": [
+        "PROCEDURE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-005",
+      "derived_expected_binding_status": "UNBOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 5,
+      "true_positive_facets": [
+        "PROCEDURE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-006",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 6,
+      "true_positive_facets": [
+        "MATERIAL"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-007",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 7,
+      "true_positive_facets": [
+        "RESPONSIBLE_ROLE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-008",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 8,
+      "true_positive_facets": [
+        "MATERIAL"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-009",
+      "derived_expected_binding_status": "MISSING",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [],
+      "prediction_present": true,
+      "record_line": 9,
+      "true_positive_facets": []
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-010",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 10,
+      "true_positive_facets": [
+        "RESPONSIBLE_ROLE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-011",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 11,
+      "true_positive_facets": [
+        "PROCEDURE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-012",
+      "derived_expected_binding_status": "MISSING",
+      "exact_match": false,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [],
+      "prediction_present": false,
+      "record_line": 12,
+      "true_positive_facets": []
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-013",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCESS_CHOICE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCESS_CHOICE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 13,
+      "true_positive_facets": [
+        "PROCESS_CHOICE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-014",
+      "derived_expected_binding_status": "UNBOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCESS_CHOICE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "PROCESS_CHOICE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 14,
+      "true_positive_facets": [
+        "PROCESS_CHOICE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-015",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "PROCEDURE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 15,
+      "true_positive_facets": [
+        "PROCEDURE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-016",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 16,
+      "true_positive_facets": [
+        "RESPONSIBLE_ROLE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-017",
+      "derived_expected_binding_status": "UNBOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "UNBOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 17,
+      "true_positive_facets": [
+        "RESPONSIBLE_ROLE"
+      ]
+    },
+    {
+      "binding_mismatches": [],
+      "case_id": "SFB-018",
+      "derived_expected_binding_status": "BOUND",
+      "exact_match": true,
+      "excluded_unresolved_output_types": [
+        "request_facet"
+      ],
+      "expected_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        },
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "false_negative_facets": [],
+      "false_positive_facets": [],
+      "predicted_facets": [
+        {
+          "binding": "BOUND",
+          "facet": "MATERIAL"
+        },
+        {
+          "binding": "BOUND",
+          "facet": "RESPONSIBLE_ROLE"
+        }
+      ],
+      "prediction_present": true,
+      "record_line": 18,
+      "true_positive_facets": [
+        "MATERIAL",
+        "RESPONSIBLE_ROLE"
+      ]
+    }
+  ],
+  "fixture_id": "missing-prediction",
+  "metrics": {
+    "binding": {
+      "accuracy": 1.0,
+      "evaluated_count": 17,
+      "match_count": 17,
+      "mismatch_count": 0
+    },
+    "case_exact_match": {
+      "matched_count": 17,
+      "rate": 0.9444444444444444,
+      "total_case_count": 18
+    },
+    "facet_label": {
+      "expected_count": 17,
+      "f1": 1.0,
+      "false_negative": 0,
+      "false_positive": 0,
+      "precision": 1.0,
+      "predicted_count": 17,
+      "recall": 1.0,
+      "true_positive": 17
+    },
+    "prediction_coverage": {
+      "predicted_case_count": 17,
+      "rate": 0.9444444444444444,
+      "total_case_count": 18
+    }
+  },
+  "missing_prediction_case_ids": [
+    "SFB-012"
+  ],
+  "model_inference": false,
+  "parser_runtime_integration": false,
+  "prediction_sha256": "f61584ca3991df9bbe10ea92f1d373ae1ee41e22b07e1ec562cfe59417640b19",
+  "retrieval_executed": false,
+  "schema_version": "1.0"
+}
