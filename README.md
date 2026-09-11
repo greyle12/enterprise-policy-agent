@@ -4,9 +4,40 @@
 
 一个面向企业内部制度查询与流程办理场景的 AI Agent 个人项目。
 
-项目不止实现普通的文档问答，还计划完成从制度检索、条款引用、意图识别、材料检查、申请草稿生成、用户确认到模拟审批提交的完整流程。
+项目已在个人作品集范围内实现从制度检索、条款引用、意图识别、材料检查、申请草稿生成、用户确认到模拟审批提交的完整流程。
 
 > 当前项目为个人学习和求职作品集项目。仓库中的制度、员工、供应商、金额、审批流程和申请记录均为模拟数据，不代表任何真实企业。
+
+## 核心能力
+
+- Stateful Agent Workflow：覆盖制度查询、材料检查、审批判断、草稿生成、确认与模拟提交。
+- Hybrid RAG：结合 BGE 向量检索、BM25、RRF 与 BGE Reranker。
+- Retrieval-time Authorization：在检索前按身份、部门、角色、安全等级和地域过滤授权内容。
+- Tool Calling + HITL：通过受控工具执行动作，正式提交等副作用操作要求人工确认。
+- Idempotency + Audit：支持幂等提交、受控重试和审计记录。
+- RAG / Agent Evaluation：包含 20 条检索评测集、30 条 Agent 黄金测试用例及质量门禁。
+- FastAPI / PostgreSQL / pgvector：提供 API 服务与 RAG 向量持久化、增量索引能力。
+- CI / Reliability：GitHub Actions、pytest、Prometheus、single-flight 和失败边界验证。
+
+## 评测结果
+
+在 20 条开发集检索评测、199 个 Chunk、统一权限范围、候选窗口与 Top-5 配置下，
+RRF + BGE Reranker 达到 **Recall@5 92.5%、MRR@5 0.950**。
+
+以上是 retrieval evaluation 指标，不是回答准确率或生产业务准确率，也不代表生产质量。
+
+## 架构边界
+
+- **LLM：** 负责自然语言理解、意图识别和候选内容生成。
+- **确定性代码：** 负责权限、业务规则、字段校验、幂等和副作用边界。
+- **Tool：** 只执行受控业务动作。
+- **HITL：** 对正式提交等副作用操作要求用户明确确认。
+
+## 当前状态
+
+当前 Agent Runtime 仍以 SQLite 为主。PostgreSQL Multi-instance Shared State 仍在进行中；
+Redis session coordination、runtime cutover、多实例 failover / duplicate prevention integration 尚未完成。
+本项目是使用模拟数据的 Personal Project，不描述为生产多实例系统。
 
 ---
 
@@ -30,7 +61,7 @@
 → 大模型生成回答
 ```
 
-本项目计划实现：
+当前已实现的核心流程为：
 
 ```text
 用户提问
@@ -54,7 +85,7 @@
 
 ## 2. 项目目标
 
-本项目计划验证以下 AI 应用开发能力：
+项目主要验证以下 AI 应用开发能力：
 
 1. 企业制度文档解析与元数据提取；
 2. 文档分块、向量检索和关键词检索；
