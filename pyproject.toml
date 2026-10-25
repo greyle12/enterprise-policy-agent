@@ -24,6 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+observability = ["langfuse==4.18.0"]
 dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",

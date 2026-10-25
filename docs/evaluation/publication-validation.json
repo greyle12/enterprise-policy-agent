@@ -1,0 +1,67 @@
+{
+  "checked_at": "2026-10-25T09:30:50.911452+00:00",
+  "base_commit": "34109afc44d0dcb72ecf96ca7bf056d23683bea3",
+  "scope": "Curated Agent evaluation and observability code only; all checks run from the clean publication worktree.",
+  "scoped_regression": {
+    "tests": 255,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "postgres_integration": {
+    "tests": 9,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "postgres_cleanup_verified": true,
+  "changed_python_files": 57,
+  "ruff_check": "full clean-checkout Ruff check passed",
+  "changed_python_format_check": "passed; policy_answer_service formatting preserved its AST",
+  "full_format_check": {
+    "status": "preexisting_failures",
+    "unchanged_baseline_files": [
+      "apply_patch.py",
+      "scripts/evaluate_gate_v3_decisions.py",
+      "scripts/verify_gate_v3_decision_review.py"
+    ]
+  },
+  "full_pytest": {
+    "base_commit": "34109afc44d0dcb72ecf96ca7bf056d23683bea3",
+    "test_file": "tests/evaluation/test_freeze_semantic_facet_challenge.py",
+    "test_matches_base_after_line_ending_normalization": true,
+    "fixture": "docs/gate_v3/semantic-facet-challenge-v1-draft/cases.json",
+    "fixture_missing_in_base": true,
+    "fixture_missing_in_release": true,
+    "full_suite_result": {
+      "passed": 182,
+      "failed": 3,
+      "stopped_after_failures": 3
+    },
+    "failure_type": "FileNotFoundError",
+    "scope": "preexisting semantic facet fixtures, outside this Agent evaluation change"
+  },
+  "offline_cli_smokes": {
+    "integrated_evaluation": "passed_19_workflows_and_fault_detection",
+    "independent_prompt_comparison": "passed_two_offline_captures_no_quality_winner",
+    "synthetic_tracing_probe": "offline_verified",
+    "full_workflow_tracing": "passed_19_cases_39_turns_333_spans"
+  },
+  "new_live_model_calls": 0,
+  "new_external_telemetry_export": false,
+  "remote_ci_status": "followup_commit_rerun_pending",
+  "raw_local_runtime_artifacts_published": false,
+  "ci_environment_regression": {
+    "GITHUB_SHA": "synthetic",
+    "LANGFUSE_TRACING_ENVIRONMENT": "synthetic",
+    "result": "passed",
+    "sdk_ambient_release_and_environment_exported": false
+  },
+  "initial_remote_ci": {
+    "run_id": 40179668239,
+    "postgres_integration": "passed",
+    "tracing_failure": "SDK ambient release detected; fixed and covered by local CI-environment regression",
+    "format": "three unchanged baseline failures",
+    "dependency_review": "repository Dependency graph not enabled"
+  }
+}

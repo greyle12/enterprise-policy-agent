@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
@@ -217,6 +219,7 @@ class ResilientToolExecutor:
             return False
         return policy.retry_safe and classify_tool_failure(exc) in _RETRYABLE_CATEGORIES
 
+    @traced("tool.execute")
     async def execute(
         self,
         *,

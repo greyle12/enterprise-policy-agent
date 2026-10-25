@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 import json
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -79,6 +81,7 @@ def _context_record(
     return record
 
 
+@traced("context.build")
 def build_policy_context(
     results: Sequence[PolicyRetrievalResult],
     *,

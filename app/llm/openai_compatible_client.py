@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 from collections.abc import Sequence
 from typing import Self
 
@@ -63,6 +65,7 @@ class OpenAICompatibleLLMClient:
             max_retries=settings.llm_max_retries,
         )
 
+    @traced("llm.generation")
     async def chat(
         self,
         messages: Sequence[ChatMessage],

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -46,6 +48,7 @@ class RRFResult:
     contributions: tuple[RRFContribution, ...]
 
 
+@traced("retrieval.rrf")
 def reciprocal_rank_fusion(
     ranked_lists: Sequence[RankedList],
     *,

@@ -1,0 +1,64 @@
+name: Optional live semantic evaluation
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Explicit model ID
+        required: true
+        type: string
+      token_budget:
+        description: Maximum reserved tokens
+        required: true
+        type: number
+        default: 10000
+      cost_budget:
+        description: Maximum estimated USD
+        required: true
+        type: number
+        default: 0.10
+      max_usd_per_million:
+        description: Conservative maximum input/output price per million tokens
+        required: true
+        type: number
+      repetitions:
+        description: Repetitions (same cases, not independent samples)
+        required: true
+        type: number
+        default: 1
+permissions:
+  contents: read
+jobs:
+  live-judge:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: evaluation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: '3.12.10'
+      - run: python -m pip install -e '.[dev]'
+      - name: Run only synthetic semantic fixtures
+        env:
+          EVAL_API_KEY: ${{ secrets.EVAL_API_KEY }}
+          EVAL_BASE_URL: ${{ secrets.EVAL_BASE_URL }}
+          EVAL_MODEL: ${{ inputs.model }}
+          TOKEN_BUDGET: ${{ inputs.token_budget }}
+          COST_BUDGET: ${{ inputs.cost_budget }}
+          TOKEN_PRICE: ${{ inputs.max_usd_per_million }}
+          REPETITIONS: ${{ inputs.repetitions }}
+        run: >-
+          python -m scripts.run_semantic_evaluation --mode live
+          --input tests/evaluation/semantic_smoke.jsonl --output-dir artifacts/live-judge
+          --model "$EVAL_MODEL" --token-budget "$TOKEN_BUDGET" --cost-budget "$COST_BUDGET"
+          --max-usd-per-million "$TOKEN_PRICE" --repetitions "$REPETITIONS"
+          --max-output-tokens 500 --timeout 30 --max-calls 20
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        if: ${{ always() }}
+        with:
+          name: live-judge-${{ github.run_id }}
+          path: artifacts/live-judge/
+          if-no-files-found: error
+          retention-days: 14

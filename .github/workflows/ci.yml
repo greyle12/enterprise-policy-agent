@@ -76,6 +76,7 @@ jobs:
           python -m pytest
           tests/integration/test_postgres_repositories.py
           tests/integration/test_postgres_checkpointer.py
+          tests/integration/test_workflow_evaluation_postgres.py
           -m postgres_integration -q
           --junitxml=artifacts/test-results/postgres-repositories.xml
 
@@ -106,7 +107,7 @@ jobs:
           cache-dependency-path: pyproject.toml
 
       - name: Install project and development dependencies
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,observability]"
 
       - name: Verify installed dependency consistency
         run: python -m pip check
@@ -122,6 +123,64 @@ jobs:
 
       - name: Run the complete pytest suite
         run: python -m pytest --junitxml=artifacts/test-results/pytest.xml
+
+      - name: Run integrated offline evaluation delivery
+        if: ${{ always() }}
+        run: python -m scripts.run_evaluation_delivery --output-dir artifacts/workflow-evaluation/delivery
+
+      - name: Run evaluation contracts and safety regressions
+        if: ${{ always() }}
+        run: >-
+          python -m pytest tests/evaluation/test_evaluation_upgrade.py tests/evaluation/test_evaluation_delivery.py
+          tests/evaluation/test_agent_capture.py tests/evaluation/test_capture_provider.py
+          tests/evaluation/test_workflow_capture_pipeline.py
+          tests/evaluation/test_assisted_review.py tests/evaluation/test_capture_comparison.py
+          tests/evaluation/test_prompt_comparison.py
+          tests/unit/test_optional_tracing.py tests/unit/test_tracing_receipt.py
+          tests/evaluation/test_traced_workflow_evaluation.py
+          tests/deployment/test_local_langfuse_acceptance.py
+          tests/unit/test_policy_access_control.py tests/unit/test_prompt_injection.py
+          tests/unit/test_agent_resilience.py -q
+          --junitxml=artifacts/workflow-evaluation/fast-gate.xml
+
+      - name: Run offline Agent capture and semantic export
+        if: ${{ always() }}
+        run: python -m scripts.run_agent_evaluation_batch --output-dir artifacts/workflow-evaluation/agent-batch
+
+      - name: Verify capture comparison without live calls
+        if: ${{ always() }}
+        run: >-
+          python -m scripts.run_capture_comparison
+          --baseline artifacts/workflow-evaluation/agent-batch/workflow/capture-report.json
+          --candidate artifacts/workflow-evaluation/agent-batch/workflow/capture-report.json
+          --output-dir artifacts/workflow-evaluation/capture-comparison
+
+      - name: Verify independent answer prompt captures without live calls
+        if: ${{ always() }}
+        run: >-
+          python -m scripts.run_prompt_comparison
+          --output-dir artifacts/workflow-evaluation/prompt-comparison
+
+      - name: Verify synthetic tracing without external export
+        if: ${{ always() }}
+        run: >-
+          python -m scripts.verify_optional_tracing
+          --output-dir artifacts/workflow-evaluation/observability-probe
+
+      - name: Correlate all offline workflow turns with local traces
+        if: ${{ always() }}
+        run: >-
+          python -m scripts.run_traced_workflow_evaluation
+          --output-dir artifacts/workflow-evaluation/traced-workflow
+
+      - name: Upload workflow evaluation evidence
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: workflow-evaluation-${{ github.run_id }}
+          path: artifacts/workflow-evaluation/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Verify confirmed semantic request Facet evidence
         run: >-

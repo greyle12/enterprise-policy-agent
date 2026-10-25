@@ -118,6 +118,55 @@ async def _waiting_draft() -> DraftGenerationResult:
     return replace(answer.result, draft=draft)
 
 
+@pytest.mark.asyncio
+async def test_lifecycle_warning_updates_preserve_business_identity() -> None:
+    from app.persistence.postgres_runtime import _validate_draft_transition
+
+    waiting = await _waiting_draft()
+    confirmed = _confirmed(waiting)
+    confirmed = replace(
+        confirmed,
+        draft=replace(
+            confirmed.draft,
+            warnings=tuple(
+                w for w in waiting.draft.warnings if w != "草稿尚未确认，也没有提交审批。"
+            )
+            + ("草稿已由用户确认，但尚未提交审批。",),
+        ),
+    )
+    _validate_draft_transition(waiting, confirmed)
+    submitted = replace(
+        confirmed,
+        draft=replace(
+            confirmed.draft,
+            status=DraftStatus.SUBMITTED,
+            ready_for_confirmation=False,
+            submitted=True,
+            submission_id="test-submission",
+            submitted_at=_CONFIRMED_AT,
+            warnings=tuple(
+                w for w in confirmed.draft.warnings if w != "草稿已由用户确认，但尚未提交审批。"
+            )
+            + ("草稿已模拟提交审批；提交和审计记录已写入SQLite。",),
+        ),
+    )
+    _validate_draft_transition(confirmed, submitted)
+
+
+@pytest.mark.asyncio
+async def test_business_warnings_remain_immutable_during_confirmation() -> None:
+    from app.persistence.postgres_runtime import _validate_draft_transition
+
+    waiting = await _waiting_draft()
+    confirmed = _confirmed(waiting)
+    changed = replace(
+        confirmed,
+        draft=replace(confirmed.draft, warnings=confirmed.draft.warnings + ("新增业务风险提示",)),
+    )
+    with pytest.raises(DraftRevisionConflictError, match="business content"):
+        _validate_draft_transition(waiting, changed)
+
+
 def _confirmed(waiting: DraftGenerationResult) -> DraftGenerationResult:
     assert waiting.draft is not None
     return replace(

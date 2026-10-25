@@ -1,0 +1,3 @@
+{"case_id":"SEM-001","rubric":"correctness","query":"What is the synthetic allowance?","answer":"The synthetic allowance is 10 units.","reference":"10 units","evidence":{"synthetic-1":"This fictional policy permits 10 units."}}
+{"case_id":"SEM-002","rubric":"faithfulness","query":"What is the synthetic allowance?","answer":"The synthetic allowance is 999 units.","reference":"10 units","evidence":{"synthetic-1":"This fictional policy permits 10 units."}}
+{"case_id":"SEM-003","rubric":"completeness","query":"State both fictional requirements.","answer":"A receipt is required.","reference":"A receipt and supervisor approval are required.","evidence":{"synthetic-2":"Fictional requests require a receipt and supervisor approval."}}

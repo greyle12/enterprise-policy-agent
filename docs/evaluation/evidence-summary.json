@@ -1,0 +1,46 @@
+{
+  "scope": "Historical local development evidence; raw capture files, credentials, runtime logs and local environments are not published.",
+  "live_prompt_pilot": {
+    "date": "2026-10-25",
+    "calls": 42,
+    "reported_tokens": 25385,
+    "estimated_cost_upper_usd": 0.030462,
+    "actual_billed_cost_usd": null,
+    "sides": {
+      "baseline": {
+        "cases": 19,
+        "turns": 39,
+        "workflow_assertions_passed": 449,
+        "live_calls": 21,
+        "capture_sha256": "57ea4e08df5f6ae57e8d6ec431cda860f0c17854bbf5cc86732fa78b2a7ea3a4",
+        "prompt_sha256": "b016a60dc00ccfc5890d657f73a0b3679a071beb5583394dc2c96a74a86c7fc3"
+      },
+      "candidate": {
+        "cases": 19,
+        "turns": 39,
+        "workflow_assertions_passed": 449,
+        "live_calls": 21,
+        "capture_sha256": "d4f3489a920a6dadd4b513f976e9b0e9ce84e56aafe0fd439d10ee15f5c80d14",
+        "prompt_sha256": "d21ef2c93f1edc5d609198f87acef06ecf964c21f2b0c254030795a4f0f28880"
+      }
+    },
+    "workflow_pairs": 3,
+    "unique_query_evidence_groups": 1,
+    "independent_test_certified": false,
+    "quality_winner": null,
+    "human_confirmed_samples": 0,
+    "semantic_judge_calls": 0,
+    "external_telemetry_export": false,
+    "application_default_prompt_changed": false
+  },
+  "local_observability": {
+    "date": "2026-10-24",
+    "server_version": "4.69.0",
+    "sdk_version": "4.18.0",
+    "synthetic_observations_received": 8,
+    "server_receipt_verified": true,
+    "cleanup_verified": true,
+    "coverage": "Only that new local synthetic probe, not the live prompt pilot or production deployment."
+  },
+  "reproducibility_note": "Publication is curated on the existing GitHub master baseline. Original run fingerprints describe the historical local workspace; fresh published-checkout runs must produce their own fingerprints. Historical reports are not rewritten."
+}
