@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 import asyncio
 import logging
 import re
@@ -71,6 +73,7 @@ class RuntimeObservabilityMiddleware:
         self._request_id_factory = request_id_factory
         self._monotonic_ns = monotonic_ns
 
+    @traced("http.request")
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         if scope["type"] != "http":
             await self._app(scope, receive, send)

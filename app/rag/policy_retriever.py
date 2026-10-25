@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
@@ -231,6 +233,7 @@ class PolicyRetriever:
 
         return self._reranking_provider is not None
 
+    @traced("retrieval.vector")
     def search(
         self,
         query: str,
@@ -263,6 +266,7 @@ class PolicyRetriever:
             for result in vector_results
         ]
 
+    @traced("retrieval.bm25")
     def search_keywords(
         self,
         query: str,
@@ -286,6 +290,7 @@ class PolicyRetriever:
             for result in keyword_results
         ]
 
+    @traced("retrieval.hybrid")
     def search_hybrid(
         self,
         query: str,
@@ -368,6 +373,7 @@ class PolicyRetriever:
             )
         return hybrid_results
 
+    @traced("retrieval.reranked")
     def search_reranked(
         self,
         query: str,
@@ -464,6 +470,7 @@ class AccessControlledPolicyRetriever:
         self._access_context = access_context
         self._as_of_date = as_of_date
 
+    @traced("authorization.scope")
     def _allowed_chunk_ids(self) -> frozenset[str]:
         return authorized_chunk_ids(
             self._chunks,
@@ -475,6 +482,7 @@ class AccessControlledPolicyRetriever:
     def allowed_chunk_count(self) -> int:
         return len(self._allowed_chunk_ids())
 
+    @traced("retrieval.vector")
     def search(
         self,
         query: str,
@@ -487,6 +495,7 @@ class AccessControlledPolicyRetriever:
             allowed_chunk_ids=self._allowed_chunk_ids(),
         )
 
+    @traced("retrieval.bm25")
     def search_keywords(
         self,
         query: str,
@@ -499,6 +508,7 @@ class AccessControlledPolicyRetriever:
             allowed_chunk_ids=self._allowed_chunk_ids(),
         )
 
+    @traced("retrieval.hybrid")
     def search_hybrid(
         self,
         query: str,
@@ -516,6 +526,7 @@ class AccessControlledPolicyRetriever:
             allowed_chunk_ids=allowed_chunk_ids,
         )
 
+    @traced("retrieval.reranked")
     def search_reranked(
         self,
         query: str,

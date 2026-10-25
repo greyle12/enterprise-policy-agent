@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 import math
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
@@ -175,6 +177,7 @@ def build_reranked_candidates(
     return ranked if top_k is None else ranked[:top_k]
 
 
+@traced("retrieval.rerank")
 def rerank_candidates(
     query: str,
     candidates: Sequence[RerankCandidate],

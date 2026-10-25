@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from app.memory.conversation import (
@@ -77,6 +79,7 @@ class AgentRouter:
             tool_executor=tool_executor,
         )
 
+    @traced("agent.request")
     async def route(
         self,
         user_input: str,

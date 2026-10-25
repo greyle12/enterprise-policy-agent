@@ -44,6 +44,27 @@ def test_ci_is_secretless_and_uses_unprivileged_pull_request_event() -> None:
     assert "persist-credentials: false" in workflow
 
 
+def test_tracing_gate_installs_optional_sdk_and_uses_offline_default() -> None:
+    import yaml
+
+    workflow = yaml.safe_load((_PROJECT_ROOT / ".github/workflows/ci.yml").read_text("utf-8"))
+    commands = [step.get("run", "") for step in workflow["jobs"]["quality"]["steps"]]
+    assert 'python -m pip install -e ".[dev,observability]"' in commands
+    probe = next(command for command in commands if "scripts.verify_optional_tracing" in command)
+    assert "--export" not in probe
+    assert "artifacts/workflow-evaluation/observability-probe" in probe
+    workflow_probe = next(
+        command for command in commands if "scripts.run_traced_workflow_evaluation" in command
+    )
+    assert "--export" not in workflow_probe and "--mode live" not in workflow_probe
+    assert "artifacts/workflow-evaluation/traced-workflow" in workflow_probe
+    prompt_probe = next(
+        command for command in commands if "scripts.run_prompt_comparison" in command
+    )
+    assert "--mode live" not in prompt_probe and "--live-config" not in prompt_probe
+    assert "artifacts/workflow-evaluation/prompt-comparison" in prompt_probe
+
+
 def test_ci_keeps_machine_readable_evidence_and_builds_container() -> None:
     workflow = (_PROJECT_ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
 

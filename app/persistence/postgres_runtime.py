@@ -27,6 +27,14 @@ from app.tools.draft_models import (
 
 _DRAFT_RESULT_ADAPTER = TypeAdapter(DraftGenerationResult)
 _SESSION_ID_PATTERN = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,63}")
+_LIFECYCLE_WARNINGS = frozenset(
+    {
+        "草稿尚未确认，也没有提交审批。",
+        "草稿已由用户确认，但尚未提交审批。",
+        "草稿已模拟提交审批；提交和审计记录已写入SQLite。",
+        "草稿已模拟提交审批；提交和审计记录仅保存在当前进程内。",
+    }
+)
 _ALLOWED_DRAFT_STATUS_TRANSITIONS: dict[DraftStatus, frozenset[DraftStatus]] = {
     DraftStatus.WAITING_FOR_INFORMATION: frozenset({DraftStatus.CANCELLED}),
     DraftStatus.WAITING_FOR_MATERIALS: frozenset({DraftStatus.CANCELLED}),
@@ -103,6 +111,12 @@ def _draft_content_identity(result: DraftGenerationResult) -> object:
     if not isinstance(draft_payload, Mapping):
         raise DraftRevisionConflictError("stored draft revision is missing its draft payload")
     immutable_draft = dict(draft_payload)
+    # Workflow lifecycle notices change on confirmation/submission; business warnings do not.
+    immutable_draft["warnings"] = [
+        warning
+        for warning in immutable_draft.get("warnings", [])
+        if warning not in _LIFECYCLE_WARNINGS
+    ]
     for field_name in (
         "status",
         "ready_for_confirmation",

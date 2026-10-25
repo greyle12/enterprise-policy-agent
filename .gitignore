@@ -56,3 +56,7 @@ vendor/wheels/*.whl
 data/runtime/
 *.db-wal
 *.db-shm
+
+# Local evaluation runs and temporary fixtures
+/artifacts/
+.pytest_tmp*/

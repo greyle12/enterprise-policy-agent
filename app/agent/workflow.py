@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app.observability.tracing import traced
+
 import asyncio
 import re
 from collections.abc import Callable, Sequence
@@ -716,6 +718,7 @@ class AgentWorkflow:
             ),
         )
 
+    @traced("workflow.persist_route_state")
     async def _persist_route_state(
         self,
         state: AgentWorkflowState,
@@ -772,6 +775,7 @@ class AgentWorkflow:
             update["session_phase"] = session_phase
         return update
 
+    @traced("workflow.resolve_turn")
     async def _resolve_turn(
         self,
         state: AgentWorkflowState,
@@ -813,6 +817,7 @@ class AgentWorkflow:
             raise TypeError("workflow state is missing turn action")
         return action.value
 
+    @traced("workflow.classify_intent")
     async def _classify_intent(
         self,
         state: AgentWorkflowState,
@@ -873,6 +878,7 @@ class AgentWorkflow:
             return AgentWorkflowNode.AWAIT_CONFIRMATION.value
         return END
 
+    @traced("workflow.answer_policy")
     async def _answer_policy(
         self,
         state: AgentWorkflowState,
@@ -906,6 +912,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.check_materials")
     async def _check_materials(
         self,
         state: AgentWorkflowState,
@@ -944,6 +951,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.check_approval")
     async def _check_approval(
         self,
         state: AgentWorkflowState,
@@ -982,6 +990,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.generate_draft")
     async def _generate_draft(
         self,
         state: AgentWorkflowState,
@@ -1031,6 +1040,7 @@ class AgentWorkflow:
             )
         return update
 
+    @traced("workflow.update_draft")
     async def _update_draft(
         self,
         state: AgentWorkflowState,
@@ -1124,6 +1134,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.await_confirmation")
     async def _await_confirmation(
         self,
         state: AgentWorkflowState,
@@ -1149,6 +1160,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.human_confirmation_gate")
     async def _human_confirmation_gate(
         self,
         state: AgentWorkflowState,
@@ -1191,6 +1203,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.confirm_draft")
     async def _confirm_draft(
         self,
         state: AgentWorkflowState,
@@ -1288,6 +1301,7 @@ class AgentWorkflow:
             )
         return update
 
+    @traced("workflow.submit_approval")
     async def _submit_approval(
         self,
         state: AgentWorkflowState,
@@ -1481,6 +1495,7 @@ class AgentWorkflow:
             ),
         }
 
+    @traced("workflow.cancel_draft")
     async def _cancel_draft(
         self,
         state: AgentWorkflowState,
@@ -1549,6 +1564,7 @@ class AgentWorkflow:
             )
         return update
 
+    @traced("workflow.request_clarification")
     async def _request_clarification(
         self,
         state: AgentWorkflowState,
@@ -1726,6 +1742,7 @@ class AgentWorkflow:
             ),
         )
 
+    @traced("workflow.run")
     async def run(
         self,
         user_input: str,

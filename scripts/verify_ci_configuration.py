@@ -35,7 +35,13 @@ _SEMANTIC_FACET_GATE_ARGUMENTS = (
 )
 _SEMANTIC_FACET_REPORT_PATH = "artifacts/evaluation/semantic-request-facets-report.json"
 _REQUIRED_QUALITY_COMMANDS = (
-    'python -m pip install -e ".[dev]"',
+    'python -m pip install -e ".[dev,observability]"',
+    "python -m scripts.verify_optional_tracing",
+    "--output-dir artifacts/workflow-evaluation/observability-probe",
+    "python -m scripts.run_traced_workflow_evaluation",
+    "--output-dir artifacts/workflow-evaluation/traced-workflow",
+    "python -m scripts.run_prompt_comparison",
+    "--output-dir artifacts/workflow-evaluation/prompt-comparison",
     "python -m pip check",
     "python -m scripts.verify_ci_configuration",
     "python -m ruff check .",
