@@ -175,3 +175,35 @@ def test_real_sdk_otel_export_and_ambient_context_isolation(recorder, monkeypatc
     assert "sk-test-only" not in str([dict(s.attributes) for s in spans])
     assert all("langfuse.observation.input" not in s.attributes for s in spans)
     client.shutdown()
+
+
+def test_metadata_export_removes_sdk_ambient_release_and_environment(recorder, monkeypatch):
+    pytest.importorskip("langfuse")
+    from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
+
+    monkeypatch.setenv("GITHUB_SHA", "PRIVATE-CI-REVISION")
+    monkeypatch.setenv("LANGFUSE_TRACING_ENVIRONMENT", "private-deployment")
+    exporter = InMemorySpanExporter()
+    client = tracing.make_langfuse_client(
+        public_key="pk-test-" + uuid4().hex,
+        secret_key="sk-test-only",
+        base_url="http://127.0.0.1:1",
+        span_exporter=exporter,
+    )
+    backend = tracing.LangfuseBackend.__new__(tracing.LangfuseBackend)
+    backend.client = client
+    monkeypatch.setattr(tracing, "_backend", backend)
+    try:
+        with tracing.trace_span("agent.request"):
+            pass
+        client.flush()
+        spans = exporter.get_finished_spans()
+        assert len(spans) == 1
+        assert spans[0].attributes["langfuse.observation.metadata.final_status"] == "ok"
+        assert "langfuse.release" not in spans[0].attributes
+        assert "langfuse.environment" not in spans[0].attributes
+        assert not spans[0].instrumentation_scope.attributes
+        payload = str(spans[0].attributes)
+        assert "PRIVATE-CI-REVISION" not in payload and "private-deployment" not in payload
+    finally:
+        client.shutdown()

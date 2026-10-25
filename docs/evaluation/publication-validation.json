@@ -1,9 +1,9 @@
 {
-  "checked_at": "2026-10-25T09:06:49.929161+00:00",
+  "checked_at": "2026-10-25T09:30:50.911452+00:00",
   "base_commit": "34109afc44d0dcb72ecf96ca7bf056d23683bea3",
   "scope": "Curated Agent evaluation and observability code only; all checks run from the clean publication worktree.",
   "scoped_regression": {
-    "tests": 254,
+    "tests": 255,
     "failures": 0,
     "errors": 0,
     "skipped": 0
@@ -49,6 +49,19 @@
   },
   "new_live_model_calls": 0,
   "new_external_telemetry_export": false,
-  "remote_ci_status": "not_yet_run_at_local_validation",
-  "raw_local_runtime_artifacts_published": false
+  "remote_ci_status": "followup_commit_rerun_pending",
+  "raw_local_runtime_artifacts_published": false,
+  "ci_environment_regression": {
+    "GITHUB_SHA": "synthetic",
+    "LANGFUSE_TRACING_ENVIRONMENT": "synthetic",
+    "result": "passed",
+    "sdk_ambient_release_and_environment_exported": false
+  },
+  "initial_remote_ci": {
+    "run_id": 40179668239,
+    "postgres_integration": "passed",
+    "tracing_failure": "SDK ambient release detected; fixed and covered by local CI-environment regression",
+    "format": "three unchanged baseline failures",
+    "dependency_review": "repository Dependency graph not enabled"
+  }
 }

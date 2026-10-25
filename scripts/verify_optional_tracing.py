@@ -43,7 +43,12 @@ def span_manifest(spans):
     rows = []
     prefix = "langfuse.observation.metadata."
     for span in spans:
-        attributes = dict(span.attributes)
+        # The local processor runs before MetadataExporter strips ambient SDK fields.
+        attributes = {
+            key: value
+            for key, value in span.attributes.items()
+            if key not in {"langfuse.release", "langfuse.environment"}
+        }
         if any(
             key
             not in {

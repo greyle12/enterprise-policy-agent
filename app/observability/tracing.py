@@ -37,7 +37,7 @@ def metadata_only_provider():
 def make_langfuse_client(
     *, public_key, secret_key, base_url, tracer_provider=None, span_exporter=None, **kwargs
 ):
-    """Remove SDK scope credentials only after its project-isolation filtering."""
+    """Remove SDK credentials and ambient attributes after project-isolation filtering."""
     import base64
 
     from langfuse import Langfuse
@@ -70,7 +70,17 @@ def make_langfuse_client(
                         context=span.context,
                         parent=span.parent,
                         resource=span.resource,
-                        attributes=span.attributes,
+                        attributes={
+                            key: value
+                            for key, value in span.attributes.items()
+                            if key
+                            in {
+                                "langfuse.observation.type",
+                                "langfuse.internal.as_root",
+                                "langfuse.internal.is_app_root",
+                            }
+                            or key.startswith("langfuse.observation.metadata.")
+                        },
                         events=span.events,
                         links=span.links,
                         kind=span.kind,
